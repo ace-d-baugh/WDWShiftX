@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Design System Colors */
+    --color-primary: 269 100% 75%; /* #BD80FF */
+    --color-primary-light: 269 100% 95%; /* #F2E6FF */
+    --color-secondary: 269 100% 87%; /* #DEBFFF */
+    --color-accent: 50 100% 75%; /* #FFEA80 */
+    --color-text: 269 35% 22%; /* #2F2040 */
+    --color-success: 99 70% 67%; /* #9BE673 */
+    --color-info: 200 100% 75%; /* #80D4FF */
+    --color-warning: 355 80% 74%; /* #EE808A */
+    
+    /* Semantic Colors */
+    --color-background: 0 0% 100%;
+    --color-foreground: 269 35% 22%;
+    --color-card: 0 0% 100%;
+    --color-card-foreground: 269 35% 22%;
+    --color-border: 269 20% 90%;
+    --color-input: 269 20% 90%;
+    --color-ring: 269 100% 75%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Ensure minimum touch target size for mobile */
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Focus states for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+
+  /* Headings use accent font (Philosopher) */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-accent;
+  }
+}
+
+@layer components {
+  /* Badge styles for Trade, Giveaway, OT */
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-medium;
+  }
+
+  .badge-trade {
+    @apply bg-info/20 text-info;
+  }
+
+  .badge-giveaway {
+    @apply bg-success/20 text-success;
+  }
+
+  .badge-ot {
+    @apply bg-warning/20 text-warning;
+  }
+
+  /* Card component */
+  .card {
+    @apply rounded-lg border bg-card p-4 shadow-sm;
+  }
+
+  /* Input styles */
+  .input {
+    @apply flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Button base styles */
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-text hover:bg-secondary/80;
+  }
+
+  .btn-outline {
+    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar for webkit browsers */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-border/80;
+  }
+}
