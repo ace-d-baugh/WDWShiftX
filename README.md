@@ -88,7 +88,7 @@ WDWShiftX provides:
 ### 🔐 Security & Verification
 - HubID + PERNER validation (never stored)
 - Email verification required
-- Auto-promotion to Copro for @disney.com emails
+- Auto-promotion to CoPro for @disney.com emails
 - Inactivity management (3-month warning, 5-month deactivation)
 
 ### 🎯 Proficiency System
@@ -115,8 +115,8 @@ WDWShiftX provides:
 |------|-------------|
 | **Guest** | View landing page, login, register |
 | **Cast** | View/filter boards, post shifts/requests, edit profile |
-| **Copro** | Cast permissions + CRUD all posts, flag users, deactivate other Copros |
-| **Leader** | Copro permissions + approve suggestions, manage flags, access archives |
+| **CoPro** | Cast permissions + CRUD all posts, flag users, deactivate other Copros |
+| **Leader** | CoPro permissions + approve suggestions, manage flags, access archives |
 | **Admin** | Full system control, manage Properties, assign Leader permissions |
 
 ---
@@ -133,7 +133,7 @@ WDWShiftX provides:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/wdwshiftx.git
+git clone https://github.com/ace-d-baugh/wdwshiftx.git
 cd wdwshiftx
 
 # Install dependencies
@@ -291,7 +291,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-Built with ❤️ for the Cast Member community.
+Built with ❤️ by Cast Members for Cast Members.
 
 Special thanks to all Cast Members who provided feedback on the Facebook group pain points.
 
@@ -299,10 +299,10 @@ Special thanks to all Cast Members who provided feedback on the Facebook group p
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/yourusername/wdwshiftx/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/wdwshiftx/discussions)
+- **Issues:** [GitHub Issues](https://github.com/ace-d-baugh/wdwshiftx/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/ace-d-baugh/wdwshiftx/discussions)
 - **Feedback:** Use the thumbs down button in-app to report bugs or suggest features
 
 ---
 
-**Remember:** Always verify shift trades and OT approval in Disney's official HUB system. WDWShiftX is a bulletin board only—final execution is your responsibility.
+**Remember:** Always verify shift trades and OT approval on Disney's official scheduling pages. WDWShiftX is a bulletin board only—communication & final execution is your responsibility.
