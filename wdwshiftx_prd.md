@@ -1,6 +1,6 @@
-# PRD: WDWShiftX (Version 2.0)
+# PRD: WDWShiftX (Version 2.1)
 
-**Project Lead:** App Guru  
+**Project Lead:** Ace Baugh  
 **Status:** Final Draft  
 **Stack:** React (Next.js), Supabase, Tailwind CSS  
 **Target Platform:** Progressive Web App (PWA)
@@ -20,10 +20,10 @@ WDWShiftX is a dedicated, non-affiliated bulletin board for Walt Disney World Ca
 | Role | Access Level | Description |
 |------|--------------|-------------|
 | **Guest** | Public | Can only see the landing page, login, and registration. |
-| **Cast** | Verified | Basic CM access. Can view/filter boards, post shifts/requests, edit own profile. |
-| **Copro** | Moderator | CMs with @disney.com emails. Can CRUD all posts, flag users, and deactivate other Copros. |
-| **Leader** | Manager | Can verify/deactivate Copros and other Leaders. Can promote Copros to Leaders. Can approve location/role suggestions. Access to archived posts and filtered flag queue. |
-| **Admin** | Superuser | Full system control. Can assign Leader permissions, manage all profiles, and CRUD Properties. |
+| **Cast** | Email Verified | Basic CM access. Can view/filter boards within proficiencies, CRUD shift owned offers/requests, Suggest new locations & shift titles, and edit & deactivate own profile. |
+| **CoPro** | Moderator | CMs with @disney.com emails. Can do all Cast can do plus flag users and posts, and deactivate other CoPros. |
+| **Leader** | Manager | Can do all a CoPro can do plus verify/deactivate Copros and other Leaders. Can promote Copros to Leaders. Can approve location/role suggestions. Access to archived posts and filtered flag queue. Remove an email from Black List|
+| **Admin** | Superuser | Full system control. Can assign Leader permissions, manage all profiles, and CRUD Properties, Locations, and Roles. |
 
 ---
 
@@ -31,11 +31,11 @@ WDWShiftX is a dedicated, non-affiliated bulletin board for Walt Disney World Ca
 
 ### The Registration Handshake
 
-1. **Input:** User provides Email, Password, HubID, PERNER, Display Name, Phone Number (optional).
-2. **Validation:**
-   - HubID Regex: `/^[a-zA-Z]{5}\d{3}$/` (e.g., BAUGM007)
-   - PERNER Regex: `/^\d{8}$/` (e.g., 00511062)
-   - Phone: E.164 format (US only): +1XXXXXXXXXX
+1. **Input:** User provides Email, Password, HubID, PERNER.
+2. **Server-Side Validation:**
+   - HubID Regex: `/^[a-zA-Z]{5}\d{3}$/` (e.g., HAUGM027)
+   - PERNER Regex: `/^\d{8}$/` (e.g., 01713069)
+   - Email not on "Balck List"
 3. **Action:** If validation passes, account is created with `email_verified = false`.
 4. **Email Verification:** Verification link sent to provided email. Account remains inactive until verified.
 5. **Disposal:** HubID and PERNER are used only for initial validation and are never stored in the database.
@@ -46,8 +46,8 @@ WDWShiftX is a dedicated, non-affiliated bulletin board for Walt Disney World Ca
 - Users can update email addresses.
 - New email must be verified before old email is replaced.
 - Re-login required after email change.
-- **Auto-Promotion:** If new email is @disney.com, user is promoted to Copro upon next login.
-- **Auto-Demotion:** If Copro changes from @disney.com to non-Disney email, user is demoted to Cast. Warning displayed before change.
+- **Auto-Promotion:** If new email is @disney.com, user is promoted to CoPro upon next login.
+- **Auto-Demotion:** If CoPro or Leader changes from @disney.com to non-Disney email, user is demoted to Cast. Warning displayed before change.
 
 ### Inactivity Management
 
@@ -92,13 +92,13 @@ Three-tier system to ensure users only see shifts they are qualified for:
 **Display Badges:**
 - **Trade:** Clear visual indicator (pill/tag)
 - **Giveaway:** Clear visual indicator (pill/tag)
-- **Overtime Approved:** Badge with legal disclaimer in T&C: "Verify OT approval in HUB before claiming"
+- **Overtime Approved:** Badge with legal disclaimer in T&C: "Verify OT approval before claiming"
 - Posts can have multiple badges (e.g., Trade + Giveaway + OT)
 
 **Post Editing:**
 - Users can edit their own posts as long as `is_active = true`.
 - No notifications sent for edits.
-- Edit history visible to Copros+ for abuse tracking.
+- Edit history visible to CoPros+ for abuse tracking.
 
 **Post Deactivation:**
 - Users can deactivate their own posts.
@@ -208,7 +208,7 @@ Same page as Shift Board with tab toggle.
 - Other misconduct
 
 **Flag Workflow:**
-1. Cast/Copro/Leader clicks flag button on post or profile.
+1. Cast/CoPro/Leader clicks flag button on post or profile.
 2. Flag enters pending queue with status `pending`.
 3. Flagged content remains visible.
 4. Leaders see flags filtered by their proficiencies only.
@@ -222,9 +222,9 @@ Same page as Shift Board with tab toggle.
 - Leaders can view target's Property/Location/Role via `target_id`.
 
 **Deactivation:**
-- Copros can deactivate other Copros.
-- Leaders can deactivate Copros and other Leaders.
-- Leaders can demote themselves and others (cannot promote to Leader, only Admins can).
+- CoPros can deactivate other CoPros.
+- Leaders can deactivate CoPros and other Leaders.
+- Leaders can demote themselves and others.
 - Deactivated users: all associated posts become orphaned but remain visible with original created_by name.
 
 ---
@@ -235,11 +235,11 @@ Same page as Shift Board with tab toggle.
 - Leaders and Admins only.
 
 **Contents:**
-- Posts older than 90 days (both offers and requests).
+- Posts no older than 90 days (both offers and requests).
 - Deactivated posts (user-deleted).
 
 **Search & Filter:**
-- Same filters as live boards (Property, Location, Role, Date range).
+- Same filters as live boards (Property, Location, Role, Date range) adding keyword search.
 
 **Display:**
 - Separate section/page from live boards.
@@ -247,6 +247,16 @@ Same page as Shift Board with tab toggle.
 
 ---
 
+### G. Security
+**Failed Registration Flow:**
+ - HubID & PERNER must pass Regex upon atempting to submit registration
+ - Registration page reloads with everything filled out but empty inputs for HubID and PERNER warning: "HubID or PERNER or both are not correct, please enter them again or see you Leader for correct formatting."
+ - Five failed attempts will place the email address in the banned emails list
+
+**Email Black List**
+ - Blocked emails from creating or recreating profiles.
+
+---
 ## 6. Technical Considerations
 
 ### Infrastructure
@@ -261,6 +271,7 @@ Same page as Shift Board with tab toggle.
 - `flags`: (`status`, `created_at`)
 - `users`: (`email`), (`role`, `is_active`)
 - `user_proficiencies`: (`user_id`, `location_id`, `role_id`)
+- `black_list_emails`: (`email`)
 
 ### Rate Limiting (API)
 
@@ -447,6 +458,21 @@ CREATE TABLE flags (
 );
 ```
 
+### Black_Listed
+
+```sql
+CREATE TABLE black_listed (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  failed_attempts INTEGER DEFAULT 0 CHECK (failed_attempts >= 0),
+  blocked BOOLEAN DEFAULT FALSE,
+  ip_address INET, -- Using INET type for optimized IP storage and validation
+  origin_country TEXT,
+  origin_city TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
 ---
 
 ## 10. Legal & Risk Management
@@ -460,8 +486,9 @@ CREATE TABLE flags (
 
 **Terms & Conditions:**
 - Overtime badge disclaimer: "Verify OT approval in HUB before claiming"
-- Accuracy: "WDWShiftX is a bulletin board only; users are responsible for final execution in Disney's official systems."
+- Accuracy: "WDWShiftX is a bulletin board only; users are responsible for final execution through Disney's official systems."
 - Ghosting: Users who claim shifts but fail to process them may be flagged and subject to moderation.
+- Misuse of this application may be used for real disciplinary action by leaders of the Walt Disney Company.
 
 ### Data Privacy
 
@@ -478,6 +505,9 @@ CREATE TABLE flags (
 - **Analytics Dashboard:** Leaders see shift trends by Property/Location/Role.
 - **Mobile App Wrapper:** Native iOS/Android apps (if PWA insufficient).
 - **Multi-Language Support:** Spanish, Portuguese for international CMs.
+- **Calendar View:** Importing schedules via OCR of images and ability to add shifts to posts.
+- **Paid Features:** Adding a way for users to get enhanced features or ad-free experience for low price.
+- **Ads:** Adding ads to offset the price of running the application.
 
 ---
 
@@ -498,4 +528,4 @@ CREATE TABLE flags (
 
 ---
 
-**End of PRD v2.0**
+**End of PRD v2.1**
