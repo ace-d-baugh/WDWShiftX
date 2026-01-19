@@ -3,7 +3,7 @@
 > A dedicated bulletin board for Walt Disney World Cast Members to trade shifts, give away shifts, and post shift requests.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![PRD Version](https://img.shields.io/badge/PRD-v2.0-green.svg)](docs/PRD.md)
+[![PRD Version](https://img.shields.io/badge/PRD-v2.1-green.svg)](docs/PRD.md)
 
 **⚠️ Disclaimer:** WDWShiftX is not affiliated with, authorized by, or endorsed by The Walt Disney Company.
 
