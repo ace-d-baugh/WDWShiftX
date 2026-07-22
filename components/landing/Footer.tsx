@@ -8,9 +8,9 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-row items-center gap-0 align-baseline">
             <Image
-              src="/logos/MyShiftX-Full-Logo-Gradient.svg"
-              alt="MyShiftX"
-              width={5000}
+              src="/logos/WDWShiftX-Full-Logo-Gradient.png"
+              alt="WDW ShiftX"
+              width={6200}
               height={1024}
               className="h-12 w-auto brightness-0 invert opacity-60"
             />
@@ -26,11 +26,11 @@ export function Footer() {
         </div>
         <div className="mt-6 pt-6 border-t border-white/10 text-xs text-center text-white/40">
           <p>
-            MyShiftX is an independent platform and is not affiliated with, sponsored by,
+            WDW ShiftX is an independent platform and is not affiliated with, sponsored by,
             or endorsed by any specific employer. All trademarks are property of their
             respective owners.
           </p>
-          <p className="mt-2">© {new Date().getFullYear()} MyShiftX. All rights reserved.</p>
+          <p className="mt-2">© {new Date().getFullYear()} WDW ShiftX. All rights reserved.</p>
         </div>
       </div>
     </footer>

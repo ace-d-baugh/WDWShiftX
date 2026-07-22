@@ -290,7 +290,7 @@
 .themed-logo-wrap {
   position: relative;
   display: inline-block;
-  aspect-ratio: 5000 / 1024;
+  aspect-ratio: 6200 / 1024;
 }
 .themed-logo-wrap .themed-logo-default,
 .themed-logo-wrap .themed-logo-tinted,
@@ -305,12 +305,12 @@
   display: none;
 }
 .themed-logo-tinted {
-  -webkit-mask: url('/logos/MyShiftX-Full-Logo-Black.svg') no-repeat center / contain;
-  mask: url('/logos/MyShiftX-Full-Logo-Black.svg') no-repeat center / contain;
+  -webkit-mask: url('/logos/WDWShiftX-Full-Logo-Black.svg') no-repeat center / contain;
+  mask: url('/logos/WDWShiftX-Full-Logo-Black.svg') no-repeat center / contain;
 }
 .themed-logo-stars {
-  -webkit-mask: url('/logos/MyShiftX-Stars-Only-Black.svg') no-repeat center / contain;
-  mask: url('/logos/MyShiftX-Stars-Only-Black.svg') no-repeat center / contain;
+  -webkit-mask: url('/logos/WDWShiftX-Stars-Only-Black.svg') no-repeat center / contain;
+  mask: url('/logos/WDWShiftX-Stars-Only-Black.svg') no-repeat center / contain;
 }
 .theme-midnight .themed-logo-default,
 .theme-cyberpunk .themed-logo-default,
@@ -340,7 +340,7 @@
  * also has no CSS border/stroke property to fall back on.
  *
  * Fixed by masking with an actual stroke-only SVG instead of the filled one
- * (MyShiftX-Full-Logo-Outline-Black.svg — same paths, fill:none/stroke:black
+ * (WDWShiftX-Full-Logo-Outline-Black.svg — same paths, fill:none/stroke:black
  * cascaded from the root svg element, so the mask itself only has alpha
  * along a thin ring per letter/star, leaving the interior genuinely
  * unmasked/invisible). background is a real solid color now — visible only
@@ -348,8 +348,8 @@
  * for the glow, which now has real opaque pixels to shadow.
  */
 .theme-cyberpunk .themed-logo-tinted {
-  -webkit-mask-image: url('/logos/MyShiftX-Full-Logo-Outline-Black.svg');
-  mask-image: url('/logos/MyShiftX-Full-Logo-Outline-Black.svg');
+  -webkit-mask-image: url('/logos/WDWShiftX-Full-Logo-Outline-Black.svg');
+  mask-image: url('/logos/WDWShiftX-Full-Logo-Outline-Black.svg');
   background: hsl(var(--color-text));
 }
 /* Stars break from the outline treatment — solid filled magenta, no border.

@@ -39,7 +39,7 @@ const shell = (body: string) => `
                   text-align:center;
                 ">
               <img
-                src="https://myshiftx.com/logos/MyShiftX-Full-Logo-Gradient.png"
+                src="https://wdwshiftx.com/logos/WDWShiftX-Full-Logo-Gradient.png"
                 alt="MyShiftX"
                 width="220"
                 height="45"
