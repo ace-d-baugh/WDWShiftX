@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { User, Bell, LayoutDashboard, Trash2, Save, CheckCircle, Plus, Settings, Check, Lock } from 'lucide-react'
+import { User, Bell, LayoutDashboard, Trash2, Save, CheckCircle, Settings, Check, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MyBoardsSection } from '@/components/features/MyBoardsSection'
@@ -74,7 +74,6 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [nameError, setNameError] = useState<string | null>(null)
   const [deactivateConfirm, setDeactivateConfirm] = useState(false)
-  const [createBoardOpen, setCreateBoardOpen] = useState(false)
 
   // Site settings (localStorage)
   const [siteSettings, setSiteSettings] = useState<UserSettings | null>(null)
@@ -347,22 +346,10 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
             <Link href="/boards" className="font-accent font-bold text-text hover:text-primary transition-colors">
               My Boards
             </Link>
-            <p className="text-xs text-text/50">Join boards and manage your memberships</p>
+            <p className="text-xs text-text/50">Manage your board membership</p>
           </div>
-          <button
-            onClick={() => setCreateBoardOpen(true)}
-            className="p-1.5 rounded-md border border-border text-text/40 hover:text-primary hover:border-primary hover:bg-primary-light transition-colors min-h-0 min-w-0"
-            title="Create a board"
-            aria-label="Create a board"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
         </div>
-        <MyBoardsSection
-          userId={sessionUserId}
-          createOpen={createBoardOpen}
-          onCreateOpenChange={setCreateBoardOpen}
-        />
+        <MyBoardsSection userId={sessionUserId} />
       </div>
 
       {/* Trade Record — claims made/received + reliability stats (Task 21) */}

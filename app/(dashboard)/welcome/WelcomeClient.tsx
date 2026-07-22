@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Camera, CalendarDays, LayoutDashboard, Bell, ArrowRight, Plus, Ticket, Star } from 'lucide-react'
+import { Camera, CalendarDays, LayoutDashboard, Bell, ArrowRight, Ticket, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { dismissOnboarding } from '@/app/actions/onboarding'
 import { lookupBoardByCode, confirmJoinBoard } from '@/app/actions/boards'
@@ -57,7 +57,6 @@ export function WelcomeClient({ userId, displayName, importEnabled, initialShift
   const [shiftCount, setShiftCount] = useState(initialShiftCount)
   const [boardCount, setBoardCount] = useState(initialBoardCount)
   const [importOpen, setImportOpen] = useState(false)
-  const [createBoardOpen, setCreateBoardOpen] = useState(false)
   const [leaving, setLeaving] = useState(false)
 
   // Invite code redeemed from registration (QR / share link)
@@ -138,17 +137,7 @@ export function WelcomeClient({ userId, displayName, importEnabled, initialShift
           <div className="flex items-start gap-3">
             <StepBadge n={1} done={boardsDone} />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="font-accent font-bold text-text flex-1">Join your board</h2>
-                <button
-                  onClick={() => setCreateBoardOpen(true)}
-                  className="p-1.5 rounded-md border border-border text-text/40 hover:text-primary hover:border-primary hover:bg-primary-light transition-colors min-h-0 min-w-0"
-                  title="Create a board"
-                  aria-label="Create a board"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+              <h2 className="font-accent font-bold text-text">Join your board</h2>
               {inviteNotice && (
                 <div className="mt-2 mb-1 p-2.5 rounded-md bg-success/10 border border-success/20 text-sm flex items-center gap-2">
                   <Ticket className="w-4 h-4 text-success shrink-0" />
@@ -156,15 +145,13 @@ export function WelcomeClient({ userId, displayName, importEnabled, initialShift
                 </div>
               )}
               <p className="text-sm text-text/60 mt-1 mb-3">
-                Boards are private groups where your coworkers trade shifts. Got a 7-character
-                invite code? Enter it below — or tap <strong>+</strong> to create a board and
-                invite your coworkers.
+                Boards are private groups where your coworkers trade shifts. Enter your
+                team&apos;s 7-character invite code below to join.
               </p>
               <MyBoardsSection
                 key={inviteNotice ? 'invite-joined' : 'initial'}
                 userId={userId}
-                createOpen={createBoardOpen}
-                onCreateOpenChange={setCreateBoardOpen}
+                showJoin
               />
             </div>
           </div>

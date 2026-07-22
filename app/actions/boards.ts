@@ -5,7 +5,6 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getActionSession } from '@/lib/auth/session'
 import { notifyBoardApproved } from '@/app/actions/notifications'
 import { slugify } from '@/lib/slug'
-import { createBoardSchema } from '@/lib/validations/boards'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -20,79 +19,12 @@ function generateInviteCode(): string {
 
 // ── Create a board ────────────────────────────────────────────────────────────
 
-export async function createBoard(name: string): Promise<{ error?: string; boardId?: string }> {
-  try {
-    const parsed = createBoardSchema.safeParse({ name })
-    if (!parsed.success) return { error: parsed.error.issues[0].message }
-    name = parsed.data.name
-
-    const { supabase, userId } = await getActionSession()
-
-    // Verify global role is User or Admin. (Display-name gate removed 2026-07-18:
-    // registration guarantees a name now, and onboarding no longer gatekeeps on it.)
-    const { data: profile } = await supabase.from('users').select('role').eq('id', userId).single()
-    if (!profile || !['User', 'Admin'].includes(profile.role)) {
-      return { error: 'Only verified users can create boards.' }
-    }
-
-    // Generate a unique invite code (retry on collision)
-    let invite_code = ''
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const candidate = generateInviteCode()
-      const { data: existing } = await supabase.from('boards').select('id').eq('invite_code', candidate).single()
-      if (!existing) { invite_code = candidate; break }
-    }
-    if (!invite_code) return { error: 'Failed to generate a unique invite code. Please try again.' }
-
-    // Generate a unique slug from the board name — one query for all
-    // potentially-colliding slugs instead of a lookup per candidate
-    const baseSlug = slugify(name.trim())
-    const { data: takenRows } = await supabase.from('boards').select('slug').like('slug', `${baseSlug}%`)
-    const taken = new Set((takenRows ?? []).map(r => r.slug))
-    let slug = baseSlug
-    for (let i = 2; taken.has(slug) && i <= 10; i++) {
-      slug = `${baseSlug}-${i}`
-    }
-
-    const { data: board, error: boardErr } = await supabase
-      .from('boards')
-      .insert({ name: name.trim(), slug, invite_code, created_by: userId })
-      .select('id')
-      .single()
-
-    if (boardErr) {
-      if (boardErr.code === '23505') {
-        if (boardErr.message.includes('boards_name_key')) return { error: 'A board with that name already exists.' }
-        if (boardErr.message.includes('boards_slug_key')) return { error: 'A board with a very similar name already exists. Please try a slightly different name.' }
-        if (boardErr.message.includes('boards_invite_code_key')) return { error: 'Failed to generate a unique invite code. Please try again.' }
-      }
-      return { error: boardErr.message }
-    }
-
-    // Auto-assign creator as Leader. Upsert (not insert): if the creator is
-    // themselves an Admin, the on_board_created_add_admins trigger already
-    // fired by this point and auto-added them as a *hidden* Leader (every
-    // admin auto-joins every board for oversight — see auto_add_admins_to_board).
-    // A plain insert would collide with that row's (user_id, board_id) unique
-    // constraint; upsert reconciles it instead and un-hides it, since the
-    // actual creator should see their own board normally.
-    const { error: memberErr } = await supabase.from('user_boards').upsert({
-      user_id: userId,
-      board_id: board.id,
-      role: 'Leader',
-      is_approved: true,
-      is_hidden: false,
-      approved_by_user_id: userId,
-      approved_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,board_id' })
-
-    if (memberErr) return { error: memberErr.message }
-
-    revalidatePath('/profile')
-    return { boardId: board.id }
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unknown error' }
-  }
+// WDW ShiftX is locked to its two pre-seeded boards — self-serve creation is
+// disabled entirely (not just hidden in the UI). Boards are seeded directly
+// via service role; the RLS policy (see 20260722130000_lock_board_creation_to_admin.sql)
+// enforces this too, so this is defense in depth, not the only gate.
+export async function createBoard(_name: string): Promise<{ error?: string; boardId?: string }> {
+  return { error: 'Board creation is disabled. WDWShiftX is locked to its two pre-assigned boards.' }
 }
 
 // ── Join a board (rate-limited) ───────────────────────────────────────────────
