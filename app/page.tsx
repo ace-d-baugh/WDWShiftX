@@ -9,7 +9,7 @@ import { optionalServerEnv } from '@/lib/env'
 import { INDUSTRIES } from '@/lib/landing/industries'
 
 export const metadata = {
-  title: 'MyShiftX – Shift Trading for Shift Workers',
+  title: 'WDW ShiftX – Shift Trading for Shift Workers',
   description:
     'The smarter way to trade, give away, and request shifts at work. Fast, safe, and built for shift workers.',
 }
@@ -191,7 +191,7 @@ export default async function HomePage() {
           {/* Sub-copy */}
           <div className="animate-fade-in-up" style={{ animationDelay: '320ms' }}>
             <p className="text-lg md:text-xl text-text/70 max-w-2xl mx-auto mb-10">
-              MyShiftX is the dedicated shift board for your workplace. Post open shifts,
+              WDW ShiftX is the dedicated shift board for your workplace. Post open shifts,
               request coverage, and organize your calendar without digging through
               fragmented texts or out-of-date feeds.
             </p>

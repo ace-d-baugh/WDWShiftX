@@ -7,8 +7,8 @@ import type { MetadataRoute } from 'next'
 // apple-touch-icon link Next.js generates for it.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'MyShiftX',
-    short_name: 'MyShiftX',
+    name: 'WDW ShiftX',
+    short_name: 'WDW ShiftX',
     description: 'The shift swap board for shift workers.',
     start_url: '/wall',
     display: 'standalone',

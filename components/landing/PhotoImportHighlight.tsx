@@ -32,8 +32,8 @@ export function PhotoImportHighlight({ industryName, scheduleApps }: PhotoImport
     ? `a screenshot from ${orList(scheduleApps)}`
     : 'a screenshot from your scheduling app'
   const intro = industryName
-    ? `Schedules at ${industryName.toLowerCase()} still get retyped by hand. Not anymore: whether it's a paper printout on the wall or ${appsPhrase}, photograph it and MyShiftX reads your shifts onto your calendar in seconds.`
-    : `Stop retyping the week's schedule. Photograph the posted schedule — paper on the break-room wall or ${appsPhrase} — and MyShiftX reads your shifts onto your calendar in seconds.`
+    ? `Schedules at ${industryName.toLowerCase()} still get retyped by hand. Not anymore: whether it's a paper printout on the wall or ${appsPhrase}, photograph it and WDW ShiftX reads your shifts onto your calendar in seconds.`
+    : `Stop retyping the week's schedule. Photograph the posted schedule — paper on the break-room wall or ${appsPhrase} — and WDW ShiftX reads your shifts onto your calendar in seconds.`
 
   return (
     <section className="py-20 px-4 bg-background">

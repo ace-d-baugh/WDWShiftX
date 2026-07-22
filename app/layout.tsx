@@ -12,19 +12,19 @@ const CMP_PUBLISHER_ID = ADSENSE_PUBLISHER_ID?.replace(/^ca-/, '')
 
 export const metadata: Metadata = {
   title: {
-    default: 'MyShiftX',
-    template: '%s – MyShiftX',
+    default: 'WDW ShiftX',
+    template: '%s – WDW ShiftX',
   },
-  description: 'The shift swap board for cast members.',
-  metadataBase: new URL('https://myshiftx.com'),
+  description: 'WDW ShiftX is a private shift-trading board — post open shifts, request coverage, and organize your calendar in one place.',
+  metadataBase: new URL('https://wdwshiftx.com'),
   openGraph: {
-    siteName: 'MyShiftX',
-    url: 'https://myshiftx.com',
+    siteName: 'WDW ShiftX',
+    url: 'https://wdwshiftx.com',
     type: 'website',
     images: [
       {
-        url: '/logos/FULL-LOGO-GRADIENT-COLOR.png',
-        alt: 'MyShiftX',
+        url: '/logos/WDWShiftX-Full-Logo-Gradient.png',
+        alt: 'WDW ShiftX',
       },
     ],
   },
