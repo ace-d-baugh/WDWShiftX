@@ -133,9 +133,10 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 
 ### Phase 8 — Verification (🤖, before rollout)
 
-- [ ] Build + type-check + full test suite passes on the new repo
-- [ ] Manually walk: register → enter invite code → land on correct board → post/offer/request a shift → Live Wall updates instantly for a second logged-in user without refresh → push notification fires → no ad slots render anywhere → no `/upgrade` route reachable (404) → attempting to create a second board is impossible from the UI
-- [ ] Confirm Web Push works end-to-end on the new domain (needs the headed-browser recipe in memory, since bundled Chromium can't test push)
+- [x] `npm run type-check`, `npm run lint`, and `npm run build` all pass clean on `dev`/`main` (45/45 pages built; the only build warnings are pre-existing/unrelated — Supabase's Edge Runtime notice and an outdated browserslist cache)
+- [x] 🤖 Confirmed via dev-server browser checks (no login needed): homepage, `/about`, `/privacy`, `/terms`, `/data-deletion` all render with zero console errors and no ad slots anywhere; `/upgrade` 404s ("This Shift Got Picked Up")
+- [ ] 🧑 **Needs a real login** — I don't have WDWShiftX credentials, so the authenticated half of the walkthrough is still yours to run: register → enter invite code → land on correct board → post/offer/request a shift → Live Wall updates instantly for a second logged-in user without refresh → push notification fires → attempting to create a second board is impossible from the UI (Create/Join-another-board controls should simply be absent from Profile, present only during first-time `/welcome` onboarding)
+- [ ] 🧑 Confirm Web Push works end-to-end on the new domain (needs the headed-browser recipe in memory, since bundled Chromium can't test push)
 - [ ] 🧑 Soft-launch with a handful of real tour guides before rolling out to all 225 + 30
 
 ---
