@@ -12,19 +12,19 @@ const CMP_PUBLISHER_ID = ADSENSE_PUBLISHER_ID?.replace(/^ca-/, '')
 
 export const metadata: Metadata = {
   title: {
-    default: 'WDW ShiftX',
-    template: '%s – WDW ShiftX',
+    default: 'WDWShiftX',
+    template: '%s – WDWShiftX',
   },
-  description: 'WDW ShiftX is a private shift-trading board — post open shifts, request coverage, and organize your calendar in one place.',
+  description: 'WDWShiftX is a private shift-trading web application. Employees at the same workplace use it to post open shifts, request coverage for time off, and manage their schedule from one shared, invite-only board — replacing group chats and paper sign-up sheets.',
   metadataBase: new URL('https://wdwshiftx.com'),
   openGraph: {
-    siteName: 'WDW ShiftX',
+    siteName: 'WDWShiftX',
     url: 'https://wdwshiftx.com',
     type: 'website',
     images: [
       {
         url: '/logos/WDWShiftX-Full-Logo-Gradient.png',
-        alt: 'WDW ShiftX',
+        alt: 'WDWShiftX',
       },
     ],
   },
@@ -58,7 +58,7 @@ export default function RootLayout({
         )}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('myshiftx-theme'),c=document.documentElement.classList;if(['dark','midnight','cyberpunk','christmas','halloween'].indexOf(t)>-1)c.add('dark');if(['midnight','cyberpunk','nordic','kitty','christmas','halloween','patriotic'].indexOf(t)>-1)c.add('theme-'+t)}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('wdwshiftx-theme'),c=document.documentElement.classList;if(['dark','midnight','cyberpunk','christmas','halloween'].indexOf(t)>-1)c.add('dark');if(['midnight','cyberpunk','nordic','kitty','christmas','halloween','patriotic'].indexOf(t)>-1)c.add('theme-'+t)}catch(e){}`,
           }}
         />
         {ADSENSE_PUBLISHER_ID && (

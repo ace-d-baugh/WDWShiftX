@@ -2,7 +2,7 @@ export type Theme =
   | 'light' | 'dark' | 'midnight' | 'cyberpunk' | 'nordic' | 'kitty'
   | 'christmas' | 'halloween' | 'patriotic'
 
-export const THEME_STORAGE_KEY = 'myshiftx-theme'
+export const THEME_STORAGE_KEY = 'wdwshiftx-theme'
 
 export interface ThemeInfo {
   id: Theme
@@ -29,7 +29,7 @@ export interface ThemeInfo {
 // column count. The three adminOnly themes render in their own separate
 // section (Overlord only), so their order here doesn't interact with that map.
 export const THEMES: ThemeInfo[] = [
-  { id: 'light',     label: 'Light',     description: 'The classic MyShiftX look',                  pro: false, preview: { bg: '#FFFFFF', accent: '#BD80FF', text: '#2F2040' } },
+  { id: 'light',     label: 'Light',     description: 'The classic WDWShiftX look',                  pro: false, preview: { bg: '#FFFFFF', accent: '#BD80FF', text: '#2F2040' } },
   { id: 'nordic',    label: 'Nordic',    description: 'Muted sage, cream, and slate',               pro: true,  preview: { bg: '#F7F4EC', accent: '#5E8570', text: '#3C4650' } },
   { id: 'kitty',     label: 'Kitty',     description: 'Soft pastels — mint, sky, lavender & blush',  pro: true,  preview: { bg: '#FBF3FB', accent: '#C9A6F5', text: '#3D2E52' } },
   { id: 'dark',      label: 'Dark',      description: 'Easy on the eyes',                           pro: false, preview: { bg: '#191023', accent: '#BD80FF', text: '#E9E3F2' } },

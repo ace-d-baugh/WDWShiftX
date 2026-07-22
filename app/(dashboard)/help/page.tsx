@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { optionalServerEnv } from '@/lib/env'
 import { HelpClient } from './HelpClient'
 
-export const metadata = { title: 'Help & Support – MyShiftX' }
+export const metadata = { title: 'Help & Support' }
 
 export default async function HelpPage() {
   const supabase = createServerClient()

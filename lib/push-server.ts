@@ -37,7 +37,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
     if (error) { console.error('[sendPush] subscription query error:', error.message); return }
     if (!subs || subs.length === 0) return
 
-    webpush.setVapidDetails('mailto:noreply@myshiftx.com', publicKey, privateKey)
+    webpush.setVapidDetails('mailto:noreply@wdwshiftx.com', publicKey, privateKey)
     const payload = JSON.stringify({ title, body, url })
 
     await Promise.all(subs.map(async sub => {

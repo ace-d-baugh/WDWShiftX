@@ -1,9 +1,9 @@
 ---
 name: verify
-description: Build/launch/drive recipe for verifying MyShiftX changes end-to-end in the running app.
+description: Build/launch/drive recipe for verifying WDWShiftX changes end-to-end in the running app.
 ---
 
-# Verifying MyShiftX
+# Verifying WDWShiftX
 
 Next.js 14 app, Supabase backend (project `tsnwmbdedatkajyxyvcp` — this is PRODUCTION; there is no staging DB, `.env.local` points at it).
 
@@ -20,7 +20,7 @@ Stopping the background task leaves an orphaned node child holding the port (EAD
 Playwright is available via `@playwright/test` in node_modules (bundled Chromium works for everything except Web Push — see the push memory). From a script outside the repo, require it by absolute path:
 
 ```js
-const { chromium } = require('Z:/02_Projects/03_Code/MyShiftX/node_modules/@playwright/test')
+const { chromium } = require('Z:/02_Projects/03_Code/WDWShiftX/node_modules/@playwright/test')
 ```
 
 Gotchas:

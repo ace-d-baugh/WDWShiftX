@@ -165,7 +165,7 @@ const REQUIRED = ['ease_register', 'ease_join_board', 'ease_post_shift', 'ease_f
 
 // Submissions are fully anonymous (no user_id is ever recorded — see
 // app/actions/survey.ts), so "already submitted" is tracked client-side only.
-const SUBMITTED_STORAGE_KEY = 'myshiftx-survey-submitted'
+const SUBMITTED_STORAGE_KEY = 'wdwshiftx-survey-submitted'
 
 export function SurveyClient({ displayName }: Props) {
   const [answers, setAnswers] = useState<Partial<SurveyPayload>>({
@@ -230,7 +230,7 @@ export function SurveyClient({ displayName }: Props) {
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-accent text-2xl font-bold text-text mb-1">
-          Hey {displayName} — help us improve MyShiftX
+          Hey {displayName} — help us improve WDWShiftX
         </h1>
         <p className="text-sm text-text/60 mb-4">
           Takes about 4 minutes. Every answer is read by the team building this.
@@ -260,7 +260,7 @@ export function SurveyClient({ displayName }: Props) {
       {/* ── Section 2: First impression ── */}
       <SectionLabel>First impression</SectionLabel>
 
-      <QuestionBlock label="What was your first impression when you opened MyShiftX for the first time?">
+      <QuestionBlock label="What was your first impression when you opened WDWShiftX for the first time?">
         <ChoiceGroup value={answers.first_impression ?? null} onChange={v => set('first_impression', v)}
           options={[
             { value: 'impressed', label: '😄  Impressed — exactly what I was hoping for' },
@@ -324,7 +324,7 @@ export function SurveyClient({ displayName }: Props) {
       {/* ── Feature discovery ── */}
       <SectionLabel>What you explored</SectionLabel>
 
-      <QuestionBlock label="Which of these did you actually do while using MyShiftX?" sub="Select all that apply">
+      <QuestionBlock label="Which of these did you actually do while using WDWShiftX?" sub="Select all that apply">
         <CheckGroup values={answers.features_used ?? []} onChange={v => set('features_used', v)}
           options={[
             { value: 'browse-offers', label: 'Browsed shift offers on the Wall' },
@@ -377,22 +377,22 @@ export function SurveyClient({ displayName }: Props) {
       {/* ── Section 5: Overall ── */}
       <SectionLabel>Overall experience</SectionLabel>
 
-      <QuestionBlock label="How useful was MyShiftX for your actual scheduling needs?">
+      <QuestionBlock label="How useful was WDWShiftX for your actual scheduling needs?">
         <ScaleRow value={answers.overall_useful ?? null} onChange={v => set('overall_useful', v)}
           lowLabel="Not useful" highLabel="Very useful" />
       </QuestionBlock>
 
-      <QuestionBlock label="Would you use MyShiftX instead of your current method of finding shift trades?">
+      <QuestionBlock label="Would you use WDWShiftX instead of your current method of finding shift trades?">
         <ChoiceGroup value={answers.would_replace ?? null} onChange={v => set('would_replace', v)}
           options={[
             { value: 'yes-already', label: 'Yes — I\'ve already switched' },
             { value: 'yes-soon', label: 'Yes — once it improves a bit' },
-            { value: 'both', label: 'Both — I\'d use MyShiftX alongside my current method' },
+            { value: 'both', label: 'Both — I\'d use WDWShiftX alongside my current method' },
             { value: 'probably-not', label: 'Probably not' },
           ]} />
       </QuestionBlock>
 
-      <QuestionBlock label="How often do you expect to use MyShiftX?">
+      <QuestionBlock label="How often do you expect to use WDWShiftX?">
         <ChoiceGroup value={answers.use_frequency ?? null} onChange={v => set('use_frequency', v)}
           options={[
             { value: 'daily', label: 'Daily' },
@@ -407,7 +407,7 @@ export function SurveyClient({ displayName }: Props) {
           lowLabel="Very slow" highLabel="Very fast" />
       </QuestionBlock>
 
-      <QuestionBlock label="Would you use MyShiftX more if more of your coworkers were on it?">
+      <QuestionBlock label="Would you use WDWShiftX more if more of your coworkers were on it?">
         <ChoiceGroup value={answers.network_effect ?? null} onChange={v => set('network_effect', v)}
           options={[
             { value: 'yes-definitely', label: 'Yes — the more people on it, the better' },
@@ -457,7 +457,7 @@ export function SurveyClient({ displayName }: Props) {
           ]} />
       </QuestionBlock>
 
-      <QuestionBlock label="MyShiftX will offer a paid Pro plan with no ads, SMS notifications, and advanced features. Would you pay for it?">
+      <QuestionBlock label="WDWShiftX will offer a paid Pro plan with no ads, SMS notifications, and advanced features. Would you pay for it?">
         <ChoiceGroup value={answers.would_pay ?? null} onChange={v => set('would_pay', v)}
           options={[
             { value: 'yes-right-now', label: 'Yes — I\'d upgrade right now' },
@@ -485,7 +485,7 @@ export function SurveyClient({ displayName }: Props) {
       {/* ── Section 8: Open-ended ── */}
       <SectionLabel>Open feedback</SectionLabel>
 
-      <QuestionBlock label="If you could change just ONE thing about MyShiftX right now, what would it be?">
+      <QuestionBlock label="If you could change just ONE thing about WDWShiftX right now, what would it be?">
         <textarea
           value={answers.one_thing}
           onChange={e => set('one_thing', e.target.value)}
@@ -503,7 +503,7 @@ export function SurveyClient({ displayName }: Props) {
         />
       </QuestionBlock>
 
-      <QuestionBlock label="Would you recommend MyShiftX to a coworker?">
+      <QuestionBlock label="Would you recommend WDWShiftX to a coworker?">
         <ChoiceGroup value={answers.nps ?? null} onChange={v => set('nps', v)}
           options={[
             { value: 'definitely', label: '💬  Definitely — I\'d tell them today' },
@@ -527,12 +527,12 @@ export function SurveyClient({ displayName }: Props) {
 
       <QuestionBlock
         label="Would you like to leave a short testimonial?"
-        sub="Completely optional — if you're up for it, this may be featured on the MyShiftX homepage in the future."
+        sub="Completely optional — if you're up for it, this may be featured on the WDWShiftX homepage in the future."
       >
         <textarea
           value={answers.testimonial}
           onChange={e => set('testimonial', e.target.value)}
-          placeholder="What would you tell a coworker about MyShiftX?"
+          placeholder="What would you tell a coworker about WDWShiftX?"
           className="input text-sm min-h-[80px] resize-y"
         />
         {answers.testimonial && answers.testimonial.trim().length > 0 && (

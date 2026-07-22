@@ -418,7 +418,7 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
           <div>
             <p className="text-sm font-medium text-text">Theme</p>
             <p className="text-xs text-text/50 mb-2">
-              {isPro ? 'Pick how MyShiftX looks' : 'Pick how MyShiftX looks — unlock 4 premium themes with Pro ⭐'}
+              {isPro ? 'Pick how WDWShiftX looks' : 'Pick how WDWShiftX looks — unlock 4 premium themes with Pro ⭐'}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {mainThemes.map(t => renderThemeOption(t, THEME_GRID_POSITION[t.id] ?? ''))}

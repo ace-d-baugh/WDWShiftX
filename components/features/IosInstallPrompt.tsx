@@ -5,7 +5,7 @@ import { Share, PlusSquare, Smartphone, BellRing, X } from 'lucide-react'
 import { needsIosInstallForPush, isIosSafari } from '@/lib/push'
 import { cn } from '@/lib/utils'
 
-const STORAGE_KEY = 'myshiftx-ios-install-dismissed'
+const STORAGE_KEY = 'wdwshiftx-ios-install-dismissed'
 
 interface IosInstallPromptProps {
   /**
@@ -48,7 +48,7 @@ export function IosInstallPrompt({ variant = 'banner' }: IosInstallPromptProps) 
   const steps = [
     ...(inSafari ? [] : [{
       icon: Smartphone,
-      text: <>Open <strong>myshiftx.com</strong> in <strong>Safari</strong> (installing works best from there)</>,
+      text: <>Open <strong>wdwshiftx.com</strong> in <strong>Safari</strong> (installing works best from there)</>,
     }]),
     {
       icon: Share,
@@ -60,7 +60,7 @@ export function IosInstallPrompt({ variant = 'banner' }: IosInstallPromptProps) 
     },
     {
       icon: BellRing,
-      text: <>Open <strong>MyShiftX</strong> from your Home Screen and turn on notifications when asked</>,
+      text: <>Open <strong>WDWShiftX</strong> from your Home Screen and turn on notifications when asked</>,
     },
   ]
 
@@ -76,7 +76,7 @@ export function IosInstallPrompt({ variant = 'banner' }: IosInstallPromptProps) 
             Get instant shift alerts on your iPhone
           </p>
           <p className="text-xs text-text/60 mt-0.5 mb-2.5">
-            Shifts go to whoever hears about them first. Add MyShiftX to your Home Screen
+            Shifts go to whoever hears about them first. Add WDWShiftX to your Home Screen
             (takes ~20 seconds, iOS 16.4 or newer) and push notifications start working.
           </p>
           <ol className="space-y-1.5">

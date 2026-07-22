@@ -5,7 +5,7 @@ import { optionalServerEnv } from '@/lib/env'
 import { CalendarClient } from './CalendarClient'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'My Calendar – MyShiftX' }
+export const metadata = { title: 'My Calendar' }
 
 export default async function CalendarPage() {
   const supabase = createServerClient()

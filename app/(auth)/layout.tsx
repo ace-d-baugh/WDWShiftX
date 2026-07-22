@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8 animate-slide-down">
           <Link href="/" className="inline-flex flex-row items-center justify-center gap-0">
-            <ThemedLogo priority alt="MyShiftX" className="h-14 w-auto" />
+            <ThemedLogo priority alt="WDWShiftX" className="h-14 w-auto" />
           </Link>
         </div>
 
@@ -27,7 +27,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           className="text-center text-xs text-text/40 mt-8 px-4 animate-fade-in"
           style={{ animationDelay: '400ms' }}
         >
-          MyShiftX is an independent platform and is not affiliated with, sponsored by, or endorsed by any specific employer.
+          WDWShiftX is an independent platform and is not affiliated with, sponsored by, or endorsed by any specific employer.
         </p>
       </div>
     </div>

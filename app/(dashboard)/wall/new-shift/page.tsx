@@ -5,7 +5,7 @@ import { PostShiftForm } from '@/components/features/PostShiftForm'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Post a Shift – MyShiftX',
+  title: 'Post a Shift – WDWShiftX',
 }
 
 export default async function NewShiftPage({ searchParams }: { searchParams: { from?: string } }) {

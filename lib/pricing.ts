@@ -1,7 +1,7 @@
 // Canonical Pro plan definitions — the /upgrade page renders from this, and
 // the Stripe checkout route (Task 7) will map `priceIdEnv` to real Stripe
 // Price IDs once they exist in Vercel env vars. Keep the numbers in sync with
-// Stripe Dashboard → Products → MyShiftX Pro (see TASKS.md Task 7).
+// Stripe Dashboard → Products → WDWShiftX Pro (see TASKS.md Task 7).
 
 import type { BillingCycle } from '@/lib/database.types'
 

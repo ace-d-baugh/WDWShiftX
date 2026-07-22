@@ -5,7 +5,7 @@ import { ProfileClient } from './ProfileClient'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Profile – MyShiftX' }
+export const metadata = { title: 'Profile' }
 
 export default async function ProfilePage() {
   const supabase = createServerClient()

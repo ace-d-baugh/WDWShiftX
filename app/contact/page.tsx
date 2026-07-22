@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getPublicShowAds } from '@/lib/auth/session'
 import { AdRail } from '@/components/features/AdRail'
 
-export const metadata = { title: 'Contact Us – MyShiftX' }
+export const metadata = { title: 'Contact Us' }
 
 export default async function ContactPage() {
   const showAds = await getPublicShowAds(createServerClient())
@@ -27,10 +27,10 @@ export default async function ContactPage() {
             <div>
               <h2 className="font-accent font-bold text-text mb-1">General Support</h2>
               <p className="text-sm text-text/70 mb-2">
-                Questions, feedback, or trouble using MyShiftX? Reach out and we&apos;ll get back to you.
+                Questions, feedback, or trouble using WDWShiftX? Reach out and we&apos;ll get back to you.
               </p>
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline font-medium">
-                support@myshiftx.com
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline font-medium">
+                support@wdwshiftx.com
               </a>
             </div>
           </div>
@@ -44,8 +44,8 @@ export default async function ContactPage() {
               <p className="text-sm text-text/70 mb-2">
                 Copyright concerns or legal inquiries related to the Service.
               </p>
-              <a href="mailto:dmca@myshiftx.com" className="text-primary hover:underline font-medium">
-                dmca@myshiftx.com
+              <a href="mailto:dmca@wdwshiftx.com" className="text-primary hover:underline font-medium">
+                dmca@wdwshiftx.com
               </a>
             </div>
           </div>
@@ -68,7 +68,7 @@ export default async function ContactPage() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-border text-xs text-text/40">
-          <p>MyShiftX is operated by Digital Elegance LLC d/b/a MyShiftX.</p>
+          <p>WDWShiftX is operated by Digital Elegance LLC d/b/a WDWShiftX.</p>
           <p className="mt-1">We aim to respond to all inquiries within 2 business days.</p>
         </div>
       </div>

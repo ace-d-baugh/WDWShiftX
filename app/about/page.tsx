@@ -5,7 +5,7 @@ import { getPublicShowAds } from '@/lib/auth/session'
 import { AdRail } from '@/components/features/AdRail'
 import { INDUSTRIES } from '@/lib/landing/industries'
 
-export const metadata = { title: 'About Us – MyShiftX' }
+export const metadata = { title: 'About Us' }
 
 export default async function AboutPage() {
   const showAds = await getPublicShowAds(createServerClient())
@@ -17,7 +17,7 @@ export default async function AboutPage() {
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-text/60 hover:text-text mb-8 min-h-0 min-w-0">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
-        <h1 className="font-accent text-3xl font-bold text-text mb-2">About MyShiftX</h1>
+        <h1 className="font-accent text-3xl font-bold text-text mb-2">About WDWShiftX</h1>
         <p className="text-text/50 text-sm mb-8">The shift trading board built for shift workers.</p>
 
         <div className="space-y-6 text-text/80 text-sm leading-relaxed">
@@ -25,7 +25,7 @@ export default async function AboutPage() {
           <section className="card shadow-sm">
             <h2 className="font-accent text-xl font-bold text-text mb-3">What we do</h2>
             <p>
-              MyShiftX replaces the messy, chaotic ways hourly teams swap shifts. Instead of
+              WDWShiftX replaces the messy, chaotic ways hourly teams swap shifts. Instead of
               tracking trades across fragmented group chats, buried text threads, or paper
               sign-up sheets in a breakroom, we give teams a dedicated, searchable board to
               organize their schedules — post a shift you need covered, request one you want
@@ -39,7 +39,7 @@ export default async function AboutPage() {
               Shift work requires constant flexibility. People need to pick up extra hours,
               cover for unexpected life events, and balance school or family. But when
               coordination happens via screenshots of paper schedules texted back and forth,
-              things get missed. We built MyShiftX because managing your livelihood
+              things get missed. We built WDWShiftX because managing your livelihood
               shouldn&apos;t feel like a second job. Your schedule should just work.
             </p>
           </section>
@@ -76,9 +76,9 @@ export default async function AboutPage() {
           </section>
 
           <section className="card shadow-sm">
-            <h2 className="font-accent text-xl font-bold text-text mb-3">Who&apos;s behind MyShiftX</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">Who&apos;s behind WDWShiftX</h2>
             <p>
-              MyShiftX is operated by Digital Elegance LLC, a Florida-based company. MyShiftX is an
+              WDWShiftX is operated by Digital Elegance LLC, a Florida-based company. WDWShiftX is an
               independent platform — it is not affiliated with, sponsored by, or endorsed by any
               specific employer, and all trademarks referenced on this site are the property of
               their respective owners.

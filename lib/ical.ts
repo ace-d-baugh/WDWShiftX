@@ -54,7 +54,7 @@ export function buildIcsCalendar(opts: { calendarName: string; events: IcalEvent
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//MyShiftX//Shift Calendar//EN',
+    'PRODID:-//WDWShiftX//Shift Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${esc(opts.calendarName)}`,
@@ -66,7 +66,7 @@ export function buildIcsCalendar(opts: { calendarName: string; events: IcalEvent
   for (const ev of opts.events) {
     lines.push(
       'BEGIN:VEVENT',
-      `UID:${esc(ev.uid)}@myshiftx.com`,
+      `UID:${esc(ev.uid)}@wdwshiftx.com`,
       `DTSTAMP:${now}`,
       `DTSTART:${toIcsUtc(ev.start)}`,
       `DTEND:${toIcsUtc(ev.end)}`,

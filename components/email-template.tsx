@@ -1,7 +1,7 @@
 // Shared email template helpers — used by transactional emails sent via Resend.
 // All functions return an HTML string safe to pass to resend.emails.send().
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://myshiftx.com'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 
 // ── Shell (header + footer wrapping all emails) ────────────────────────────────
 // Header matches the confirm-email-template gradient style.
@@ -13,7 +13,7 @@ const shell = (body: string) => `
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MyShiftX</title>
+  <title>WDWShiftX</title>
   <link href="https://fonts.googleapis.com/css2?family=Philosopher:wght@700&family=Lato:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body style="margin:0;padding:0;background-color:#f5f0ff;font-family:Arial,Helvetica,sans-serif;">
@@ -40,7 +40,7 @@ const shell = (body: string) => `
                 ">
               <img
                 src="https://wdwshiftx.com/logos/WDWShiftX-Full-Logo-Gradient.png"
-                alt="MyShiftX"
+                alt="WDWShiftX"
                 width="220"
                 height="45"
                 style="display:block;border:0;margin:0 auto;"
@@ -59,11 +59,11 @@ const shell = (body: string) => `
           <tr>
             <td style="padding:20px 32px;background-color:#F2E6FF;border-top:1px solid #E0D8F7;text-align:center;">
               <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#2F2040;line-height:1.5;">
-                Questions? <a href="mailto:support@myshiftx.com" style="color:#BD80FF;text-decoration:none;">support@myshiftx.com</a>
+                Questions? <a href="mailto:support@wdwshiftx.com" style="color:#BD80FF;text-decoration:none;">support@wdwshiftx.com</a>
               </p>
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9b8ab4;line-height:1.5;">
                 You received this because you have an account on
-                <a href="${BASE_URL}" style="color:#BD80FF;text-decoration:none;">myshiftx.com</a>
+                <a href="${BASE_URL}" style="color:#BD80FF;text-decoration:none;">wdwshiftx.com</a>
               </p>
             </td>
           </tr>
@@ -120,7 +120,7 @@ export const verifyEmailHtml = (confirmUrl: string, displayName?: string) =>
   shell(`
     ${h1('Confirm your email address')}
     ${p(`Hi${displayName ? ` ${esc(displayName)}` : ''},`)}
-    ${p('Thanks for signing up! Click the button below to verify your email address and activate your MyShiftX account.')}
+    ${p('Thanks for signing up! Click the button below to verify your email address and activate your WDWShiftX account.')}
     ${btn(confirmUrl, 'Confirm Email Address')}
     ${muted("This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.")}
   `)
@@ -129,7 +129,7 @@ export const verifyEmailHtml = (confirmUrl: string, displayName?: string) =>
 export const resetPasswordHtml = (resetUrl: string) =>
   shell(`
     ${h1('Reset your password')}
-    ${p("We received a request to reset the password for your MyShiftX account.")}
+    ${p("We received a request to reset the password for your WDWShiftX account.")}
     ${btn(resetUrl, 'Reset Password')}
     ${muted("This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.")}
   `)
@@ -147,7 +147,7 @@ export const boardApprovedHtml = (opts: {
     ${highlight(esc(opts.boardName))}
     ${p('Head over to the wall to start browsing shift offers and requests from your new board.')}
     ${btn(opts.wallUrl, 'Go to the Wall')}
-    ${muted('You received this because you requested to join a board on MyShiftX.')}
+    ${muted('You received this because you requested to join a board on WDWShiftX.')}
   `)
 
 /** Sent to a post owner when someone marks interest on their shift or request */
@@ -215,7 +215,7 @@ export const paymentFailedHtml = (opts: {
 }) =>
   shell(`
     ${h1('Your Pro payment did not go through')}
-    ${p(`${opts.displayName ? `Hi ${esc(opts.displayName)},` : 'Hi,'} we tried to charge <strong>$${opts.amountDue.toFixed(2)}</strong> for your MyShiftX Pro subscription and your card was declined.`)}
+    ${p(`${opts.displayName ? `Hi ${esc(opts.displayName)},` : 'Hi,'} we tried to charge <strong>$${opts.amountDue.toFixed(2)}</strong> for your WDWShiftX Pro subscription and your card was declined.`)}
     ${p('Usually this is just an expired card or a new billing address. We will keep retrying for a few days — updating your payment method now is enough to fix it, and nothing about your account changes in the meantime.')}
     ${btn(opts.billingUrl, 'Update Payment Method')}
     ${muted('If the payment ultimately fails, your account returns to Basic. Your boards, shifts, and messages are never deleted.')}

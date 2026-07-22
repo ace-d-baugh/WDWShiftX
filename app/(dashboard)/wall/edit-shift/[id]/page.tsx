@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { PostShiftForm } from '@/components/features/PostShiftForm'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Edit Shift – MyShiftX' }
+export const metadata = { title: 'Edit Shift – WDWShiftX' }
 
 interface PageProps {
   params: { id: string }

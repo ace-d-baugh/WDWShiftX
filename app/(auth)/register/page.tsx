@@ -41,7 +41,7 @@ function RegisterForm() {
 
   useEffect(() => {
     if (!inviteCode) return
-    try { localStorage.setItem('myshiftx-pending-invite', inviteCode) } catch {}
+    try { localStorage.setItem('wdwshiftx-pending-invite', inviteCode) } catch {}
   }, [inviteCode])
 
   const [form, setForm] = useState({
@@ -133,7 +133,7 @@ function RegisterForm() {
   return (
     <div className="card shadow-lg animate-auth-card-in">
       <h1 className="font-accent text-2xl font-bold text-text mb-1">Create Account</h1>
-      <p className="text-text/60 text-sm mb-6">Join the MyShiftX community.</p>
+      <p className="text-text/60 text-sm mb-6">Join the WDWShiftX community.</p>
 
       {REGISTRATION_PAUSED && (
         <div className="mb-4 p-3 rounded-md bg-info/10 border border-info/20 text-info text-sm">

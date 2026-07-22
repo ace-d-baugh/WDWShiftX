@@ -13,6 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: 'https://myshiftx.com/sitemap.xml',
+    sitemap: 'https://wdwshiftx.com/sitemap.xml',
   }
 }

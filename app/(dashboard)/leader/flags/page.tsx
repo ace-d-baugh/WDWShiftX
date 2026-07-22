@@ -3,7 +3,7 @@ import { FlagsClient } from './FlagsClient'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Flags – MyShiftX' }
+export const metadata = { title: 'Flags – WDWShiftX' }
 
 export default async function FlagsPage() {
   const { supabase } = await requireModeratorOrAdmin()

@@ -12,7 +12,7 @@ import { PRO_PLANS, TIER_COMPARISON } from '@/lib/pricing'
 import { THEMES } from '@/lib/theme'
 
 export const metadata = {
-  title: 'MyShiftX Pro – Put Your Schedule on Autopilot',
+  title: 'WDWShiftX Pro – Put Your Schedule on Autopilot',
   description:
     'Instant shift-match alerts, a live wall, unlimited photo schedule imports, calendar sync, 4 premium themes, and zero ads. Pro from $4/month.',
 }
@@ -64,7 +64,7 @@ const FAQS = [
   },
   {
     q: 'Is my payment information safe?',
-    a: 'Payments are handled entirely by Stripe, the same processor used by Amazon and Shopify. Your card number never touches MyShiftX servers, and we never see it.',
+    a: 'Payments are handled entirely by Stripe, the same processor used by Amazon and Shopify. Your card number never touches WDWShiftX servers, and we never see it.',
   },
   {
     q: 'Is Pro per board or per account?',
@@ -106,7 +106,7 @@ export default async function UpgradePage() {
           <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-2 text-sm font-medium mb-6">
               <Star className="w-4 h-4" />
-              MyShiftX Pro
+              WDWShiftX Pro
             </span>
           </div>
           <div className="animate-fade-in-up" style={{ animationDelay: '150ms' }}>
@@ -184,7 +184,7 @@ export default async function UpgradePage() {
             <AnimateIn className="mb-8">
               <div className="max-w-xl mx-auto text-center bg-success/30 border border-success/70 text-text rounded-xl px-5 py-4 text-sm font-medium">
                 <Star className="w-4 h-4 inline -mt-0.5 mr-1.5" />
-                You&apos;re already Pro — everything below is yours. Thank you for supporting MyShiftX!
+                You&apos;re already Pro — everything below is yours. Thank you for supporting WDWShiftX!
               </div>
             </AnimateIn>
           )}
@@ -370,7 +370,7 @@ export default async function UpgradePage() {
               Your Next Shift Trade Could Take Ten Seconds
             </h2>
             <p className="text-white/80 text-lg mb-8">
-              For the price of one coffee a month, MyShiftX watches the board so you don&apos;t have to.
+              For the price of one coffee a month, WDWShiftX watches the board so you don&apos;t have to.
             </p>
             <a
               href="#plans"

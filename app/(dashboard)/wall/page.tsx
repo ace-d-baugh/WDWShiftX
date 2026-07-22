@@ -6,7 +6,7 @@ import { WallClient } from './WallClient'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'The Wall – MyShiftX',
+  title: 'The Wall',
 }
 
 interface Board { id: string; name: string }

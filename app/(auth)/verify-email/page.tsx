@@ -44,7 +44,7 @@ function VerifyEmailContent() {
       <h1 className="font-accent text-2xl font-bold text-text mb-2">Check Your Email</h1>
       <p className="text-text/60 text-sm mb-2">
         We&apos;ve sent a verification link to your email address.
-        Please click the link to activate your MyShiftX account.
+        Please click the link to activate your WDWShiftX account.
       </p>
       <p className="text-text/60 text-sm mb-6">
         Once verified, you&apos;ll be able to access the full shift board.

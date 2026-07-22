@@ -6,7 +6,7 @@ import { WelcomeClient } from './WelcomeClient'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Welcome – MyShiftX',
+  title: 'Welcome',
 }
 
 export default async function WelcomePage() {

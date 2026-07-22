@@ -9,9 +9,9 @@ import { optionalServerEnv } from '@/lib/env'
 import { INDUSTRIES } from '@/lib/landing/industries'
 
 export const metadata = {
-  title: 'WDW ShiftX – Shift Trading for Shift Workers',
+  title: 'WDWShiftX – Shift Trading for Shift Workers',
   description:
-    'The smarter way to trade, give away, and request shifts at work. Fast, safe, and built for shift workers.',
+    'WDWShiftX is a private shift-trading web application: employees at the same workplace post open shifts, request coverage for time off, and manage their schedule from one shared, invite-only board.',
 }
 
 const features = [
@@ -191,7 +191,7 @@ export default async function HomePage() {
           {/* Sub-copy */}
           <div className="animate-fade-in-up" style={{ animationDelay: '320ms' }}>
             <p className="text-lg md:text-xl text-text/70 max-w-2xl mx-auto mb-10">
-              WDW ShiftX is the dedicated shift board for your workplace. Post open shifts,
+              WDWShiftX is the dedicated shift board for your workplace. Post open shifts,
               request coverage, and organize your calendar without digging through
               fragmented texts or out-of-date feeds.
             </p>

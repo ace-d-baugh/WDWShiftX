@@ -2,7 +2,7 @@ import { requireUser } from '@/lib/auth/session'
 import { MessagesClient } from './MessagesClient'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Messages – MyShiftX' }
+export const metadata = { title: 'Messages' }
 
 export default async function MessagesPage() {
   const { supabase, user } = await requireUser()

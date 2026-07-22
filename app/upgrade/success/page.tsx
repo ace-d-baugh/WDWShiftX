@@ -7,7 +7,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getMembership } from '@/lib/auth/session'
 
 export const metadata = {
-  title: "Welcome to Pro – MyShiftX",
+  title: "Welcome to Pro – WDWShiftX",
   robots: { index: false, follow: false },
 }
 
@@ -67,7 +67,7 @@ export default async function UpgradeSuccessPage() {
           <p className="text-text/70 mb-8">
             {active ? (
               <>
-                Thanks for supporting MyShiftX
+                Thanks for supporting WDWShiftX
                 {profile?.display_name ? `, ${profile.display_name}` : ''}. Everything below is
                 switched on right now.
                 {isTrial && trialEnds && (

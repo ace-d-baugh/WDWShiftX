@@ -13,7 +13,7 @@ interface MembershipSectionProps {
 }
 
 const CYCLE_COPY: Record<'Pro' | 'Trial', string> = {
-  Pro: 'Your subscription is active. Thanks for supporting MyShiftX.',
+  Pro: 'Your subscription is active. Thanks for supporting WDWShiftX.',
   Trial: 'You’re on a free trial with full Pro access.',
 }
 

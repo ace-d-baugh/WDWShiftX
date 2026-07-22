@@ -5,7 +5,7 @@ import { optionalServerEnv } from '@/lib/env'
 import { EMAIL_FROM, SUPPORT_EMAIL } from '@/lib/email-constants'
 
 // Task 15 follow-up: when the schedule reader disappoints, the user can send
-// the exact photo it saw to support@myshiftx.com so real-world failures feed
+// the exact photo it saw to support@wdwshiftx.com so real-world failures feed
 // back into prompt/pipeline improvements. Explicit user action only — the
 // image is never forwarded automatically.
 

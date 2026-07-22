@@ -4,7 +4,7 @@ import { isSurveyClosed } from '@/lib/beta-schedule'
 import { SurveyClient } from './SurveyClient'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Beta Survey – MyShiftX' }
+export const metadata = { title: 'Beta Survey' }
 
 export default async function SurveyPage() {
   // The beta wrap-up pages are gone; once the survey window ends, send

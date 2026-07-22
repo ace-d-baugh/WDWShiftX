@@ -5,8 +5,8 @@ import { getPublicShowAds } from '@/lib/auth/session'
 import { AdRail } from '@/components/features/AdRail'
 
 export const metadata = {
-  title: 'Data Deletion Instructions – MyShiftX',
-  description: 'How to request the deletion of your MyShiftX account and personal data.',
+  title: 'Data Deletion Instructions',
+  description: 'How to request the deletion of your WDWShiftX account and personal data.',
 }
 
 export default async function DataDeletionPage() {
@@ -40,7 +40,7 @@ export default async function DataDeletionPage() {
           {/* Overview */}
           <section>
             <p className="text-base">
-              MyShiftX (operated by Digital Elegance LLC) is committed to your privacy. Whether you
+              WDWShiftX (operated by Digital Elegance LLC) is committed to your privacy. Whether you
               signed up with an email address or through Google, Facebook, or LinkedIn, this page
               explains exactly how to delete your account and personal data.
             </p>
@@ -49,7 +49,7 @@ export default async function DataDeletionPage() {
           {/* What data we store */}
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">What Data We Store</h2>
-            <p className="mb-3 text-sm">When you create a MyShiftX account, we store:</p>
+            <p className="mb-3 text-sm">When you create a WDWShiftX account, we store:</p>
             <ul className="space-y-1.5 list-none pl-0">
               {[
                 'Your email address',
@@ -101,7 +101,7 @@ export default async function DataDeletionPage() {
             </p>
             <ol className="space-y-2 text-sm list-none pl-0">
               {[
-                'Log in to MyShiftX',
+                'Log in to WDWShiftX',
                 'Go to your Profile page',
                 'Scroll to the Danger Zone section',
                 'Click "Deactivate Account" and confirm',
@@ -130,11 +130,11 @@ export default async function DataDeletionPage() {
               within <strong>30 days</strong>.
             </p>
             <a
-              href="mailto:support@myshiftx.com?subject=Data%20Deletion%20Request&body=Please%20delete%20all%20data%20associated%20with%20my%20account.%0A%0AEmail%20address%20used%20to%20register%3A%20"
+              href="mailto:support@wdwshiftx.com?subject=Data%20Deletion%20Request&body=Please%20delete%20all%20data%20associated%20with%20my%20account.%0A%0AEmail%20address%20used%20to%20register%3A%20"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
             >
               <Mail className="w-4 h-4" />
-              support@myshiftx.com
+              support@wdwshiftx.com
             </a>
             <p className="text-xs text-text/50 mt-3">
               Please include the email address associated with your account so we can locate your
@@ -193,14 +193,14 @@ export default async function DataDeletionPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">Google Login Users</h2>
             <p className="text-sm mb-3">
-              If you registered with Google Sign-In, you can revoke MyShiftX&apos;s access directly
+              If you registered with Google Sign-In, you can revoke WDWShiftX&apos;s access directly
               from your Google account:
             </p>
             <ol className="space-y-2 text-sm list-none pl-0">
               {[
                 'Go to myaccount.google.com → Security',
                 'Scroll to "Third-party apps & services"',
-                'Find MyShiftX and click "Remove Access"',
+                'Find WDWShiftX and click "Remove Access"',
               ].map((step, i) => (
                 <li key={step} className="flex items-start gap-3">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success text-xs font-bold shrink-0 mt-0.5">
@@ -211,7 +211,7 @@ export default async function DataDeletionPage() {
               ))}
             </ol>
             <p className="text-xs text-text/50 mt-3">
-              Revoking Google access prevents future sign-ins but does not delete your MyShiftX
+              Revoking Google access prevents future sign-ins but does not delete your WDWShiftX
               account data. Follow Option 1 or Option 2 above to delete your data.
             </p>
           </section>
@@ -220,14 +220,14 @@ export default async function DataDeletionPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">Facebook Login Users</h2>
             <p className="text-sm mb-3">
-              If you registered with Facebook Login, you can revoke MyShiftX&apos;s access directly
+              If you registered with Facebook Login, you can revoke WDWShiftX&apos;s access directly
               from Facebook:
             </p>
             <ol className="space-y-2 text-sm list-none pl-0">
               {[
                 'Go to Facebook Settings → Security and Login',
                 'Click "Apps and Websites"',
-                'Find MyShiftX and click "Remove"',
+                'Find WDWShiftX and click "Remove"',
               ].map((step, i) => (
                 <li key={step} className="flex items-start gap-3">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-info/15 text-info text-xs font-bold shrink-0 mt-0.5">
@@ -238,7 +238,7 @@ export default async function DataDeletionPage() {
               ))}
             </ol>
             <p className="text-xs text-text/50 mt-3">
-              Revoking Facebook access prevents future sign-ins but does not delete your MyShiftX
+              Revoking Facebook access prevents future sign-ins but does not delete your WDWShiftX
               account data. Follow Option 1 or Option 2 above to delete your data.
             </p>
           </section>
@@ -247,14 +247,14 @@ export default async function DataDeletionPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">LinkedIn Login Users</h2>
             <p className="text-sm mb-3">
-              If you registered with LinkedIn, you can revoke MyShiftX&apos;s access from your
+              If you registered with LinkedIn, you can revoke WDWShiftX&apos;s access from your
               LinkedIn settings:
             </p>
             <ol className="space-y-2 text-sm list-none pl-0">
               {[
                 'Go to linkedin.com → Settings & Privacy',
                 'Click "Data Privacy" → "Permitted Services"',
-                'Find MyShiftX and click "Remove"',
+                'Find WDWShiftX and click "Remove"',
               ].map((step, i) => (
                 <li key={step} className="flex items-start gap-3">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/15 text-primary text-xs font-bold shrink-0 mt-0.5">
@@ -265,7 +265,7 @@ export default async function DataDeletionPage() {
               ))}
             </ol>
             <p className="text-xs text-text/50 mt-3">
-              Revoking LinkedIn access prevents future sign-ins but does not delete your MyShiftX
+              Revoking LinkedIn access prevents future sign-ins but does not delete your WDWShiftX
               account data. Follow Option 1 or Option 2 above to delete your data.
             </p>
           </section>
@@ -274,8 +274,8 @@ export default async function DataDeletionPage() {
           <section className="border-t border-border pt-6">
             <p className="text-sm text-text/60">
               Questions about your data?{' '}
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">
-                support@myshiftx.com
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">
+                support@wdwshiftx.com
               </a>
               {' '}·{' '}
               <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>

@@ -21,7 +21,7 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const supabase = createServerClient()
   const { data: board } = await supabase.from('boards').select('name').eq('slug', params.slug).single()
-  return { title: board ? `${board.name} – MyShiftX` : 'Board – MyShiftX' }
+  return { title: board ? board.name : 'Board' }
 }
 
 export default async function BoardSlugPage({ params, searchParams }: Props) {

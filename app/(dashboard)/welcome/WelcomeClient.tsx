@@ -13,7 +13,7 @@ import { PushNotificationsToggle } from '@/components/features/PushNotifications
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { cn } from '@/lib/utils'
 
-const PENDING_INVITE_KEY = 'myshiftx-pending-invite'
+const PENDING_INVITE_KEY = 'wdwshiftx-pending-invite'
 
 interface WelcomeClientProps {
   userId: string
@@ -128,7 +128,7 @@ export function WelcomeClient({ userId, displayName, importEnabled, initialShift
           Welcome{firstName ? `, ${firstName}` : ''}! 👋
         </h1>
         <p className="text-text/60 text-sm">
-          Three easy steps and MyShiftX starts working for you.
+          Three easy steps and WDWShiftX starts working for you.
         </p>
       </div>
 

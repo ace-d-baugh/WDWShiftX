@@ -4,7 +4,7 @@ import type { RemovedReason } from '@/lib/database.types'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Archive – MyShiftX' }
+export const metadata = { title: 'Archive – WDWShiftX' }
 
 const REASONS: RemovedReason[] = ['expired', 'leader_removed', 'user_removed', 'covered']
 

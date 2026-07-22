@@ -112,7 +112,7 @@ export function ShiftCard({
   const posterTrades = posterStats ? posterStats.picked_up + posterStats.covered : 0
   const tradeBadge = posterTrades > 0 && (
     <span
-      title={`${posterTrades} completed trade${posterTrades === 1 ? '' : 's'} on MyShiftX`}
+      title={`${posterTrades} completed trade${posterTrades === 1 ? '' : 's'} on WDWShiftX`}
       className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-success/15 text-success px-1.5 py-0.5 rounded-full leading-none"
     >
       <Handshake className="w-2.5 h-2.5" />

@@ -28,7 +28,7 @@ export function CalendarSyncSection() {
     })
   }, [])
 
-  const feedUrl = token ? `https://myshiftx.com/api/calendar/${token}.ics` : ''
+  const feedUrl = token ? `https://wdwshiftx.com/api/calendar/${token}.ics` : ''
 
   const handleCopy = async () => {
     try {

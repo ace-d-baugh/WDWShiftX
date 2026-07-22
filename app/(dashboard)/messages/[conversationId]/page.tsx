@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/auth/session'
 import { ConversationClient } from './ConversationClient'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Messages – MyShiftX' }
+export const metadata = { title: 'Messages – WDWShiftX' }
 
 // Uuid sanity check so a malformed URL 404s cleanly instead of erroring in a query
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

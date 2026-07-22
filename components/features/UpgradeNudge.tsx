@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Star, X } from 'lucide-react'
 
-const DISMISS_KEY = 'myshiftx-upgrade-nudge-dismissed'
+const DISMISS_KEY = 'wdwshiftx-upgrade-nudge-dismissed'
 
 /**
  * Soft upsell banner for Basic members — render only for the Basic tier.

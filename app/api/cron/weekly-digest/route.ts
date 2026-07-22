@@ -12,7 +12,7 @@ import { optionalServerEnv } from '@/lib/env'
 // Scheduled in vercel.json (Sunday evening ET). Skips users with nothing new,
 // so quiet boards never generate empty email.
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://myshiftx.com'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 const ET = 'America/New_York'
 const MAX_ITEMS_PER_EMAIL = 6
 

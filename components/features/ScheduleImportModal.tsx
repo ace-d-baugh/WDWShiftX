@@ -502,7 +502,7 @@ export function ScheduleImportModal({ userId, displayName, open, onClose }: Sche
       {(boardsLoading || boards.length > 0) && step === 'pick' && (
         <div className="space-y-4">
           <p className="text-sm text-text/70">
-            Take a photo of your printed or on-screen schedule and MyShiftX will read
+            Take a photo of your printed or on-screen schedule and WDWShiftX will read
             the shifts for you. You&apos;ll review everything before it&apos;s saved.
           </p>
           {remaining !== null && remaining >= 0 && (

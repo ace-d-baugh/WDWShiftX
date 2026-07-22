@@ -10,12 +10,12 @@ import { optionalServerEnv } from '@/lib/env'
 
 const page = (title: string, body: string) => `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>${title} – MyShiftX</title></head>
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>${title} – WDWShiftX</title></head>
 <body style="margin:0;padding:48px 16px;background:#f5f0ff;font-family:Arial,Helvetica,sans-serif;text-align:center;">
   <div style="max-width:420px;margin:0 auto;background:#fff;border-radius:10px;padding:32px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
     <h1 style="margin:0 0 12px;font-size:20px;color:#2f2040;">${title}</h1>
     <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#5a4a6e;">${body}</p>
-    <a href="https://myshiftx.com/profile" style="color:#BD80FF;font-size:14px;text-decoration:none;font-weight:600;">Manage notifications in your profile →</a>
+    <a href="https://wdwshiftx.com/profile" style="color:#BD80FF;font-size:14px;text-decoration:none;font-weight:600;">Manage notifications in your profile →</a>
   </div>
 </body>
 </html>`

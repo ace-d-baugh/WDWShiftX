@@ -1,4 +1,4 @@
-# MyShiftX Design System
+# WDWShiftX Design System
 
 **Last Updated:** January 19, 2026  
 **Status:** Final (v1.0)

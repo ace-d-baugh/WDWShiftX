@@ -20,7 +20,7 @@ export const runtime = 'nodejs'
 // never be statically optimized or have its body parsed upstream.
 export const dynamic = 'force-dynamic'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://myshiftx.com'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 
 type UserPatch = {
   membership?: Membership
@@ -51,7 +51,7 @@ function tierForStatus(status: Stripe.Subscription.Status): Membership {
   }
 }
 
-/** Resolve the MyShiftX user for a subscription: metadata first, then customer ID. */
+/** Resolve the WDWShiftX user for a subscription: metadata first, then customer ID. */
 async function findUserId(
   admin: ReturnType<typeof createAdminClient>,
   sub: Stripe.Subscription
@@ -134,7 +134,7 @@ async function sendPaymentFailedEmail(
     await resend.emails.send({
       from: EMAIL_FROM,
       to: profile.email,
-      subject: 'Your MyShiftX Pro payment did not go through',
+      subject: 'Your WDWShiftX Pro payment did not go through',
       html: paymentFailedHtml({
         displayName: profile.display_name ?? undefined,
         amountDue: (invoice.amount_due ?? 0) / 100,

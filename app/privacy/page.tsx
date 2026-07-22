@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getPublicShowAds } from '@/lib/auth/session'
 import { AdRail } from '@/components/features/AdRail'
 
-export const metadata = { title: 'Privacy Policy – MyShiftX' }
+export const metadata = { title: 'Privacy Policy' }
 
 export default async function PrivacyPage() {
   const showAds = await getPublicShowAds(createServerClient())
@@ -24,14 +24,14 @@ export default async function PrivacyPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">1. Introduction &amp; Data Controller</h2>
             <p>
-              This Privacy Policy explains how Digital Elegance LLC d/b/a MyShiftX (&ldquo;MyShiftX,&rdquo;
+              This Privacy Policy explains how Digital Elegance LLC d/b/a WDWShiftX (&ldquo;WDWShiftX,&rdquo;
               &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects, uses, and shares information about you
               when you use our shift coordination platform (&ldquo;the Service&rdquo;).
             </p>
             <p className="mt-3">
               Digital Elegance LLC is the data controller responsible for your personal information.
               If you have questions or requests regarding your privacy, contact us at{' '}
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a>.
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a>.
             </p>
             <p className="mt-3">
               By using the Service, you agree to the collection and use of information in accordance
@@ -105,7 +105,7 @@ export default async function PrivacyPage() {
             <h3 className="font-semibold text-text mt-4 mb-2">Within the Platform</h3>
             <ul className="list-disc list-inside space-y-1">
               <li>Your <strong>display name and shift posts</strong> are visible to all approved members of the boards you belong to</li>
-              <li>Your <strong>direct messages</strong> are visible only to the other participant in that conversation. They are not visible to other board members or board moderators. Messages are stored on our servers so conversations sync across your devices, and may be reviewed by MyShiftX when investigating a flag, abuse report, or suspected violation of our Terms of Service</li>
+              <li>Your <strong>direct messages</strong> are visible only to the other participant in that conversation. They are not visible to other board members or board moderators. Messages are stored on our servers so conversations sync across your devices, and may be reviewed by WDWShiftX when investigating a flag, abuse report, or suspected violation of our Terms of Service</li>
               <li>Deleting a chat removes it from <strong>your</strong> view only — the other participant retains their copy of the conversation</li>
               <li>Your <strong>display name</strong> is associated with your comments, flags, and interest marks as visible to moderators and post owners</li>
             </ul>
@@ -121,7 +121,7 @@ export default async function PrivacyPage() {
             <p className="mt-2">
               We may disclose your information if required to do so by law, subpoena, court order, or
               other governmental authority, or if we believe in good faith that disclosure is necessary
-              to protect the rights, property, or safety of MyShiftX, our users, or the public.
+              to protect the rights, property, or safety of WDWShiftX, our users, or the public.
             </p>
 
             <h3 className="font-semibold text-text mt-4 mb-2">Business Transfers</h3>
@@ -215,7 +215,7 @@ export default async function PrivacyPage() {
             <p className="mt-3">
               No system is completely secure. We cannot guarantee absolute security of your information.
               If you believe your account has been compromised, contact us immediately at{' '}
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a>.
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a>.
             </p>
             <p className="mt-3">
               <strong>Data Breach Notification:</strong> In the event of a data breach that is likely
@@ -277,7 +277,7 @@ export default async function PrivacyPage() {
 
             <p className="mt-3">
               To exercise any of these rights, contact us at{' '}
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a>.
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a>.
               We will respond within 30 days (or 45 days for complex requests). We may need to verify
               your identity before processing your request.
             </p>
@@ -291,14 +291,14 @@ export default async function PrivacyPage() {
               that a user under 18 has created an account, we will promptly delete their account and
               all associated data. If you believe a minor has provided us with personal information,
               please contact us at{' '}
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a>.
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a>.
             </p>
           </section>
 
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">14. International Data Transfers</h2>
             <p>
-              MyShiftX is operated from the United States. If you access the Service from outside the
+              WDWShiftX is operated from the United States. If you access the Service from outside the
               United States, your information will be transferred to and processed in the United States,
               where data protection laws may differ from those in your country.
             </p>
@@ -350,9 +350,9 @@ export default async function PrivacyPage() {
               practices, please contact us:
             </p>
             <ul className="list-none mt-3 space-y-1">
-              <li><strong>Privacy inquiries:</strong> <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a></li>
-              <li><strong>DMCA / Copyright:</strong> <a href="mailto:dmca@myshiftx.com" className="text-primary hover:underline">dmca@myshiftx.com</a></li>
-              <li><strong>Company:</strong> Digital Elegance LLC d/b/a MyShiftX</li>
+              <li><strong>Privacy inquiries:</strong> <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a></li>
+              <li><strong>DMCA / Copyright:</strong> <a href="mailto:dmca@wdwshiftx.com" className="text-primary hover:underline">dmca@wdwshiftx.com</a></li>
+              <li><strong>Company:</strong> Digital Elegance LLC d/b/a WDWShiftX</li>
             </ul>
             <p className="mt-3">
               We will respond to all privacy requests within 30 days.
@@ -363,7 +363,7 @@ export default async function PrivacyPage() {
 
         <div className="mt-10 pt-6 border-t border-border">
           <p className="text-xs text-text/40 text-center">
-            MyShiftX is operated by Digital Elegance LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
+            WDWShiftX is operated by Digital Elegance LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
           </p>
         </div>
       </div>

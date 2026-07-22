@@ -43,7 +43,7 @@ export const INDUSTRIES: Industry[] = [
   {
     slug: 'retail',
     shortName: 'Retail Stores',
-    metaTitle: 'Shift Swap App for Retail Associates – MyShiftX',
+    metaTitle: 'Shift Swap App for Retail Associates – WDWShiftX',
     metaDescription:
       'Stop texting twenty coworkers to cover a shift. Post open shifts, pick up extra hours, and swap with other associates in minutes.',
     heroKicker: 'Built for Retail Associates',
@@ -69,7 +69,7 @@ export const INDUSTRIES: Industry[] = [
         body: 'You updated your availability weeks ago, but the system — or the person entering it — is always a step behind. So you\'re back to hunting for a trade by hand.',
       },
     ],
-    solutionsIntro: 'How MyShiftX fixes it',
+    solutionsIntro: 'How WDWShiftX fixes it',
     solutions: [
       {
         icon: RefreshCw,
@@ -94,7 +94,7 @@ export const INDUSTRIES: Industry[] = [
   {
     slug: 'restaurants',
     shortName: 'Restaurants',
-    metaTitle: 'Shift Swap App for Restaurant Staff – MyShiftX',
+    metaTitle: 'Shift Swap App for Restaurant Staff – WDWShiftX',
     metaDescription:
       'Front of house, back of house, servers, cooks — trade doubles and closing shifts without the group chat chaos or the breakroom printout.',
     heroKicker: 'Built for FOH & BOH',
@@ -120,7 +120,7 @@ export const INDUSTRIES: Industry[] = [
         body: "Need to drop a lunch shift to study, or pick up an extra dinner double? Don't hope someone checks the printout by the kitchen — half the staff won't see it until it's too late.",
       },
     ],
-    solutionsIntro: 'How MyShiftX fixes it',
+    solutionsIntro: 'How WDWShiftX fixes it',
     solutions: [
       {
         icon: RefreshCw,
@@ -145,14 +145,14 @@ export const INDUSTRIES: Industry[] = [
   {
     slug: 'warehouses',
     shortName: 'Warehouses',
-    metaTitle: 'Shift Swap App for Warehouse Associates – MyShiftX',
+    metaTitle: 'Shift Swap App for Warehouse Associates – WDWShiftX',
     metaDescription:
       'Rigid crews, mandatory overtime, and attendance points on the line — coordinate trades instantly with qualified teammates before your shift starts.',
     heroKicker: 'Built for Warehouse Associates',
     heroHeadlinePrefix: 'Own Your Shift.',
     heroHeadlineHighlight: 'Protect Your Metrics.',
     heroSubcopy:
-      'Warehouse schedules are rigid, and missing a shift can cost you attendance points. When mandatory overtime hits or you need coverage for a night shift, MyShiftX lets you coordinate trades instantly with qualified teammates.',
+      'Warehouse schedules are rigid, and missing a shift can cost you attendance points. When mandatory overtime hits or you need coverage for a night shift, WDWShiftX lets you coordinate trades instantly with qualified teammates.',
     painPointsIntro: 'What working the schedule actually feels like',
     painPoints: [
       {
@@ -171,7 +171,7 @@ export const INDUSTRIES: Industry[] = [
         body: "Voluntary time off and extra hours show up when they show up — there's no way to plan around them, and no easy way to trade into a shift that actually works for you.",
       },
     ],
-    solutionsIntro: 'How MyShiftX fixes it',
+    solutionsIntro: 'How WDWShiftX fixes it',
     solutions: [
       {
         icon: RefreshCw,
@@ -196,7 +196,7 @@ export const INDUSTRIES: Industry[] = [
   {
     slug: 'hotels',
     shortName: 'Hotels & Resorts',
-    metaTitle: 'Shift Swap App for Hotel & Resort Staff – MyShiftX',
+    metaTitle: 'Shift Swap App for Hotel & Resort Staff – WDWShiftX',
     metaDescription:
       'Front desk, housekeeping, F&B, valet — 24/7 schedules across departments that never see each other. Coordinate trades in one centralized hub.',
     heroKicker: 'Built for Front Desk, Housekeeping & F&B',
@@ -222,7 +222,7 @@ export const INDUSTRIES: Industry[] = [
         body: "An overnight audit or early-morning open needs covering, and there's no good way to ask — a group text at 3 AM wakes the whole team, and waiting until morning is too late.",
       },
     ],
-    solutionsIntro: 'How MyShiftX fixes it',
+    solutionsIntro: 'How WDWShiftX fixes it',
     solutions: [
       {
         icon: RefreshCw,
@@ -247,14 +247,14 @@ export const INDUSTRIES: Industry[] = [
   {
     slug: 'theme-parks',
     shortName: 'Theme Parks',
-    metaTitle: 'Shift Swap App for Theme Park Team Members – MyShiftX',
+    metaTitle: 'Shift Swap App for Theme Park Team Members – WDWShiftX',
     metaDescription:
-      'Attraction-specific training, regular-time-for-regular-time trades, and a call board that goes stale — MyShiftX matches trades to qualified peers.',
+      'Attraction-specific training, regular-time-for-regular-time trades, and a call board that goes stale — WDWShiftX matches trades to qualified peers.',
     heroKicker: 'Built for Attractions & Park Teams',
     heroHeadlinePrefix: 'Clear Qualifications.',
     heroHeadlineHighlight: 'Faster Coverage.',
     heroSubcopy:
-      "Park schedules are complex, and you can't just trade with anyone — they have to be trained on your exact attraction, venue, or land. MyShiftX filters your trades by precise roles and locations, so your shift is only seen by cross-trained peers.",
+      "Park schedules are complex, and you can't just trade with anyone — they have to be trained on your exact attraction, venue, or land. WDWShiftX filters your trades by precise roles and locations, so your shift is only seen by cross-trained peers.",
     painPointsIntro: 'What trading a shift actually looks like right now',
     painPoints: [
       {
@@ -273,7 +273,7 @@ export const INDUSTRIES: Industry[] = [
         body: 'Open shifts get released in phases and go stale fast — by the time you check, the good ones are already gone.',
       },
     ],
-    solutionsIntro: 'How MyShiftX fixes it',
+    solutionsIntro: 'How WDWShiftX fixes it',
     solutions: [
       {
         icon: RefreshCw,
@@ -298,7 +298,7 @@ export const INDUSTRIES: Industry[] = [
   {
     slug: 'event-venues',
     shortName: 'Event Venues',
-    metaTitle: 'Shift Swap App for Event & Venue Staff – MyShiftX',
+    metaTitle: 'Shift Swap App for Event & Venue Staff – WDWShiftX',
     metaDescription:
       'Stadium, arena, and theater schedules change with every booking. Trade, drop, and pick up gigs instantly with your venue crew.',
     heroKicker: 'Built for Event & Venue Crews',
@@ -324,7 +324,7 @@ export const INDUSTRIES: Industry[] = [
         body: 'Event schedules move with tour dates and game times. When your hours are this unpredictable, a missed post in a thread is a missed paycheck.',
       },
     ],
-    solutionsIntro: 'How MyShiftX fixes it',
+    solutionsIntro: 'How WDWShiftX fixes it',
     solutions: [
       {
         icon: RefreshCw,

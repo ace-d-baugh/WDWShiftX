@@ -5,7 +5,7 @@ import { Bell, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { PUSH_CONFIGURED, isPushSupported, getPushPermission, getExistingSubscription, subscribeToPush } from '@/lib/push'
 
-const STORAGE_KEY = 'myshiftx-push-prompt-dismissed'
+const STORAGE_KEY = 'wdwshiftx-push-prompt-dismissed'
 
 /**
  * One-time nudge on the Wall for users who haven't enabled push yet.

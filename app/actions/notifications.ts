@@ -10,7 +10,7 @@ import { parseISO } from 'date-fns'
 import type { PreferredTime } from '@/lib/database.types'
 import { optionalServerEnv } from '@/lib/env'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://myshiftx.com'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 
 const resend = new Resend(optionalServerEnv.RESEND_API_KEY ?? '')
 

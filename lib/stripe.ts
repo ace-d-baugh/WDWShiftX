@@ -31,7 +31,7 @@ export function getStripe(): Stripe {
     client = new Stripe(key, {
       apiVersion: '2026-06-24.dahlia',
       typescript: true,
-      appInfo: { name: 'MyShiftX', url: 'https://myshiftx.com' },
+      appInfo: { name: 'WDWShiftX', url: 'https://wdwshiftx.com' },
     })
   }
   return client

@@ -4,7 +4,7 @@ import { UserEditClient } from './UserEditClient'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Edit User – MyShiftX' }
+export const metadata = { title: 'Edit User – WDWShiftX' }
 
 interface PageProps {
   params: { id: string }

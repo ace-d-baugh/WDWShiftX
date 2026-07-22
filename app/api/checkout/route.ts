@@ -11,7 +11,7 @@ import { optionalServerEnv } from '@/lib/env'
 
 export const runtime = 'nodejs'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://myshiftx.com'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 
 const bodySchema = z.object({
   plan: z.enum(['monthly', 'quarterly', 'semiannual', 'annual']),
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       metadata: { user_id: user.id, plan: plan.key },
       success_url: `${BASE_URL}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/upgrade`,
-      integration_identifier: 'myshiftx-pro-kwbdhnzt',
+      integration_identifier: 'wdwshiftx-pro-kwbdhnzt',
     })
 
     if (!session.url) {

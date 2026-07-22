@@ -50,13 +50,13 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
     a: "On the Messages page, tap the trash icon on a conversation and confirm. This clears the chat from your view only — the other person keeps their copy. If either of you messages again, the conversation reappears for you without the old history. To report someone who is misusing messaging, open the chat and use the three-dot menu → Flag User.",
   },
   {
-    q: 'Can MyShiftX read my work schedule from a photo?',
+    q: 'Can WDWShiftX read my work schedule from a photo?',
     a: "Yes — that's Photo Schedule Import. On the Calendar page, tap Import Schedule, then snap a photo of the posted schedule (paper or a screenshot from your scheduling app). Your shifts are read in seconds and shown next to your photo for review — you can edit, uncheck, or add rows before anything is saved, and shifts that overlap something already on your calendar are flagged. Free accounts get 4 imports per month; Pro is unlimited. See the Photo Schedule Import section below for details.",
     importOnly: true,
   },
   {
     q: 'How does shift matching work?',
-    a: "When you post a shift offer, MyShiftX automatically scans all active shift requests on the same board for the same date. If a request's preferred time window overlaps with your shift's start time, both you and the requester get an email notification about the potential match — no manual searching needed. The same happens in reverse when you post a request.",
+    a: "When you post a shift offer, WDWShiftX automatically scans all active shift requests on the same board for the same date. If a request's preferred time window overlaps with your shift's start time, both you and the requester get an email notification about the potential match — no manual searching needed. The same happens in reverse when you post a request.",
   },
   {
     q: 'How do I report a post, comment, or user?',
@@ -99,18 +99,18 @@ const PUSH_GUIDES = [
     steps: [
       'In Chrome, turn on push from Profile → Notifications → Push Notifications (or tap Enable on the Wall banner), then tap Allow.',
       'By default, notifications may go quietly to the notification bar without popping up over your screen.',
-      'To make them pop up: press and hold a MyShiftX notification in the tray, tap the settings gear, and set it to "Alerting" with "Pop on screen" enabled (wording varies by phone).',
-      'You can also get there via Settings → Apps → Chrome → Notifications and raising the importance of the myshiftx.com entry.',
+      'To make them pop up: press and hold a WDWShiftX notification in the tray, tap the settings gear, and set it to "Alerting" with "Pop on screen" enabled (wording varies by phone).',
+      'You can also get there via Settings → Apps → Chrome → Notifications and raising the importance of the wdwshiftx.com entry.',
     ],
   },
   {
     icon: Smartphone,
     device: 'iPhone / iPad',
     steps: [
-      'iPhone requires MyShiftX to be added to your Home Screen first (iOS 16.4 or newer) — push doesn\'t work from a regular Safari tab. The app shows you these install steps on The Wall and in your Profile whenever you\'re browsing from an iPhone.',
-      'In Safari, open myshiftx.com, tap the Share button, and choose "Add to Home Screen."',
-      'Open MyShiftX from the new Home Screen icon (not from Safari), then turn on push from Profile → Notifications → Push Notifications and tap Allow.',
-      'To control how they appear: Settings → Notifications → MyShiftX — enable Lock Screen, Notification Center, and Banners.',
+      'iPhone requires WDWShiftX to be added to your Home Screen first (iOS 16.4 or newer) — push doesn\'t work from a regular Safari tab. The app shows you these install steps on The Wall and in your Profile whenever you\'re browsing from an iPhone.',
+      'In Safari, open wdwshiftx.com, tap the Share button, and choose "Add to Home Screen."',
+      'Open WDWShiftX from the new Home Screen icon (not from Safari), then turn on push from Profile → Notifications → Push Notifications and tap Allow.',
+      'To control how they appear: Settings → Notifications → WDWShiftX — enable Lock Screen, Notification Center, and Banners.',
     ],
   },
 ]
@@ -138,7 +138,7 @@ const CALENDAR_GUIDES = [
     steps: [
       'Open outlook.com (or Outlook on the web) and go to Calendar.',
       'Choose "Add calendar" → "Subscribe from web."',
-      'Paste your feed URL, give it a name like MyShiftX, and click Import.',
+      'Paste your feed URL, give it a name like WDWShiftX, and click Import.',
     ],
   },
 ]
@@ -186,7 +186,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
         </div>
         <div>
           <h1 className="font-accent text-2xl font-bold text-text">Help &amp; Support</h1>
-          <p className="text-sm text-text/60">Everything you need to get the most out of MyShiftX.</p>
+          <p className="text-sm text-text/60">Everything you need to get the most out of WDWShiftX.</p>
         </div>
       </div>
 
@@ -347,7 +347,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
           </div>
           <div className="mt-3 text-xs text-text/60 bg-primary-light/30 border border-primary/15 rounded-lg px-4 py-3 leading-relaxed space-y-1.5">
             <p><strong className="text-text/80">Good to know:</strong> free accounts get 4 imports per month; Pro and Trial members are unlimited. Failed reads never count against your limit.</p>
-            <p><strong className="text-text/80">Full-team schedules:</strong> the reader looks for your display name to pick out your row — it helps if your MyShiftX display name matches the name on the schedule (change it on your Profile page).</p>
+            <p><strong className="text-text/80">Full-team schedules:</strong> the reader looks for your display name to pick out your row — it helps if your WDWShiftX display name matches the name on the schedule (change it on your Profile page).</p>
             <p><strong className="text-text/80">Privacy:</strong> your photo is used only to read the shifts and is never stored — not by us, and not by the AI service that processes it.</p>
           </div>
         </section>
@@ -476,8 +476,8 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
 
         <p className="text-center text-xs text-text/40 mt-4">
           Prefer email?{' '}
-          <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">
-            support@myshiftx.com
+          <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">
+            support@wdwshiftx.com
           </a>
         </p>
       </section>

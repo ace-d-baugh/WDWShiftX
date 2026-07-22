@@ -8,7 +8,7 @@ interface ThemedLogoProps {
 }
 
 /**
- * Full WDW ShiftX logo that follows the active theme. Light and dark show the
+ * Full WDWShiftX logo that follows the active theme. Light and dark show the
  * gradient artwork; pro/seasonal themes (theme-* class on <html>) hide it and
  * show a solid-tinted silhouette instead. A second, independently-masked
  * "stars" layer sits on top (from a stars-only SVG extracted from the same
@@ -19,7 +19,7 @@ interface ThemedLogoProps {
  * care about this leave .themed-logo-stars at its default display:none.
  * See "Theme-aware logo" in globals.css.
  */
-export function ThemedLogo({ className, alt = 'WDW ShiftX Logo', priority }: ThemedLogoProps) {
+export function ThemedLogo({ className, alt = 'WDWShiftX Logo', priority }: ThemedLogoProps) {
   return (
     <span className={`themed-logo-wrap ${className}`}>
       <Image

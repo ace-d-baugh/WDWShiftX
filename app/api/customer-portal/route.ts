@@ -10,7 +10,7 @@ import { optionalServerEnv } from '@/lib/env'
 
 export const runtime = 'nodejs'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://myshiftx.com'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 
 export async function POST() {
   if (!isStripeConfigured() || !optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {

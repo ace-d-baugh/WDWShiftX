@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/Button'
 
 // Tied to the same env var that gates the AdSense script itself (Task 12),
 // rather than a separate hardcoded flag, so the two can't drift out of sync.
-// Before AdSense, the only cookies MyShiftX set were Supabase Auth session
+// Before AdSense, the only cookies WDWShiftX set were Supabase Auth session
 // cookies — "strictly necessary" and exempt from consent requirements under
 // GDPR/ePrivacy and CCPA — so there was nothing to ask consent for.
 const COOKIE_BANNER_ENABLED = Boolean(process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID)
 
-const STORAGE_KEY = 'myshiftx-cookie-consent'
+const STORAGE_KEY = 'wdwshiftx-cookie-consent'
 
 function isGoogleCmpRegion(): boolean {
-  return document.cookie.split('; ').some(c => c === 'myshiftx-region=eea' || c === 'myshiftx-region=us')
+  return document.cookie.split('; ').some(c => c === 'wdwshiftx-region=eea' || c === 'wdwshiftx-region=us')
 }
 
 export function CookieConsentBanner() {

@@ -87,13 +87,13 @@ export async function getExistingSubscription(): Promise<PushSubscription | null
 export async function subscribeToPush(): Promise<{ error?: string }> {
   if (!PUSH_CONFIGURED) return { error: 'Push notifications are not available yet.' }
   if (!isPushSupported()) {
-    return { error: 'This browser does not support push notifications. On iPhone, add MyShiftX to your Home Screen first.' }
+    return { error: 'This browser does not support push notifications. On iPhone, add WDWShiftX to your Home Screen first.' }
   }
 
   try {
     const permission = await Notification.requestPermission()
     if (permission !== 'granted') {
-      return { error: 'Notifications are blocked. Enable them for myshiftx.com in your browser settings.' }
+      return { error: 'Notifications are blocked. Enable them for wdwshiftx.com in your browser settings.' }
     }
 
     const reg = await getRegistration()

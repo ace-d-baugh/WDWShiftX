@@ -69,8 +69,8 @@ export async function middleware(request: NextRequest) {
   // header and stay cacheable. The 24h maxAge means it re-sets once a day.
   const country = request.headers.get('x-vercel-ip-country') ?? ''
   const region = EEA_UK_CH_COUNTRIES.has(country) ? 'eea' : country === 'US' ? 'us' : 'other'
-  if (request.cookies.get('myshiftx-region')?.value !== region) {
-    supabaseResponse.cookies.set('myshiftx-region', region, {
+  if (request.cookies.get('wdwshiftx-region')?.value !== region) {
+    supabaseResponse.cookies.set('wdwshiftx-region', region, {
       path: '/',
       maxAge: 60 * 60 * 24,
     })

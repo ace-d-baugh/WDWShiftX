@@ -1,4 +1,4 @@
-const KEY = 'myshiftx-settings'
+const KEY = 'wdwshiftx-settings'
 
 export type WeekStart  = 0 | 1 | 6          // 0=Sun, 1=Mon, 6=Sat
 export type DateFormat = 'mdy' | 'dmy'       // MM/DD or DD/MM

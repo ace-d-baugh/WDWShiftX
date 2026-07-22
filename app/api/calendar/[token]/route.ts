@@ -61,7 +61,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
   }
 
   const ics = buildIcsCalendar({
-    calendarName: 'MyShiftX Shifts',
+    calendarName: 'WDWShiftX Shifts',
     events: (shifts ?? []).map(s => {
       const boardName = (s.boards as unknown as { name: string } | null)?.name
       const description = [s.details, boardName ? `Board: ${boardName}` : null]
@@ -73,7 +73,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
         end: s.end_time as string,
         summary: s.shift_title as string,
         description: description || undefined,
-        url: 'https://myshiftx.com/calendar',
+        url: 'https://wdwshiftx.com/calendar',
       }
     }),
   })
@@ -83,8 +83,8 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': wantsDownload
-        ? 'attachment; filename="myshiftx-shifts.ics"'
-        : 'inline; filename="myshiftx-shifts.ics"',
+        ? 'attachment; filename="wdwshiftx-shifts.ics"'
+        : 'inline; filename="wdwshiftx-shifts.ics"',
       // Calendar apps poll on their own schedule; keep responses fresh
       'Cache-Control': 'private, no-cache',
     },

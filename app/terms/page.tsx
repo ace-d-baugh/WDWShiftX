@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getPublicShowAds } from '@/lib/auth/session'
 import { AdRail } from '@/components/features/AdRail'
 
-export const metadata = { title: 'Terms & Conditions – MyShiftX' }
+export const metadata = { title: 'Terms & Conditions' }
 
 export default async function TermsPage() {
   const showAds = await getPublicShowAds(createServerClient())
@@ -24,13 +24,13 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">1. Acceptance of Terms</h2>
             <p>
-              These Terms &amp; Conditions (&ldquo;Terms&rdquo;) govern your access to and use of MyShiftX,
-              operated by Digital Elegance LLC d/b/a MyShiftX (&ldquo;MyShiftX,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
+              These Terms &amp; Conditions (&ldquo;Terms&rdquo;) govern your access to and use of WDWShiftX,
+              operated by Digital Elegance LLC d/b/a WDWShiftX (&ldquo;WDWShiftX,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
               By creating an account or using the Service in any way, you agree to be bound by these Terms.
               If you do not agree, do not register or use the Service.
             </p>
             <p className="mt-3">
-              These Terms constitute a legally binding agreement between you and MyShiftX. We reserve the
+              These Terms constitute a legally binding agreement between you and WDWShiftX. We reserve the
               right to modify these Terms at any time. Material changes will be communicated via email
               before they take effect. Continued use of the Service after the effective date of any change
               constitutes your acceptance of the updated Terms.
@@ -63,13 +63,13 @@ export default async function TermsPage() {
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Provide accurate, complete, and current registration information</li>
-              <li>Immediately notify us at <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a> of any unauthorized use of your account</li>
+              <li>Immediately notify us at <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a> of any unauthorized use of your account</li>
               <li>Not share your password or allow any other person to access your account</li>
               <li>Not create more than one account per person</li>
               <li>Not create an account on behalf of another person without their explicit consent</li>
             </ul>
             <p className="mt-3">
-              MyShiftX is not liable for any loss or damage arising from your failure to maintain the
+              WDWShiftX is not liable for any loss or damage arising from your failure to maintain the
               security of your account credentials.
             </p>
           </section>
@@ -77,15 +77,15 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">4. Disclaimer of Non-Affiliation</h2>
             <p>
-              MyShiftX is an <strong>independent platform</strong> and is not affiliated with, authorized
+              WDWShiftX is an <strong>independent platform</strong> and is not affiliated with, authorized
               by, endorsed by, or in any way officially connected with any employer, theme park, resort,
               entertainment company, or any other organization whose employees may use the Service.
               All trademarks, service marks, and trade names referenced on the platform are the property
               of their respective owners.
             </p>
             <p className="mt-3">
-              Any shift trades, giveaways, or arrangements facilitated through MyShiftX are solely between
-              the users involved. MyShiftX is not a party to any employment relationship and assumes no
+              Any shift trades, giveaways, or arrangements facilitated through WDWShiftX are solely between
+              the users involved. WDWShiftX is not a party to any employment relationship and assumes no
               responsibility for compliance with any employer&apos;s scheduling, seniority, union, or
               other workplace policies.
             </p>
@@ -121,7 +121,7 @@ export default async function TermsPage() {
               profanity, offensive, discriminatory, or sexually explicit language, harassment, unwanted
               advances, spam, and solicitation. Recipients can flag users who misuse messaging, and misuse
               may result in loss of messaging privileges, suspension, or permanent removal from the Service
-              (see Section 14). MyShiftX may review message content when investigating a flag, abuse
+              (see Section 14). WDWShiftX may review message content when investigating a flag, abuse
               report, or suspected violation of these Terms.
             </p>
           </section>
@@ -129,7 +129,7 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">6. Shift Transactions &amp; Arrangements</h2>
             <p>
-              MyShiftX is a <strong>communication platform only</strong>. We facilitate connections between
+              WDWShiftX is a <strong>communication platform only</strong>. We facilitate connections between
               users who wish to trade, give away, or pick up shifts. We do not:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
@@ -150,7 +150,7 @@ export default async function TermsPage() {
             <h2 className="font-accent text-xl font-bold text-text mb-3">7. User-Generated Content</h2>
             <p>
               By posting shift offers, requests, comments, direct messages, or any other content
-              (&ldquo;User Content&rdquo;) through the Service, you grant MyShiftX a non-exclusive,
+              (&ldquo;User Content&rdquo;) through the Service, you grant WDWShiftX a non-exclusive,
               royalty-free, worldwide license to display, distribute, and transmit that content to the
               users it is addressed to — other authorized users of the boards where it was posted, or,
               for direct messages, the other participant in the conversation — solely for the purpose
@@ -159,7 +159,7 @@ export default async function TermsPage() {
             <p className="mt-3">
               You represent and warrant that you own or have the necessary rights to post all User Content
               and that your User Content does not violate the rights of any third party or any applicable law.
-              MyShiftX does not claim ownership of your User Content. We reserve the right to remove any
+              WDWShiftX does not claim ownership of your User Content. We reserve the right to remove any
               User Content at our sole discretion.
             </p>
           </section>
@@ -167,7 +167,7 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">8. Subscription, Payments &amp; Refunds</h2>
             <p>
-              MyShiftX offers a free Basic tier and a paid Pro tier. Pro membership is available on the
+              WDWShiftX offers a free Basic tier and a paid Pro tier. Pro membership is available on the
               following billing cycles, billed in advance:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
@@ -177,7 +177,7 @@ export default async function TermsPage() {
             </ul>
             <p className="mt-3">
               All payments are processed securely through Stripe. By providing payment information, you
-              authorize MyShiftX to charge the applicable fee on a recurring basis until you cancel.
+              authorize WDWShiftX to charge the applicable fee on a recurring basis until you cancel.
             </p>
             <p className="mt-3">
               <strong>Cancellation:</strong> You may cancel your subscription at any time through your
@@ -194,7 +194,7 @@ export default async function TermsPage() {
               trial per email address — additional accounts are not eligible.
             </p>
             <p className="mt-3">
-              MyShiftX reserves the right to modify pricing at any time. Price changes will be communicated
+              WDWShiftX reserves the right to modify pricing at any time. Price changes will be communicated
               at least 30 days in advance and will not affect the current billing period.
             </p>
           </section>
@@ -204,17 +204,17 @@ export default async function TermsPage() {
             <p>
               Pro tier members may opt in to receive SMS notifications for shift matches and alerts.
               By providing your mobile phone number and enabling SMS notifications, you expressly consent
-              to receive automated text messages from MyShiftX at that number.
+              to receive automated text messages from WDWShiftX at that number.
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Message frequency: up to 30 messages per month based on your activity</li>
               <li>Message and data rates may apply based on your carrier plan</li>
               <li>To opt out at any time, reply <strong>STOP</strong> to any message or disable SMS in your profile settings</li>
-              <li>For help, reply <strong>HELP</strong> or contact <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a></li>
+              <li>For help, reply <strong>HELP</strong> or contact <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a></li>
             </ul>
             <p className="mt-3">
               Consent to receive SMS is not a condition of purchasing any product or service.
-              MyShiftX is not responsible for any charges incurred from your mobile carrier.
+              WDWShiftX is not responsible for any charges incurred from your mobile carrier.
             </p>
           </section>
 
@@ -236,7 +236,7 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">11. Third-Party Services</h2>
             <p>
-              MyShiftX uses the following third-party services to operate. By using our Service, you
+              WDWShiftX uses the following third-party services to operate. By using our Service, you
               acknowledge that your data may be processed by these providers in accordance with their
               own privacy policies:
             </p>
@@ -267,9 +267,9 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">13. DMCA &amp; Copyright Infringement</h2>
             <p>
-              MyShiftX respects intellectual property rights. If you believe that content on the Service
+              WDWShiftX respects intellectual property rights. If you believe that content on the Service
               infringes your copyright, please submit a written notice to our designated DMCA agent at{' '}
-              <a href="mailto:dmca@myshiftx.com" className="text-primary hover:underline">dmca@myshiftx.com</a> that includes:
+              <a href="mailto:dmca@wdwshiftx.com" className="text-primary hover:underline">dmca@wdwshiftx.com</a> that includes:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>A description of the copyrighted work you claim has been infringed</li>
@@ -291,7 +291,7 @@ export default async function TermsPage() {
               We reserve the right to suspend or terminate your account and access to the Service at any
               time, with or without notice, at our sole discretion, including but not limited to for
               violation of these Terms, fraudulent activity, or conduct we determine to be harmful to
-              the community or to MyShiftX.
+              the community or to WDWShiftX.
             </p>
             <p className="mt-3">
               You may deactivate your account at any time from your Profile page. Upon deactivation, your
@@ -312,11 +312,11 @@ export default async function TermsPage() {
             <p>
               THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND,
               EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
-              FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. MYSHIFTX DOES NOT WARRANT THAT
+              FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WDWSHIFTX DOES NOT WARRANT THAT
               THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR FREE OF VIRUSES OR OTHER HARMFUL COMPONENTS.
             </p>
             <p className="mt-3">
-              TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, MYSHIFTX AND ITS OFFICERS, DIRECTORS,
+              TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, WDWSHIFTX AND ITS OFFICERS, DIRECTORS,
               EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
               CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA,
               GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR IN CONNECTION WITH:
@@ -330,7 +330,7 @@ export default async function TermsPage() {
             </ul>
             <p className="mt-3">
               In no event shall our total liability to you for all claims related to the Service exceed
-              the greater of $100 or the amount you paid MyShiftX in the 12 months preceding the claim.
+              the greater of $100 or the amount you paid WDWShiftX in the 12 months preceding the claim.
             </p>
           </section>
 
@@ -356,14 +356,14 @@ export default async function TermsPage() {
               <strong>Please read this section carefully — it affects your legal rights.</strong>
             </p>
             <p className="mt-3">
-              You and MyShiftX agree that any dispute, claim, or controversy arising out of or relating
+              You and WDWShiftX agree that any dispute, claim, or controversy arising out of or relating
               to these Terms or the Service will be resolved by <strong>binding individual arbitration</strong> administered
               by the American Arbitration Association (AAA) under its Consumer Arbitration Rules, rather
               than in court. The arbitration will be conducted in Florida or, at your option, via
               telephone or videoconference.
             </p>
             <p className="mt-3">
-              <strong>Class Action Waiver:</strong> You and MyShiftX each waive the right to a trial by
+              <strong>Class Action Waiver:</strong> You and WDWShiftX each waive the right to a trial by
               jury and the right to participate in a class action. You may only bring claims in your
               individual capacity, not as a plaintiff or class member in any purported class or
               representative proceeding.
@@ -376,7 +376,7 @@ export default async function TermsPage() {
             <p className="mt-3">
               <strong>Opt-Out:</strong> You may opt out of this arbitration agreement within 30 days of
               first accepting these Terms by emailing{' '}
-              <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a>{' '}
+              <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a>{' '}
               with the subject line &ldquo;Arbitration Opt-Out.&rdquo; Opting out does not affect any other Terms.
             </p>
           </section>
@@ -394,7 +394,7 @@ export default async function TermsPage() {
           <section>
             <h2 className="font-accent text-xl font-bold text-text mb-3">19. Force Majeure</h2>
             <p>
-              MyShiftX shall not be liable for any failure or delay in performance resulting from causes
+              WDWShiftX shall not be liable for any failure or delay in performance resulting from causes
               beyond our reasonable control, including but not limited to acts of God, natural disasters,
               pandemic, war, terrorism, riots, embargoes, acts of civil or military authorities, fire,
               floods, strikes, power outages, or failures of telecommunications or internet service providers.
@@ -410,12 +410,12 @@ export default async function TermsPage() {
             <p className="mt-3">
               <strong>No Waiver:</strong> Our failure to enforce any right or provision of these Terms
               will not be considered a waiver of that right or provision. A waiver of any provision will
-              only be effective if made in writing and signed by an authorized representative of MyShiftX.
+              only be effective if made in writing and signed by an authorized representative of WDWShiftX.
             </p>
             <p className="mt-3">
               <strong>Entire Agreement:</strong> These Terms, together with our Privacy Policy, Cookie
               Policy, and any other policies incorporated by reference, constitute the entire agreement
-              between you and MyShiftX regarding the Service and supersede all prior agreements,
+              between you and WDWShiftX regarding the Service and supersede all prior agreements,
               understandings, and communications between you and us.
             </p>
             <p className="mt-3">
@@ -446,9 +446,9 @@ export default async function TermsPage() {
               If you have questions, concerns, or feedback regarding these Terms, please contact us:
             </p>
             <ul className="list-none mt-3 space-y-1">
-              <li><strong>Email:</strong> <a href="mailto:support@myshiftx.com" className="text-primary hover:underline">support@myshiftx.com</a></li>
-              <li><strong>Legal / DMCA:</strong> <a href="mailto:dmca@myshiftx.com" className="text-primary hover:underline">dmca@myshiftx.com</a></li>
-              <li><strong>Company:</strong> Digital Elegance LLC d/b/a MyShiftX</li>
+              <li><strong>Email:</strong> <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a></li>
+              <li><strong>Legal / DMCA:</strong> <a href="mailto:dmca@wdwshiftx.com" className="text-primary hover:underline">dmca@wdwshiftx.com</a></li>
+              <li><strong>Company:</strong> Digital Elegance LLC d/b/a WDWShiftX</li>
             </ul>
           </section>
 
@@ -456,7 +456,7 @@ export default async function TermsPage() {
 
         <div className="mt-10 pt-6 border-t border-border">
           <p className="text-xs text-text/40 text-center">
-            MyShiftX is operated by Digital Elegance LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
+            WDWShiftX is operated by Digital Elegance LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
           </p>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 
 const TIMEOUT_MS      = 8 * 60 * 60 * 1000 // 8 hours of inactivity
 const CHECK_INTERVAL  = 60 * 1000            // check every minute
-const ACTIVITY_KEY    = 'myshiftx-last-activity'
+const ACTIVITY_KEY    = 'wdwshiftx-last-activity'
 
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'] as const
 

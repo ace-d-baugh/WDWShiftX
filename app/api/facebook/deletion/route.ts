@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   const confirmationCode = `del_${data.user_id}_${Date.now()}`
-  const statusUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://myshiftx.com'}/data-deletion?code=${confirmationCode}`
+  const statusUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://wdwshiftx.com'}/data-deletion?code=${confirmationCode}`
 
   return NextResponse.json({ url: statusUrl, confirmation_code: confirmationCode })
 }

@@ -1,4 +1,4 @@
-# MyShiftX
+# WDWShiftX
 
 > A private, invite-only bulletin board for trading shifts, giving away shifts, and posting shift requests.
 
@@ -7,7 +7,7 @@
 
 **Status:** Beta — core product (auth, boards, wall, moderation, notifications, calendar sync, in-app messaging) is feature-complete. Monetization (Stripe checkout) and legal/business formation are still in progress ahead of public launch (`1.0.0`). See [TASKS.md](TASKS.md) for the full breakdown.
 
-**⚠️ Disclaimer:** MyShiftX is an independent platform and is not affiliated with, sponsored by, or endorsed by any specific employer.
+**⚠️ Disclaimer:** WDWShiftX is an independent platform and is not affiliated with, sponsored by, or endorsed by any specific employer.
 
 ---
 
@@ -31,7 +31,7 @@
 
 ## Overview
 
-MyShiftX replaces the chaos of Facebook groups with a structured, secure platform organized around **invite-only boards**. Users join boards with a code, then post and browse shifts scoped to only the boards they belong to.
+WDWShiftX replaces the chaos of Facebook groups with a structured, secure platform organized around **invite-only boards**. Users join boards with a code, then post and browse shifts scoped to only the boards they belong to.
 
 - **Trade shifts** with trusted peers on your boards
 - **Give away shifts** you can't work
@@ -55,7 +55,7 @@ Users currently rely on Facebook groups to coordinate shift trades, which create
 
 ## The Solution
 
-MyShiftX provides:
+WDWShiftX provides:
 
 1. **Board-Based Access:** Users join private boards via invite codes — posts are scoped to your boards only
 2. **The Wall:** A unified, filterable feed of all shifts and requests across your boards
@@ -111,7 +111,7 @@ MyShiftX provides:
 
 ## Roles
 
-MyShiftX uses two independent role systems.
+WDWShiftX uses two independent role systems.
 
 > **Naming note:** the labels below are what users see as of 2026-07-18. Internally
 > (DB values, RLS policies, route paths, code) the board "Admin" is still stored as
@@ -279,7 +279,7 @@ npm run db:reset     # Reset local database (dev only)
 
 ### Phase 3: Public Launch
 - [ ] Broader rollout
-- [ ] Marketing to shift-trading communities ("N shifts covered on MyShiftX" as the proof point)
+- [ ] Marketing to shift-trading communities ("N shifts covered on WDWShiftX" as the proof point)
 - [ ] 500+ verified users
 
 ### Future Enhancements
@@ -315,4 +315,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Remember:** Always verify shift trades and OT approval on your employer's official scheduling pages. MyShiftX is a bulletin board only — communication and final execution are your responsibility.
+**Remember:** Always verify shift trades and OT approval on your employer's official scheduling pages. WDWShiftX is a bulletin board only — communication and final execution are your responsibility.

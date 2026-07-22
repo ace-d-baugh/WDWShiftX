@@ -5,7 +5,7 @@ import type { ManagedBoard } from './types'
 import type { BoardRole } from '@/lib/database.types'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'My Boards – MyShiftX' }
+export const metadata = { title: 'My Boards' }
 
 export default async function BoardsPage() {
   const { supabase, user } = await requireUser()

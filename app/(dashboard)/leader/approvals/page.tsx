@@ -3,7 +3,7 @@ import { ApprovalsClient } from './ApprovalsClient'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Approvals – MyShiftX' }
+export const metadata = { title: 'Approvals – WDWShiftX' }
 
 interface PendingRequest {
   id: string

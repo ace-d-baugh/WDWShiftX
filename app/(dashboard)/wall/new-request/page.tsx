@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { PostRequestForm } from '@/components/features/PostRequestForm'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Post a Request – MyShiftX' }
+export const metadata = { title: 'Post a Request – WDWShiftX' }
 
 export default async function NewRequestPage() {
   const supabase = createServerClient()

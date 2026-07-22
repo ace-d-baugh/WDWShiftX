@@ -70,7 +70,7 @@ export function PushNotificationsToggle() {
       </div>
       {blocked && (
         <p className="mt-1 text-xs text-warning">
-          Notifications are blocked for myshiftx.com — allow them in your browser&rsquo;s site settings, then try again.
+          Notifications are blocked for wdwshiftx.com — allow them in your browser&rsquo;s site settings, then try again.
         </p>
       )}
       {error && !blocked && <p className="mt-1 text-xs text-warning">{error}</p>}

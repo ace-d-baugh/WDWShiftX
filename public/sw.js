@@ -1,4 +1,4 @@
-// MyShiftX service worker — Web Push only (no offline caching).
+// WDWShiftX service worker — Web Push only (no offline caching).
 // Registered lazily from lib/push.ts when a user enables notifications.
 
 self.addEventListener('push', (event) => {
@@ -9,7 +9,7 @@ self.addEventListener('push', (event) => {
     // Non-JSON payload — show a generic notification rather than dropping it
   }
 
-  const title = data.title || 'MyShiftX'
+  const title = data.title || 'WDWShiftX'
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',
