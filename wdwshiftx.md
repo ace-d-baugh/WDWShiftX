@@ -72,7 +72,7 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 - ✅ 🤖 Generate a fresh VAPID key pair for Web Push (keys are origin-specific, can't reuse myshiftx.com's) — verification needs a headed Edge/Chrome browser with a pre-seeded profile, since the bundled Chromium test browser can't do push (known from prior MyShiftX push work)
 - ✅ 🤝 Decide final env var list for Vercel (see §5) and set them
 
-### Phase 2 — Remove ads (🤖, code)
+### Phase 2 — Remove ads (🤖, code) & other unneeded pages
 
 - [ ] Delete/neuter `components/features/AdSlot.tsx` and `components/features/AdRail.tsx` (or just never set `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID` — the components already no-op without it, but the "Remove Ads" links inside `AdRail.tsx` still point at `/upgrade`, so if `/upgrade` is deleted (Phase 3) this needs real removal, not just leaving the env var unset)
 - [ ] Remove AdSense loader script + Funding Choices CMP script + `google-adsense-account` meta tag from `app/layout.tsx` (lines ~31-33, 64-85)
@@ -81,6 +81,8 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 - [ ] Remove ad-consent logic from `components/features/CookieConsentBanner.tsx` and the `myshiftx-region` cookie plumbing in `middleware.ts` (or leave it dormant — harmless if ads are gone, your call)
 - [ ] Remove ad disclosure paragraphs from `app/privacy/page.tsx`
 - [ ] Remove `getShowAds()`/`getPublicShowAds()` call sites (`lib/auth/session.ts`) from every page that currently renders `AdRail`: `app/(dashboard)/layout.tsx`, `wall`, `calendar`, `boards/[slug]/page.tsx`, `terms`, `privacy`, `data-deletion`, `contact`, `about`
+- [ ] Remove for/ special landing pages. 
+
 
 ### Phase 3 — Remove Stripe / Pro / upgrade paths (🤖, code)
 
@@ -119,9 +121,10 @@ Given the target matrix in §2, the smallest-diff approach:
 - [ ] 🧑 Provide app name, logo, favicon, theme color, and any copy changes you want (currently everything says "MyShiftX")
 - [ ] 🤖 Update `app/manifest.ts` (name/short_name/description/theme_color)
 - [ ] 🤖 Update hardcoded domain references (~28 files) from `myshiftx.com` → `wdwshiftx.com`: `app/layout.tsx` (metadataBase, OpenGraph), `app/sitemap.ts`, `app/robots.ts`, `lib/stripe.ts` (deleted in Phase 3, moot), `lib/ical.ts` (iCal UID domain), `components/email-template.tsx`, `lib/email-constants.ts`, `components/features/InviteModal.tsx`, and the rest found by grepping `myshiftx.com`
-- [ ] 🤖 Set `NEXT_PUBLIC_SITE_URL`/`NEXT_PUBLIC_APP_URL` env vars to `https://wdwshiftx.com` in Vercel (most runtime references already fall back to these vars first, so this alone fixes checkout/webhook/cron URL construction — though those routes are deleted in Phase 3 anyway)
 - [ ] 🤖 Update `package.json` name field, `README.md`
 - [ ] 🧑 Replace icon/logo asset files (`app/apple-icon.png`, favicon, any `public/` logo images) with WDW ShiftX branding
+- [ ] Remove Landing page verbiage about "Built for Any Workplace"
+
 
 ### Phase 7 — Legal/policy pages (🤝)
 
