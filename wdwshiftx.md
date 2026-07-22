@@ -63,7 +63,7 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 ### Phase 1 — Repo & infra setup
 
 - [x] 🧑 Create new private GitHub repo
-- [ ] 🤖 Clone/copy MyShiftX working tree into a new local folder, re-point git remote to the new repo, push initial commit https://github.com/ace-d-baugh/WDWShiftX.git
+- [x] 🤖 Clone/copy MyShiftX working tree into a new local folder, re-point git remote to the new repo, push initial commit https://github.com/ace-d-baugh/WDWShiftX.git — done: `dev` and `main` pushed, this file included
 - [ ] 🧑 Create new Supabase project (org, region — pick one close to Orlando/US-East since this is a Disney World team)
 - [ ] 🧑 Create new Vercel project, link to the new GitHub repo
 - [ ] 🧑 Add `wdwshiftx.com` as the domain in Vercel, update DNS at your registrar to point at Vercel
