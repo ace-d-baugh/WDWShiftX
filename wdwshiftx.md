@@ -51,26 +51,26 @@ Confirmed: calendar sync is on. Premium themes and instant email alerts cost not
 
 Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (external accounts, DNS, human decisions), 🤝 = needs you to decide/approve, then I execute.
 
-### Phase 0 — Decisions (🧑 first, blocks everything else)
+### ✅ Phase 0 — Decisions (🧑 first, blocks everything else)
 
-- [x] 🧑 Confirm: new private GitHub repo name (`WDWShiftX` assumed)
-- [x] 🧑 Confirm: app display name/branding (currently assumed "WDW ShiftX" — logo, colors, icons all reference "MyShiftX" today and need new assets or at least new text) ** Use "WDWShiftX" for now with same favicon,appleicon, etc**
-- [x] Board names/count confirmed: **"DSA VIP Tour Guides"** (~225) + **"DSA Valet"** (~30, VIP Valet team) — 2 boards
-- [x] Invite codes confirmed: **`DSAVIP7`** (DSA VIP Tour Guides) + **`VALET4U`** (VIP Valet team)
-- [x] Onboarding method confirmed: **self-serve registration with invite code** (not admin bulk-populate). People register themselves at `app/(auth)/register` and enter their team's code — same flow MyShiftX already supports.
-- [x] 🧑 I will still assume the role of Overlord and I will be the admin of each board. A users join, I will give some admin and mod rights.
+- ✅ 🧑 Confirm: new private GitHub repo name (`WDWShiftX` assumed)
+- ✅ 🧑 Confirm: app display name/branding (currently assumed "WDW ShiftX" — logo, colors, icons all reference "MyShiftX" today and need new assets or at least new text) ** Use "WDWShiftX" for now with same favicon,appleicon, etc**
+- ✅ Board names/count confirmed: **"DSA VIP Tour Guides"** (~225) + **"DSA Valet"** (~30, VIP Valet team) — 2 boards
+- ✅ Invite codes confirmed: **`DSAVIP7`** (DSA VIP Tour Guides) + **`VALET4U`** (VIP Valet team)
+- ✅ Onboarding method confirmed: **self-serve registration with invite code** (not admin bulk-populate). People register themselves at `app/(auth)/register` and enter their team's code — same flow MyShiftX already supports.
+- ✅ 🧑 I will still assume the role of Overlord and I will be the admin of each board. A users join, I will give some admin and mod rights.
 
-### Phase 1 — Repo & infra setup
+### ✅ Phase 1 — Repo & infra setup
 
-- [x] 🧑 Create new private GitHub repo
-- [x] 🤖 Clone/copy MyShiftX working tree into a new local folder, re-point git remote to the new repo, push initial commit https://github.com/ace-d-baugh/WDWShiftX.git — done: `dev` and `main` pushed, this file included
-- [ ] 🧑 Create new Supabase project (org, region — pick one close to Orlando/US-East since this is a Disney World team)
-- [ ] 🧑 Create new Vercel project, link to the new GitHub repo
-- [ ] 🧑 Add `wdwshiftx.com` as the domain in Vercel, update DNS at your registrar to point at Vercel
-- [ ] 🤖 Run all 61 existing Supabase migrations (`supabase/migrations/`) against the new project — schema is identical, you're just removing app-layer gates, not tables
-- [ ] 🧑 Set up Resend (or your email provider) sender domain verification for `wdwshiftx.com` if you want branded outbound email (match reminders, weekly digest) — otherwise this can be skipped/left off (`RESEND_API_KEY` unset = soft-fail, no emails sent)
-- [ ] 🤖 Generate a fresh VAPID key pair for Web Push (keys are origin-specific, can't reuse myshiftx.com's) — verification needs a headed Edge/Chrome browser with a pre-seeded profile, since the bundled Chromium test browser can't do push (known from prior MyShiftX push work)
-- [ ] 🤝 Decide final env var list for Vercel (see §5) and set them
+- ✅ 🧑 Create new private GitHub repo
+- ✅ 🤖 Clone/copy MyShiftX working tree into a new local folder, re-point git remote to the new repo, push initial commit https://github.com/ace-d-baugh/WDWShiftX.git — done: `dev` and `main` pushed, this file included
+- ✅ 🧑 Create new Supabase project (org, region — pick one close to Orlando/US-East since this is a Disney World team)
+- ✅ 🧑 Create new Vercel project, link to the new GitHub repo
+- ✅ 🧑 Add `wdwshiftx.com` as the domain in Vercel, update DNS at your registrar to point at Vercel
+- ✅ 🤖 Run all 61 existing Supabase migrations (`supabase/migrations/`) against the new project — schema is identical, you're just removing app-layer gates, not tables
+- ✅ 🧑 Set up Resend (or your email provider) sender domain verification for `wdwshiftx.com` if you want branded outbound email (match reminders, weekly digest) — otherwise this can be skipped/left off (`RESEND_API_KEY` unset = soft-fail, no emails sent)
+- ✅ 🤖 Generate a fresh VAPID key pair for Web Push (keys are origin-specific, can't reuse myshiftx.com's) — verification needs a headed Edge/Chrome browser with a pre-seeded profile, since the bundled Chromium test browser can't do push (known from prior MyShiftX push work)
+- ✅ 🤝 Decide final env var list for Vercel (see §5) and set them
 
 ### Phase 2 — Remove ads (🤖, code)
 

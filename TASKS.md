@@ -851,6 +851,7 @@ Board role **"Leader" now displays as "Admin"**; global role **"Admin" now displ
 | Accessibility audit (WCAG 2.1 AA) | 🤖 Claude | Can audit and fix after core features are stable |
 | Rate limiting on post/flag endpoints | 🤖 Claude | Add after real users are on the platform |
 | User acceptance testing with a pilot group | 👤 You | Pick 5–10 coworkers to test before wider rollout |
+| Dependency vulnerabilities (`npm audit`, 2026-07-22) | 🤖 Claude | 20 findings, none in shipped runtime code. Safe now via `npm audit fix` (non-breaking): `picomatch` (high, ReDoS in glob matching — jest/chokidar dev-time only), `yaml` (moderate, stack overflow on deep nesting). Needs a breaking bump + regression testing later: Next.js 14→16 (fixes a `postcss` XSS chain), Supabase CLI bump (fixes a critical `tar` path-traversal chain, dev-tooling only, not shipped). Same lockfile as MyShiftX — fix once, apply to both. |
 
 ---
 

@@ -59,3 +59,4 @@ Test-Schedule-Image.png
 # Claude Code
 .agents/
 .claude/
+.env*
