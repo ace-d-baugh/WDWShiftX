@@ -6,7 +6,6 @@ import { Footer } from '@/components/landing/Footer'
 import { PhotoImportHighlight } from '@/components/landing/PhotoImportHighlight'
 import { createServerClient } from '@/lib/supabase/server'
 import { optionalServerEnv } from '@/lib/env'
-import { INDUSTRIES } from '@/lib/landing/industries'
 
 export const metadata = {
   title: 'WDWShiftX – Shift Trading for Shift Workers',
@@ -250,31 +249,6 @@ export default async function HomePage() {
 
       {/* ── Photo Schedule Import highlight (gated with the feature) ── */}
       {importEnabled && <PhotoImportHighlight />}
-
-      {/* ── Properties ── */}
-      <section className="py-16 px-4 bg-primary-light overflow-hidden">
-        {/* max-w-screen-sm = 640px, the closest Tailwind stop under the 650px design cap */}
-        <div className="max-w-screen-sm mx-auto text-center">
-          <AnimateIn>
-            <h2 className="font-accent text-2xl md:text-3xl font-bold text-text mb-3">
-              One Board, Everyone Included
-            </h2>
-            <p className="text-text/60 mb-8">Find shifts that work for you.</p>
-          </AnimateIn>
-          <div className="flex flex-wrap justify-center gap-3">
-            {INDUSTRIES.map((industry, i) => (
-              <AnimateIn key={industry.slug} animation="fade-in" delay={i * 70}>
-                <Link
-                  href={`/for/${industry.slug}`}
-                  className="inline-block bg-card border border-primary/20 text-text rounded-full px-5 py-2 text-sm font-medium shadow-sm hover:border-primary/50 hover:shadow-md transition-all duration-200"
-                >
-                  {industry.shortName}
-                </Link>
-              </AnimateIn>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Reviews — hidden until real user reviews are collected ── */}
       <section className="hidden py-20 px-4 bg-background">

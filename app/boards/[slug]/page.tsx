@@ -1,10 +1,8 @@
 import { redirect, notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import { getShowAds } from '@/lib/auth/session'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { SessionTimeout } from '@/components/features/SessionTimeout'
-import { AdRail } from '@/components/features/AdRail'
 import { BoardsClient } from '@/app/(dashboard)/boards/BoardsClient'
 import { groupMembersByBoard } from '@/app/(dashboard)/boards/utils'
 import { JoinBoardClient } from './JoinBoardClient'
@@ -143,20 +141,16 @@ export default async function BoardSlugPage({ params, searchParams }: Props) {
     members:           membersByBoard.get(board.id) ?? [],
   }]
 
-  const showAds = await getShowAds(supabase)
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SessionTimeout />
       {navbar}
       <main className="flex-1 pb-20 md:pb-0">
-        <AdRail showAds={showAds}>
-          <BoardsClient
-            managedBoards={managedBoards}
-            currentUserId={user.id}
-            isAdmin={isAdmin}
-          />
-        </AdRail>
+        <BoardsClient
+          managedBoards={managedBoards}
+          currentUserId={user.id}
+          isAdmin={isAdmin}
+        />
       </main>
       <Footer />
     </div>

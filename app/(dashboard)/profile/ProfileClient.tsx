@@ -9,7 +9,6 @@ import { MyBoardsSection } from '@/components/features/MyBoardsSection'
 import { PushNotificationsToggle } from '@/components/features/PushNotificationsToggle'
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { CalendarSyncSection } from '@/components/features/CalendarSyncSection'
-import { MembershipSection } from '@/components/features/MembershipSection'
 import { TradeRecordSection } from '@/components/features/TradeRecordSection'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -35,13 +34,12 @@ interface UserProfile {
 interface ProfileClientProps {
   user: UserProfile | null
   sessionUserId: string
-  isPro: boolean
-  membershipTier?: 'Basic' | 'Pro' | 'Trial'
-  /** ISO timestamp — only set while membershipTier is 'Trial'. */
-  trialEndsAt?: string | null
-  /** False until STRIPE_SECRET_KEY is set — hides the billing portal button. */
-  billingEnabled?: boolean
 }
+
+// Premium (seasonal/Pro) themes stay locked for everyone — no billing tier
+// in this fork to unlock them. Flip to true to unlock them for fun; costs
+// nothing since the theme CSS itself is already shipped.
+const PREMIUM_THEMES_UNLOCKED = false
 
 // Theme picker grid placement: mobile is 2 columns / 3 rows, desktop (sm+) is
 // 3 columns / 2 rows, and each wants a DIFFERENT visual grouping (light
@@ -60,7 +58,7 @@ const THEME_GRID_POSITION: Partial<Record<Theme, string>> = {
   cyberpunk: 'row-start-3 col-start-2 sm:row-start-2 sm:col-start-3',
 }
 
-export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Basic', trialEndsAt = null, billingEnabled = false }: ProfileClientProps) {
+export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -85,18 +83,17 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
     const settings = getSettings()
     setSiteSettings(settings)
     const stored = getStoredTheme()
-    // Profile is the enforcement point for Pro themes: a downgraded member
-    // keeps their look everywhere else, but landing here re-checks Pro status
-    // and reverts a now-locked theme to its free equivalent (Nordic/Kitty →
-    // Light, Midnight/Cyberpunk → Dark). Persist so the revert sticks and
-    // syncs across devices.
-    const effective = isPro ? stored : freeThemeFallback(stored)
+    // Profile is the enforcement point for premium themes: reverts a locked
+    // theme to its free equivalent (Nordic/Kitty → Light, Midnight/Cyberpunk
+    // → Dark) if PREMIUM_THEMES_UNLOCKED is off. Persist so the revert sticks
+    // and syncs across devices.
+    const effective = PREMIUM_THEMES_UNLOCKED ? stored : freeThemeFallback(stored)
     setTheme(effective)
     if (effective !== stored) {
       applyTheme(effective)
       upsertPreferences(sessionUserId, { ...settings, theme: effective })
     }
-  }, [isPro, sessionUserId])
+  }, [sessionUserId])
 
   const syncToDB = (settings: UserSettings, t: Theme) => {
     upsertPreferences(sessionUserId, { ...settings, theme: t })
@@ -109,7 +106,7 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
   }
 
   const selectTheme = (t: Theme) => {
-    if (isProTheme(t) && !isPro) return
+    if (isProTheme(t) && !PREMIUM_THEMES_UNLOCKED) return
     setTheme(t)
     applyTheme(t)
     syncToDB(siteSettings ?? getSettings(), t)
@@ -169,13 +166,8 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
     )
   }
 
-  const trialDaysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000))
-    : null
-
   // Global Admin ("Overlord") only — gates the 3 seasonal themes below.
-  // Not a Pro perk: even a Basic-tier Overlord sees them; every other role,
-  // regardless of membership tier, never sees them rendered at all.
+  // Every other role never sees them rendered at all.
   const isOverlord = user?.role === 'Admin'
   const mainThemes = THEMES.filter(t => !t.adminOnly)
   const overlordThemes = THEMES.filter(t => t.adminOnly)
@@ -185,7 +177,7 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
   // grid, which needs one to satisfy its breakpoint-aware layout — the
   // Overlord section is a plain grid with natural left-to-right order.
   const renderThemeOption = (t: ThemeInfo, positionClass = '') => {
-    const locked = t.pro && !isPro
+    const locked = t.pro && !PREMIUM_THEMES_UNLOCKED
     const selected = theme === t.id
     const swatch = (
       <span
@@ -206,15 +198,15 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
     )
     if (locked) {
       return (
-        <Link
+        <div
           key={t.id}
-          href="/upgrade"
-          title={`${t.description} — Pro theme, tap to upgrade`}
-          className={`flex flex-col gap-1.5 rounded-lg border border-border p-2 opacity-60 hover:opacity-100 hover:border-primary/50 transition-all min-h-0 min-w-0 ${positionClass}`}
+          title={`${t.description} — not available`}
+          aria-disabled="true"
+          className={`flex flex-col gap-1.5 rounded-lg border border-border p-2 opacity-60 cursor-not-allowed min-h-0 min-w-0 ${positionClass}`}
         >
           {swatch}
           {labelRow}
-        </Link>
+        </div>
       )
     }
     return (
@@ -241,22 +233,6 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
           <h1 className="font-accent text-2xl font-bold text-text">My Profile</h1>
           <p className="text-sm text-text/60">Manage your account settings and boards</p>
         </div>
-        {/* Membership badge */}
-        {membershipTier === 'Basic' ? (
-          <Link
-            href="/upgrade"
-            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary hover:bg-primary/20 rounded-full px-3 py-1.5 transition-colors min-h-0 min-w-0"
-            title="See what Pro unlocks"
-          >
-            Basic · Upgrade ⭐
-          </Link>
-        ) : (
-          <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide bg-secondary text-text rounded-full px-3 py-1.5">
-            ⭐ {membershipTier === 'Trial' && trialDaysLeft !== null
-              ? `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left`
-              : 'Pro'}
-          </span>
-        )}
       </div>
 
       {isNewOAuthUser && (
@@ -264,12 +240,6 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
           Welcome! Set a display name below before posting or joining boards.
         </div>
       )}
-
-      <MembershipSection
-        tier={membershipTier}
-        trialEndsAt={trialEndsAt}
-        billingEnabled={billingEnabled}
-      />
 
       {/* Account Info */}
       <div className="card shadow-sm">
@@ -398,8 +368,8 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
       {/* Trade Record — claims made/received + reliability stats (Task 21) */}
       <TradeRecordSection userId={sessionUserId} />
 
-      {/* Calendar Sync — Pro/Trial only (Task 17) */}
-      {isPro && <CalendarSyncSection />}
+      {/* Calendar Sync — always on */}
+      <CalendarSyncSection />
 
       {/* Site Settings */}
       <div className="card shadow-sm">
@@ -417,9 +387,7 @@ export function ProfileClient({ user, sessionUserId, isPro, membershipTier = 'Ba
           {/* Theme */}
           <div>
             <p className="text-sm font-medium text-text">Theme</p>
-            <p className="text-xs text-text/50 mb-2">
-              {isPro ? 'Pick how WDWShiftX looks' : 'Pick how WDWShiftX looks — unlock 4 premium themes with Pro ⭐'}
-            </p>
+            <p className="text-xs text-text/50 mb-2">Pick how WDWShiftX looks</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {mainThemes.map(t => renderThemeOption(t, THEME_GRID_POSITION[t.id] ?? ''))}
             </div>

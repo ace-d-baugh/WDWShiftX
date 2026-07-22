@@ -2,14 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/lib/env'
 
-// EEA member states + UK + Switzerland — the regions Google's ad-consent
-// requirements (and our own CookieConsentBanner suppression) target.
-const EEA_UK_CH_COUNTRIES = new Set([
-  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IS', 'IE', 'IT',
-  'LV', 'LI', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-  'GB', 'CH',
-])
-
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
@@ -59,21 +51,6 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/wall'
     url.search = ''
     return NextResponse.redirect(url)
-  }
-
-  // Vercel populates this header at the edge — no geo-IP service needed.
-  // Used to defer to Google's ad-consent CMP (which now has both an EEA/UK/CH
-  // message and a U.S. states message published) instead of showing our own
-  // generic cookie banner to those visitors too.
-  // Only set when missing or changed, so most responses carry no Set-Cookie
-  // header and stay cacheable. The 24h maxAge means it re-sets once a day.
-  const country = request.headers.get('x-vercel-ip-country') ?? ''
-  const region = EEA_UK_CH_COUNTRIES.has(country) ? 'eea' : country === 'US' ? 'us' : 'other'
-  if (request.cookies.get('wdwshiftx-region')?.value !== region) {
-    supabaseResponse.cookies.set('wdwshiftx-region', region, {
-      path: '/',
-      maxAge: 60 * 60 * 24,
-    })
   }
 
   return supabaseResponse

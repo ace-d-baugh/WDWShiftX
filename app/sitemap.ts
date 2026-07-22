@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next'
-import { INDUSTRIES } from '@/lib/landing/industries'
 
 // Only the pages that are actually public (no login required) — everything
 // else in the app sits behind an auth wall that Googlebot can't get past
@@ -7,8 +6,7 @@ import { INDUSTRIES } from '@/lib/landing/industries'
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://wdwshiftx.com'
   const routes = [
-    '', '/login', '/register', '/about', '/contact', '/upgrade', '/terms', '/privacy', '/data-deletion',
-    ...INDUSTRIES.map(i => `/for/${i.slug}`),
+    '', '/login', '/register', '/about', '/contact', '/terms', '/privacy', '/data-deletion',
   ]
 
   return routes.map(route => ({

@@ -1,16 +1,10 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { createServerClient } from '@/lib/supabase/server'
-import { getPublicShowAds } from '@/lib/auth/session'
-import { AdRail } from '@/components/features/AdRail'
 
 export const metadata = { title: 'Privacy Policy' }
 
 export default async function PrivacyPage() {
-  const showAds = await getPublicShowAds(createServerClient())
-
   return (
-    <AdRail showAds={showAds} hasBottomNav={false}>
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-12">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-text/60 hover:text-text mb-8 min-h-0 min-w-0">
@@ -144,7 +138,6 @@ export default async function PrivacyPage() {
               <li><strong>Google</strong> (google.com) — optional OAuth sign-in. If used, Google shares your name and email with us.</li>
               <li><strong>Facebook / Meta</strong> (meta.com) — optional OAuth sign-in. If used, Meta shares your name and email with us.</li>
               <li><strong>LinkedIn</strong> (linkedin.com) — optional OAuth sign-in. If used, LinkedIn shares your name and email with us.</li>
-              <li><strong>Google AdSense</strong> (google.com/adsense) — advertising shown to Basic (free) tier users. AdSense may set cookies and collect usage data for ad personalization. Pro members do not see ads and are not subject to AdSense data collection.</li>
             </ul>
           </section>
 
@@ -155,7 +148,6 @@ export default async function PrivacyPage() {
               <li><strong>Session cookies:</strong> Required to keep you logged in while you use the Service. These are deleted when you close your browser or log out.</li>
               <li><strong>Preference cookies:</strong> Store your display preferences (dark mode, time format, timezone) locally on your device.</li>
               <li><strong>Security cookies:</strong> Used to detect and prevent fraud and unauthorized access.</li>
-              <li><strong>Third-party cookies (Basic tier only):</strong> Google AdSense may set cookies for ad personalization. You can manage these through our cookie consent banner or your browser settings.</li>
             </ul>
             <p className="mt-3">
               We do not use tracking pixels, cross-site tracking, or behavioral advertising cookies for
@@ -368,6 +360,5 @@ export default async function PrivacyPage() {
         </div>
       </div>
     </div>
-    </AdRail>
   )
 }

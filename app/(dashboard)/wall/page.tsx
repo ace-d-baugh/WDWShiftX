@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { requireUser, getMembership, isProTier } from '@/lib/auth/session'
+import { requireUser } from '@/lib/auth/session'
 import { WallClient } from './WallClient'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +16,7 @@ export default async function WallPage({ searchParams }: { searchParams: { tab?:
 
   const { supabase, user } = await requireUser()
 
-  const [{ data: userProfile }, { data: memberRows }, membership, { count: ownShiftCount }] = await Promise.all([
+  const [{ data: userProfile }, { data: memberRows }, { count: ownShiftCount }] = await Promise.all([
     supabase
       .from('users')
       .select('id, display_name, onboarding_dismissed_at')
@@ -28,7 +28,6 @@ export default async function WallPage({ searchParams }: { searchParams: { tab?:
       .select('board_id, boards(id, name)')
       .eq('user_id', user.id)
       .eq('is_approved', true),
-    getMembership(supabase),
     supabase.from('shifts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
   ])
 
@@ -51,7 +50,7 @@ export default async function WallPage({ searchParams }: { searchParams: { tab?:
       hasBoards={boards.length > 0}
       initialTab={searchParams.tab === 'requests' ? 'requests' : 'offers'}
       initialDate={searchParams.date ?? ''}
-      liveWall={isProTier(membership)}
+      liveWall={true}
     />
   )
 }

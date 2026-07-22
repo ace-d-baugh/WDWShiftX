@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client'
 import { deactivateShift, deactivateRequest } from '@/app/actions/posts'
 import { PushPromptBanner } from '@/components/features/PushPromptBanner'
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
-import { UpgradeNudge } from '@/components/features/UpgradeNudge'
 import { ShiftCard, type ShiftData } from '@/components/features/ShiftCard'
 import type { MyClaim, PendingClaim, TradeStats } from '@/components/features/ClaimSection'
 import { RequestCard, type RequestData } from '@/components/features/RequestCard'
@@ -574,9 +573,6 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
 
       {/* iOS Safari tab: push needs a Home Screen install first (Task 23) */}
       <IosInstallPrompt />
-
-      {/* Soft upsell for Basic members — dismissible per session */}
-      {!liveWall && <UpgradeNudge />}
 
       {/* Basic-tier realtime gate: something changed, refresh is manual */}
       {newActivity && (

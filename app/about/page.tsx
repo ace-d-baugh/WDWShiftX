@@ -1,17 +1,10 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { createServerClient } from '@/lib/supabase/server'
-import { getPublicShowAds } from '@/lib/auth/session'
-import { AdRail } from '@/components/features/AdRail'
-import { INDUSTRIES } from '@/lib/landing/industries'
 
 export const metadata = { title: 'About Us' }
 
 export default async function AboutPage() {
-  const showAds = await getPublicShowAds(createServerClient())
-
   return (
-    <AdRail showAds={showAds} hasBottomNav={false}>
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-12">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-text/60 hover:text-text mb-8 min-h-0 min-w-0">
@@ -57,25 +50,6 @@ export default async function AboutPage() {
           </section>
 
           <section className="card shadow-sm">
-            <h2 className="font-accent text-xl font-bold text-text mb-3">Built for teams in:</h2>
-            <div className="flex flex-wrap gap-3">
-              {INDUSTRIES.map(industry => (
-                <Link
-                  key={industry.slug}
-                  href={`/for/${industry.slug}`}
-                  className="inline-block bg-background border border-primary/20 text-text rounded-full px-4 py-1.5 text-sm font-medium hover:border-primary/50 hover:shadow-sm transition-all duration-200 min-h-0 min-w-0"
-                >
-                  {industry.shortName}
-                </Link>
-              ))}
-            </div>
-            <p className="mt-4 text-text/60">
-              …and any other workplace that runs on fixed shifts. If yours isn&apos;t listed,
-              it still works — boards are workplace-agnostic.
-            </p>
-          </section>
-
-          <section className="card shadow-sm">
             <h2 className="font-accent text-xl font-bold text-text mb-3">Who&apos;s behind WDWShiftX</h2>
             <p>
               WDWShiftX is operated by Digital Elegance LLC, a Florida-based company. WDWShiftX is an
@@ -109,6 +83,5 @@ export default async function AboutPage() {
         </div>
       </div>
     </div>
-    </AdRail>
   )
 }

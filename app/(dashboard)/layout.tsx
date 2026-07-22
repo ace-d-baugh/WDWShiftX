@@ -1,11 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { requireUser, getShowAds } from '@/lib/auth/session'
+import { requireUser } from '@/lib/auth/session'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { SessionTimeout } from '@/components/features/SessionTimeout'
 import { PreferencesSyncer } from '@/components/features/PreferencesSyncer'
-import { AdRail } from '@/components/features/AdRail'
 import { MessageToast } from '@/components/features/MessageToast'
 import type { GlobalRole } from '@/lib/database.types'
 
@@ -20,15 +19,14 @@ export default async function DashboardLayout({
 
   const { supabase, user } = await requireUser()
 
-  // Profile, moderator check, ad eligibility, and unread messages are independent — fetch together
-  const [profileRes, { data: isMod }, showAds, { data: unreadMessages }] = await Promise.all([
+  // Profile, moderator check, and unread messages are independent — fetch together
+  const [profileRes, { data: isMod }, { data: unreadMessages }] = await Promise.all([
     supabase
       .from('users')
       .select('id, display_name, role, is_active')
       .eq('id', user.id)
       .single() as unknown as Promise<{ data: UserProfileRow }>,
     supabase.rpc('is_any_board_moderator'),
-    getShowAds(supabase),
     supabase.rpc('get_unread_message_count'),
   ])
   const userProfile = profileRes.data
@@ -87,10 +85,9 @@ export default async function DashboardLayout({
         pendingApprovalsCount={pendingApprovalsCount}
         pendingFlagsCount={pendingFlagsCount}
         unreadMessagesCount={unreadMessages ?? 0}
-        showUpgrade={showAds /* showAds === Basic tier, same signal */}
       />
       <main className="flex-1 pb-20 md:pb-0">
-        <AdRail showAds={showAds}>{children}</AdRail>
+        {children}
       </main>
       <Footer />
     </div>

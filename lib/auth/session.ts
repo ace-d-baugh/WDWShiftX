@@ -68,8 +68,7 @@ export interface Membership {
 /**
  * The current user's membership, via the get_own_membership() RPC (the
  * membership columns are column-locked from direct SELECT). Falls back to
- * Basic on any failure, so feature gating errs toward the free experience;
- * ads specifically use getShowAds below, which errs the other way.
+ * Basic on any failure, so feature gating errs toward the free experience.
  */
 export async function getMembership(supabase: Supabase): Promise<Membership> {
   const { data } = await supabase.rpc('get_own_membership').single()
@@ -85,28 +84,4 @@ export async function getMembership(supabase: Supabase): Promise<Membership> {
 /** Pro and Trial members get every gated feature. */
 export function isProTier(m: Membership): boolean {
   return m.tier === 'Pro' || m.tier === 'Trial'
-}
-
-/**
- * Whether ads should be shown to the current session user (Basic/Free tier
- * only — Pro and Trial members never see ads). Uses get_own_membership()
- * since membership/trial columns are column-locked from direct SELECT.
- * Defaults to false (no ads) if the lookup fails, so an error never
- * accidentally shows ads to a paying member.
- */
-export async function getShowAds(supabase: Supabase): Promise<boolean> {
-  const { data } = await supabase.rpc('get_own_membership').single()
-  return data?.membership === 'Basic'
-}
-
-/**
- * Same as getShowAds, but for public pages (Terms, Privacy, Data Deletion)
- * that anonymous visitors can reach without an account. There's no paying
- * membership to protect for a signed-out visitor, so they always see ads;
- * a logged-in visitor falls back to the normal Basic-only rule.
- */
-export async function getPublicShowAds(supabase: Supabase): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return true
-  return getShowAds(supabase)
 }

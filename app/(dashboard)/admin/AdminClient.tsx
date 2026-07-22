@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
-import { Settings, LayoutGrid, Users, CheckCircle, Search, UserCog, ChevronDown, Check, BarChart3 } from 'lucide-react'
+import { Settings, LayoutGrid, Users, CheckCircle, Search, UserCog } from 'lucide-react'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
 import { Badge } from '@/components/ui/Badge'
-import { AdminCharts } from './AdminCharts'
 import { cn } from '@/lib/utils'
-import type { GlobalRole, Membership, BillingCycle } from '@/lib/database.types'
+import type { GlobalRole } from '@/lib/database.types'
 
-type AdminTab = 'boards' | 'users' | 'charts'
-export type MembershipFilterKey = 'free' | 'trial' | 'monthly' | 'quarterly' | 'semi_annual' | 'yearly'
+type AdminTab = 'boards' | 'users'
 
 interface Board {
   id: string
@@ -26,8 +24,6 @@ export interface UserRow {
   role: string
   is_active: boolean
   created_at: string
-  membership: Membership
-  billing_cycle: BillingCycle | null
 }
 
 interface AdminClientProps {
@@ -42,45 +38,6 @@ const roleVariant: Record<GlobalRole, 'guest' | 'user' | 'admin'> = {
 
 const globalRoleOptions: GlobalRole[] = ['Guest', 'User', 'Admin']
 
-export const MEMBERSHIP_OPTIONS: { key: MembershipFilterKey; label: string }[] = [
-  { key: 'free',         label: 'Free' },
-  { key: 'trial',        label: 'Trial' },
-  { key: 'monthly',      label: 'Monthly' },
-  { key: 'quarterly',    label: 'Quarterly' },
-  { key: 'semi_annual',  label: 'Semi-Annually' },
-  { key: 'yearly',       label: 'Yearly' },
-]
-
-/** Glance icon per tier — shared by the user list, the legend key, and the charts. */
-export const MEMBERSHIP_ICON: Record<MembershipFilterKey, string> = {
-  free: '📰',
-  trial: '⚖️',
-  monthly: '📅',
-  quarterly: '🌘',
-  semi_annual: '🌓',
-  yearly: '🏆',
-}
-
-/** Global Admins get this instead of their membership icon. */
-export const ADMIN_ICON = '🫅🏼'
-
-export function getMembershipKey(u: UserRow): MembershipFilterKey {
-  if (u.membership === 'Basic') return 'free'
-  if (u.membership === 'Trial') return 'trial'
-  return (u.billing_cycle ?? 'monthly') as MembershipFilterKey
-}
-
-/** Small glance icon per billing tier; global Admins override with the admin icon. */
-export function MembershipIcon({ user: u }: { user: UserRow }) {
-  const key = getMembershipKey(u)
-  const isAdmin = u.role === 'Admin'
-  return (
-    <span className="text-base leading-none shrink-0" role="img" aria-label={isAdmin ? 'Admin' : key}>
-      {isAdmin ? ADMIN_ICON : MEMBERSHIP_ICON[key]}
-    </span>
-  )
-}
-
 export function AdminClient({ boards: initBoards, users: initUsers, adminId }: AdminClientProps) {
   const [tab, setTab] = useState<AdminTab>('users')
   const [boards, setBoards] = useState(initBoards)
@@ -92,9 +49,6 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
   // Users tab filters
   const [userSearch, setUserSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
-  const [membershipFilters, setMembershipFilters] = useState<Set<MembershipFilterKey>>(new Set())
-  const [membershipDropdownOpen, setMembershipDropdownOpen] = useState(false)
-  const membershipDropdownRef = useRef<HTMLDivElement>(null)
 
   // Tab indicator animation
   const tabRefs = useRef<Map<AdminTab, HTMLButtonElement | null>>(new Map())
@@ -114,33 +68,13 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
     }
   }, [tab])
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (membershipDropdownRef.current && !membershipDropdownRef.current.contains(e.target as Node)) {
-        setMembershipDropdownOpen(false)
-      }
-    }
-    if (membershipDropdownOpen) document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [membershipDropdownOpen])
-
-  const toggleMembershipFilter = (key: MembershipFilterKey) => {
-    setMembershipFilters(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
       if (userSearch && !(u.display_name ?? '').toLowerCase().includes(userSearch.toLowerCase())) return false
       if (filterRole && u.role !== filterRole) return false
-      if (membershipFilters.size > 0 && !membershipFilters.has(getMembershipKey(u))) return false
       return true
     })
-  }, [users, userSearch, filterRole, membershipFilters])
+  }, [users, userSearch, filterRole])
 
   const toggleBoardActive = async (id: string, current: boolean) => {
     setProcessing(id)
@@ -166,7 +100,6 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
   const tabs: { key: AdminTab; label: string; icon: React.ReactNode; count: number | null }[] = [
     { key: 'boards', label: 'Boards', icon: <LayoutGrid className="w-4 h-4" />, count: boards.length },
     { key: 'users',  label: 'Users',  icon: <Users className="w-4 h-4" />,     count: users.length },
-    { key: 'charts', label: 'Charts', icon: <BarChart3 className="w-4 h-4" />, count: null },
   ]
 
   return (
@@ -258,20 +191,8 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
       {/* Users Tab */}
       {tab === 'users' && (
         <div className="space-y-4">
-          {/* Icon key */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-text/60">
-            {MEMBERSHIP_OPTIONS.map(o => (
-              <span key={o.key} className="flex items-center gap-1">
-                <span role="img" aria-hidden>{MEMBERSHIP_ICON[o.key]}</span>{o.label}
-              </span>
-            ))}
-            <span className="flex items-center gap-1">
-              <span role="img" aria-hidden>{ADMIN_ICON}</span>Overlord
-            </span>
-          </div>
-
           <div className="p-4 bg-primary-light/40 rounded-lg space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select
                 className="input text-sm h-9"
                 value={filterRole}
@@ -280,65 +201,6 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
                 <option value="">All Roles</option>
                 {globalRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
-
-              {/* Membership multi-select dropdown */}
-              <div ref={membershipDropdownRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setMembershipDropdownOpen(o => !o)}
-                  className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
-                >
-                  <span className="truncate text-left">
-                    {membershipFilters.size === 0
-                      ? 'All Memberships'
-                      : membershipFilters.size === 1
-                        ? (MEMBERSHIP_OPTIONS.find(o => membershipFilters.has(o.key))?.label ?? '1 selected')
-                        : `${membershipFilters.size} selected`}
-                  </span>
-                  <ChevronDown className={cn('w-4 h-4 shrink-0 text-text/40 transition-transform', membershipDropdownOpen && 'rotate-180')} />
-                </button>
-
-                {membershipDropdownOpen && (
-                  <div className="absolute z-50 top-full left-0 mt-1 w-full min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-1">
-                    <button
-                      type="button"
-                      onClick={() => setMembershipFilters(new Set())}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-primary-light/40 transition-colors min-h-0 min-w-0"
-                    >
-                      <span className={cn('w-4 h-4 rounded border shrink-0 flex items-center justify-center', membershipFilters.size === 0 ? 'bg-primary border-primary' : 'border-border bg-background')}>
-                        {membershipFilters.size === 0 && <Check className="w-2.5 h-2.5 text-white" />}
-                      </span>
-                      <span className="font-medium">All Memberships</span>
-                    </button>
-
-                    {membershipFilters.size > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setMembershipFilters(new Set())}
-                        className="w-full flex items-center px-3 py-1 text-xs text-primary hover:text-primary/70 transition-colors min-h-0 min-w-0"
-                      >
-                        Clear selection
-                      </button>
-                    )}
-
-                    <div className="h-px bg-border mx-2 my-1" />
-
-                    {MEMBERSHIP_OPTIONS.map(o => (
-                      <button
-                        key={o.key}
-                        type="button"
-                        onClick={() => toggleMembershipFilter(o.key)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-primary-light/40 transition-colors min-h-0 min-w-0"
-                      >
-                        <span className={cn('w-4 h-4 rounded border shrink-0 flex items-center justify-center', membershipFilters.has(o.key) ? 'bg-primary border-primary' : 'border-border bg-background')}>
-                          {membershipFilters.has(o.key) && <Check className="w-2.5 h-2.5 text-white" />}
-                        </span>
-                        <span className="truncate">{o.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 pointer-events-none" />
@@ -360,7 +222,6 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
                 <div key={u.id} className="card flex items-center justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <MembershipIcon user={u} />
                       <p className={cn('font-medium', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
                         {u.display_name ?? <span className="italic text-text/40">No display name</span>}
                       </p>
@@ -400,9 +261,6 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
           </div>
         </div>
       )}
-
-      {/* Charts Tab */}
-      {tab === 'charts' && <AdminCharts users={users} />}
     </div>
   )
 }

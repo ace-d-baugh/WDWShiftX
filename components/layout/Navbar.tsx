@@ -18,7 +18,6 @@ import {
   Settings,
   Kanban,
   MessageSquare,
-  Star,
 } from 'lucide-react'
 import { ThemedLogo } from '@/components/ui/ThemedLogo'
 import { createClient } from '@/lib/supabase/client'
@@ -33,8 +32,6 @@ interface NavbarProps {
   pendingApprovalsCount?: number
   pendingFlagsCount?: number
   unreadMessagesCount?: number
-  /** Basic tier only — shows the "Upgrade to Pro" entry in the account menu. */
-  showUpgrade?: boolean
 }
 
 export function Navbar({
@@ -45,7 +42,6 @@ export function Navbar({
   pendingApprovalsCount = 0,
   pendingFlagsCount = 0,
   unreadMessagesCount = 0,
-  showUpgrade = false,
 }: NavbarProps) {
   const pathname = usePathname()
   const supabase = createClient()
@@ -87,7 +83,7 @@ export function Navbar({
 
   // ── Dropdown menu items (role-scoped) ──────────────────────────────────────
   const dropdownItems = buildDropdownItems({
-    isAdmin, showModItems, isLeader, showUpgrade,
+    isAdmin, showModItems, isLeader,
     pendingApprovalsCount, pendingFlagsCount, fmt,
   })
 
@@ -343,13 +339,12 @@ interface DropdownItemDef {
 }
 
 function buildDropdownItems({
-  isAdmin, showModItems, isLeader, showUpgrade,
+  isAdmin, showModItems, isLeader,
   pendingApprovalsCount, pendingFlagsCount, fmt,
 }: {
   isAdmin: boolean
   showModItems: boolean
   isLeader: boolean
-  showUpgrade: boolean
   pendingApprovalsCount: number
   pendingFlagsCount: number
   fmt: (n: number) => string | null
@@ -358,10 +353,6 @@ function buildDropdownItems({
     { type: 'link', href: '/profile', label: 'Profile', icon: User },
     { type: 'link', href: '/help',    label: 'Help & Support', icon: HelpCircle },
   ]
-
-  if (showUpgrade) {
-    items.push({ type: 'link', href: '/upgrade', label: 'Upgrade to Pro', icon: Star })
-  }
 
   if (showModItems) {
     items.push({ type: 'separator' })

@@ -72,39 +72,37 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 - ✅ 🤖 Generate a fresh VAPID key pair for Web Push (keys are origin-specific, can't reuse myshiftx.com's) — verification needs a headed Edge/Chrome browser with a pre-seeded profile, since the bundled Chromium test browser can't do push (known from prior MyShiftX push work)
 - ✅ 🤝 Decide final env var list for Vercel (see §5) and set them
 
-### Phase 2 — Remove ads (🤖, code) & other unneeded pages
+### Phase 2 — Remove ads (🤖, code) & other unneeded pages ✅
 
-- [ ] Delete/neuter `components/features/AdSlot.tsx` and `components/features/AdRail.tsx` (or just never set `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID` — the components already no-op without it, but the "Remove Ads" links inside `AdRail.tsx` still point at `/upgrade`, so if `/upgrade` is deleted (Phase 3) this needs real removal, not just leaving the env var unset)
-- [ ] Remove AdSense loader script + Funding Choices CMP script + `google-adsense-account` meta tag from `app/layout.tsx` (lines ~31-33, 64-85)
-- [ ] Remove `Mediapartners-Google` allow rule from `app/robots.ts`
-- [ ] Delete/empty `ads.txt`
-- [ ] Remove ad-consent logic from `components/features/CookieConsentBanner.tsx` and the `myshiftx-region` cookie plumbing in `middleware.ts` (or leave it dormant — harmless if ads are gone, your call)
-- [ ] Remove ad disclosure paragraphs from `app/privacy/page.tsx`
-- [ ] Remove `getShowAds()`/`getPublicShowAds()` call sites (`lib/auth/session.ts`) from every page that currently renders `AdRail`: `app/(dashboard)/layout.tsx`, `wall`, `calendar`, `boards/[slug]/page.tsx`, `terms`, `privacy`, `data-deletion`, `contact`, `about`
-- [ ] Remove for/ special landing pages. 
+- [x] Delete/neuter `components/features/AdSlot.tsx` and `components/features/AdRail.tsx` — deleted outright, along with `/upgrade` so the "Remove Ads" links are moot
+- [x] Remove AdSense loader script + Funding Choices CMP script + `google-adsense-account` meta tag from `app/layout.tsx`
+- [x] Remove `Mediapartners-Google` allow rule from `app/robots.ts`
+- [x] Delete/empty `ads.txt`
+- [x] Remove ad-consent logic from `components/features/CookieConsentBanner.tsx` (deleted) and the region-cookie plumbing in `middleware.ts` (removed entirely)
+- [x] Remove ad disclosure paragraphs from `app/privacy/page.tsx`
+- [x] Remove `getShowAds()`/`getPublicShowAds()` call sites from every consuming page
+- [x] Remove for/ special landing pages.
 
 
-### Phase 3 — Remove Stripe / Pro / upgrade paths (🤖, code)
+### Phase 3 — Remove Stripe / Pro / upgrade paths (🤖, code) ✅
 
-- [ ] Delete `app/upgrade/` (pricing page + success page)
-- [ ] Delete `app/api/checkout/route.ts`, `app/api/customer-portal/route.ts`, `app/api/webhooks/stripe/route.ts`
-- [ ] Delete `components/features/CheckoutButton.tsx`, `components/features/UpgradeNudge.tsx`
-- [ ] Delete `lib/stripe.ts`, `lib/pricing.ts`
-- [ ] Remove "Upgrade to Pro" nav item from `components/layout/Navbar.tsx` (lines ~36-37, 362-363) and the `showUpgrade` prop plumbing in `app/(dashboard)/layout.tsx`
-- [ ] Remove Pro/billing section from `app/(dashboard)/profile/page.tsx` + `ProfileClient.tsx`
-- [ ] Simplify `lib/auth/session.ts`: delete `isProTier()`/`getMembership()`/tier plumbing, or just hardcode `isProTier()` to always return what you want per feature (simplest, smallest diff — see Phase 4)
-- [ ] Remove `stripe` npm dependency from `package.json`
-- [ ] Drop Stripe-related columns/migrations if you want a clean schema, or just leave them unused (lower risk — the columns being present and unused costs nothing)
-- [ ] Skip Stripe entirely in new-project env vars — no `STRIPE_*` keys needed at all since the routes won't exist
+- [x] Delete `app/upgrade/` (pricing page + success page)
+- [x] Delete `app/api/checkout/route.ts`, `app/api/customer-portal/route.ts`, `app/api/webhooks/stripe/route.ts`
+- [x] Delete `components/features/CheckoutButton.tsx`, `components/features/UpgradeNudge.tsx`
+- [x] Delete `lib/stripe.ts`, `lib/pricing.ts`
+- [x] Remove "Upgrade to Pro" nav item from `components/layout/Navbar.tsx` and the `showUpgrade` prop plumbing in `app/(dashboard)/layout.tsx`
+- [x] Remove Pro/billing section from `app/(dashboard)/profile/page.tsx` + `ProfileClient.tsx` (also cleaned up `admin/AdminClient.tsx`/`admin/page.tsx`, which had their own membership-tier filter/columns, and deleted the Stripe-revenue `AdminCharts.tsx`)
+- [x] Simplify `lib/auth/session.ts` — kept `isProTier()`/`getMembership()` narrowly for the one still-gated feature (instant match-alert emails, intentionally left Basic-only per §2); every other consumer now hardcodes `true`
+- [x] Remove `stripe` npm dependency from `package.json` (also removed now-unused `recharts`, only used by the deleted `AdminCharts.tsx`)
+- [x] Drop Stripe-related columns/migrations — left as unused, lower risk per this doc's own recommendation
+- [x] Skip Stripe entirely in new-project env vars — no `STRIPE_*` keys set
 
-### Phase 4 — Flip feature gates to your target set (🤖, code)
+### Phase 4 — Flip feature gates to your target set (🤖, code) ✅
 
-Given the target matrix in §2, the smallest-diff approach:
-
-- [ ] In `lib/auth/session.ts`: make Live Wall instant updates unconditional — `app/(dashboard)/wall/page.tsx:54` currently passes `liveWall={isProTier(membership)}`; change to `liveWall={true}` (or delete the prop and hardcode `true` in `WallClient.tsx`)
-- [ ] Make calendar sync unconditional — `app/(dashboard)/calendar/page.tsx:84` currently passes `isPro={isProTier(membership)}`; change to `isPro={true}` (or delete the prop and hardcode `true` in `CalendarClient.tsx`). Also update the DB-side gate in the iCal feed token logic (`supabase/migrations/20260702010000_ical_feed_token.sql` lines 27, 55 — `v_membership NOT IN ('Pro','Trial')` blocks token issuance) so it stops blocking Basic-tier accounts, or simplest: since every account will effectively be Pro-equivalent, just set `membership='Pro'` for all users at seed time (see below) and leave this SQL check as-is
-- [ ] Leave premium themes and unlimited photo import gated OFF (i.e., just delete the Pro branch, keep only the Basic behavior) unless you decide otherwise later — trivial to flip
-- [ ] Once Stripe is fully removed (Phase 3), the cleanest way to satisfy both "Live Wall + calendar sync always on" and "everything else Basic" without keeping a dead billing enum around: replace the `Basic|Pro|Trial` membership concept with two independent booleans/constants (e.g. `LIVE_WALL_ENABLED = true`, `CALENDAR_SYNC_ENABLED = true`) rather than one tier flag — since your target set doesn't map to either tier cleanly (it's Basic + 2 specific Pro features), forcing it through the old binary tier would be more confusing than just naming the two features directly
+- [x] Live Wall instant updates unconditional — `wall/page.tsx` now passes `liveWall={true}`
+- [x] Calendar sync unconditional — `calendar/page.tsx` now passes `isPro={true}`; DB-side gate removed via new migration `20260722120000_ical_feed_always_on.sql` (`get_or_create_ical_token`/`reset_ical_token` no longer check membership at all — cleaner than the doc's suggested "set membership='Pro' for everyone" workaround)
+- [x] Premium themes and unlimited photo import left gated OFF — `ProfileClient.tsx` now uses a dedicated `PREMIUM_THEMES_UNLOCKED = false` constant instead of reusing `isPro`
+- [x] Replaced the tier-flag approach with direct per-feature hardcoding (`liveWall={true}`, `isPro={true}`, `PREMIUM_THEMES_UNLOCKED = false`) rather than keeping a `Basic|Pro|Trial` enum driving unrelated features — `Membership`/`isProTier` still exist in `session.ts` solely for the intentionally-still-gated match-alert emails
 
 ### Phase 5 — Lock down to 2 boards (🤖, code + 🧑 seed data)
 
@@ -118,12 +116,12 @@ Given the target matrix in §2, the smallest-diff approach:
 
 ### Phase 6 — Rebranding (🤖 code, 🧑 assets)
 
-- [ ] 🧑 Provide app name, logo, favicon, theme color, and any copy changes you want (currently everything says "MyShiftX")
-- [ ] 🤖 Update `app/manifest.ts` (name/short_name/description/theme_color)
-- [ ] 🤖 Update hardcoded domain references (~28 files) from `myshiftx.com` → `wdwshiftx.com`: `app/layout.tsx` (metadataBase, OpenGraph), `app/sitemap.ts`, `app/robots.ts`, `lib/stripe.ts` (deleted in Phase 3, moot), `lib/ical.ts` (iCal UID domain), `components/email-template.tsx`, `lib/email-constants.ts`, `components/features/InviteModal.tsx`, and the rest found by grepping `myshiftx.com`
-- [ ] 🤖 Update `package.json` name field, `README.md`
-- [ ] 🧑 Replace icon/logo asset files (`app/apple-icon.png`, favicon, any `public/` logo images) with WDW ShiftX branding
-- [ ] Remove Landing page verbiage about "Built for Any Workplace"
+- ✅ 🧑 Provide app name, logo, favicon, theme color, and any copy changes you want (currently everything says "MyShiftX")
+- [ ] 🤖 Update `app/manifest.ts` (name/short_name/description/theme_color) - Is This done?
+- [ ] 🤖 Update hardcoded domain references (~28 files) from `myshiftx.com` → `wdwshiftx.com`: `app/layout.tsx` (metadataBase, OpenGraph), `app/sitemap.ts`, `app/robots.ts`, `lib/stripe.ts` (deleted in Phase 3, moot), `lib/ical.ts` (iCal UID domain), `components/email-template.tsx`, `lib/email-constants.ts`, `components/features/InviteModal.tsx`, and the rest found by grepping `myshiftx.com` Is This done?
+- [ ] 🤖 Update `package.json` name field, `README.md` - Is This done?
+- ✅ 🧑 Replace icon/logo asset files (`app/apple-icon.png`, favicon, any `public/` logo images) with WDW ShiftX branding
+- [ ] Remove Landing page stuff like in the One Board, Everyone Included Find shifts that work for you section: Locations like Retail, Hotels & Resorts, Theme Parks, etc.
 
 
 ### Phase 7 — Legal/policy pages (🤝)

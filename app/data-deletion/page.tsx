@@ -1,8 +1,5 @@
 import Link from 'next/link'
 import { Trash2, Mail, Clock, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react'
-import { createServerClient } from '@/lib/supabase/server'
-import { getPublicShowAds } from '@/lib/auth/session'
-import { AdRail } from '@/components/features/AdRail'
 
 export const metadata = {
   title: 'Data Deletion Instructions',
@@ -10,10 +7,7 @@ export const metadata = {
 }
 
 export default async function DataDeletionPage() {
-  const showAds = await getPublicShowAds(createServerClient())
-
   return (
-    <AdRail showAds={showAds} hasBottomNav={false}>
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-12">
 
@@ -287,6 +281,5 @@ export default async function DataDeletionPage() {
         </div>
       </div>
     </div>
-    </AdRail>
   )
 }
