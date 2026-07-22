@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'WDWShiftX',
     short_name: 'WDWShiftX',
-    description: 'The shift swap board for shift workers.',
+    description: 'WDWShiftX is a private shift-trading web application: employees at the same workplace post open shifts, request coverage for time off, and manage their schedule from one shared, invite-only board.',
     start_url: '/wall',
     display: 'standalone',
     background_color: '#ffffff',
