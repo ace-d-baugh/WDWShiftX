@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS comments (
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_type, post_id, is_active, created_at);
 
 -- Reuses the existing update_updated_at_column() trigger function (users/black_listed)
+-- Guarded: initial_schema.sql already creates this trigger on a fresh install.
+DROP TRIGGER IF EXISTS update_comments_updated_at ON comments;
 CREATE TRIGGER update_comments_updated_at
   BEFORE UPDATE ON comments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

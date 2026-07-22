@@ -81,6 +81,35 @@ ALTER POLICY user_boards_insert_own ON public.user_boards
 ALTER POLICY user_boards_select_own ON public.user_boards
   USING (user_id = (select auth.uid()));
 
+-- user_preferences predates migration history (added by hand on the original
+-- project, like the other gaps found in this fork; see lib/preferences.ts).
+-- Stub the table + its original policy so the ALTER POLICY below has
+-- something to rewrite on a fresh install.
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+  user_id     UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  theme       TEXT,
+  time_format TEXT,
+  date_format TEXT,
+  week_start  SMALLINT,
+  timezone    TEXT,
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'user_preferences' AND policyname = 'Users manage own preferences'
+  ) THEN
+    CREATE POLICY "Users manage own preferences" ON public.user_preferences
+      FOR ALL
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
 ALTER POLICY "Users manage own preferences" ON public.user_preferences
   USING ((select auth.uid()) = user_id)
   WITH CHECK ((select auth.uid()) = user_id);

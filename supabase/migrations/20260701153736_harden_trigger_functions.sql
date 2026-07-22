@@ -4,6 +4,11 @@
 -- 2. Trigger-only functions don't need to be directly callable via PostgREST RPC —
 --    revoke EXECUTE from anon/authenticated so they can only fire as triggers.
 
+-- user_boards.is_hidden predates migration history (added by hand on the
+-- original project, like the other gaps found in this fork). auto_add_admins_to_board()
+-- below needs it, as does directory_boards_filter (20260702150000).
+ALTER TABLE public.user_boards ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT false;
+
 CREATE OR REPLACE FUNCTION public.protect_membership_fields()
 RETURNS trigger
 LANGUAGE plpgsql

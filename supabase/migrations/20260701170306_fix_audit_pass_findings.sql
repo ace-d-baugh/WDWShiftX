@@ -21,6 +21,9 @@ $function$;
 -- 2. boards.slug had no uniqueness enforcement at all (only name/invite_code
 --    were unique) — a genuine check-then-insert race in createBoard() could
 --    produce two boards with the same slug, breaking /boards/[slug] routing.
+-- The column itself predates migration history (added by hand on the original
+-- project, like the other gaps found in this fork); stub it for fresh installs.
+ALTER TABLE public.boards ADD COLUMN IF NOT EXISTS slug TEXT NOT NULL;
 ALTER TABLE public.boards ADD CONSTRAINT boards_slug_key UNIQUE (slug);
 
 -- 3. The "quick interest" pill in CommentSection.tsx checks in-memory state

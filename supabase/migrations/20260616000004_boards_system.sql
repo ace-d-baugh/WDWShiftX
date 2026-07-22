@@ -87,6 +87,9 @@ DROP TABLE IF EXISTS public.properties;
 ALTER TABLE public.users RENAME COLUMN user_type TO role;
 
 ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_user_type_check;
+-- Guarded: on a fresh install, initial_schema.sql's inline CHECK on users.role
+-- gets auto-named "users_role_check" by Postgres, colliding with this name.
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE public.users ADD CONSTRAINT users_role_check
   CHECK (role IN ('Guest', 'User', 'Admin'));
 
@@ -153,6 +156,8 @@ CREATE TABLE IF NOT EXISTS public.boards (
 
 ALTER TABLE public.boards ENABLE ROW LEVEL SECURITY;
 
+-- Guarded: initial_schema.sql already creates this trigger on a fresh install.
+DROP TRIGGER IF EXISTS update_boards_updated_at ON public.boards;
 CREATE TRIGGER update_boards_updated_at
   BEFORE UPDATE ON public.boards
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

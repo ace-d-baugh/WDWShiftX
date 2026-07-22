@@ -3,6 +3,37 @@
 -- enable RLS and create all policies.
 -- ============================================================
 
+-- 0. Stub the pre-boards legacy tables this migration (and the ones through
+--    20260616000004_boards_system.sql) assume already exist. On the original
+--    MyShiftX project these were created by hand via the SQL editor, outside
+--    migration history, before the codebase pivoted to the boards model.
+--    boards_system.sql drops all of them once the pivot lands, so on a fresh
+--    database this just lets that stretch of history replay faithfully.
+CREATE TABLE IF NOT EXISTS public.properties (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+);
+
+CREATE TABLE IF NOT EXISTS public.locations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  is_approved BOOLEAN NOT NULL DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS public.roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  is_approved BOOLEAN NOT NULL DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS public.user_proficiencies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  role_id UUID REFERENCES public.roles(id) ON DELETE CASCADE,
+  location_id UUID REFERENCES public.locations(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.black_listed (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+);
+
 -- 1a. Drop password_hash — Supabase Auth handles passwords
 ALTER TABLE public.users DROP COLUMN IF EXISTS password_hash;
 
