@@ -50,7 +50,7 @@ export default async function AboutPage() {
           <section className="card shadow-sm">
             <h2 className="font-accent text-xl font-bold text-text mb-3">Who&apos;s behind WDWShiftX</h2>
             <p>
-              WDWShiftX is operated by Digital Elegance LLC, a Florida-based company. WDWShiftX is an
+              WDWShiftX is operated by one private individual LLC, a Florida-based company. WDWShiftX is an
               independent platform — it is not affiliated with, sponsored by, or endorsed by any
               specific employer, and all trademarks referenced on this site are the property of
               their respective owners.

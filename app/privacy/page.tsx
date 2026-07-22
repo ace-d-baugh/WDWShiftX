@@ -208,7 +208,7 @@ export default async function PrivacyPage() {
 
         <div className="mt-10 pt-6 border-t border-border">
           <p className="text-xs text-text/40 text-center">
-            WDWShiftX is operated by Digital Elegance LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
+            WDWShiftX is operated by one private individual LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
           </p>
         </div>
       </div>

@@ -62,7 +62,7 @@ export default async function ContactPage() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-border text-xs text-text/40">
-          <p>WDWShiftX is operated by Digital Elegance LLC d/b/a WDWShiftX.</p>
+          <p>WDWShiftX is operated by one private individual LLC d/b/a WDWShiftX.</p>
           <p className="mt-1">We aim to respond to all inquiries within 2 business days.</p>
         </div>
       </div>

@@ -18,7 +18,7 @@ const features = [
     icon: RefreshCw,
     title: 'Shift Trading Board',
     description:
-      'Browse and post shift offers in real-time. Filter by property, location, and role. Trades and giveaways clearly labeled.',
+      'Browse and post shift offers in real-time. Trades and giveaways clearly labeled.',
     border: 'border-l-primary',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
@@ -36,7 +36,7 @@ const features = [
     icon: Zap,
     title: 'Smart Filtering',
     description:
-      "Filter shifts by your proficiency locations and roles. Only see what's relevant to you across every property you work.",
+      "Filter shifts by date, type, or any word. Only see what's relevant to you. Only show posts from verified coworkers. No spam",
     border: 'border-l-success',
     iconBg: 'bg-success/10',
     iconColor: 'text-success',
@@ -54,7 +54,7 @@ const features = [
     icon: Shield,
     title: 'Verified Coworkers Only',
     description:
-      "Every workplace board is private and invite-only. Roles and locations are approved by your board's creator before members can post — so you only trade with real teammates from your location.",
+      "Your board is private and invite-only. Coworkers are approved by your board's creator before members can post — so you only trade with real teammates from your location.",
     border: 'border-l-warning',
     iconBg: 'bg-warning/10',
     iconColor: 'text-warning',
@@ -63,7 +63,7 @@ const features = [
     icon: Users,
     title: 'Built-In Moderation',
     description:
-      'Built for shift workers, by shift workers. Board-run moderation and a simple flagging system keep the Wall clean, current, and trustworthy — no corporate oversight required.',
+      'Built for our teams, by someone who knows your team. Board-run moderation and a simple flagging system keep the Wall clean, current, and trustworthy — no corporate oversight required.',
     border: 'border-l-secondary',
     iconBg: 'bg-secondary/30',
     iconColor: 'text-primary',

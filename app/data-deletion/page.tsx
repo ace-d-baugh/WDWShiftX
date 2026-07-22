@@ -34,7 +34,7 @@ export default async function DataDeletionPage() {
           {/* Overview */}
           <section>
             <p className="text-base">
-              WDWShiftX (operated by Digital Elegance LLC) is committed to your privacy. Whether you
+              WDWShiftX (operated by one private individual LLC) is committed to your privacy. Whether you
               signed up with an email address or through Google, Facebook, or LinkedIn, this page
               explains exactly how to delete your account and personal data.
             </p>

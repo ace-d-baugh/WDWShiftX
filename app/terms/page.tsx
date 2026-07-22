@@ -19,7 +19,7 @@ export default async function TermsPage() {
             <h2 className="font-accent text-xl font-bold text-text mb-3">1. Acceptance of Terms</h2>
             <p>
               These Terms &amp; Conditions (&ldquo;Terms&rdquo;) govern your access to and use of WDWShiftX,
-              operated by Digital Elegance LLC d/b/a WDWShiftX (&ldquo;WDWShiftX,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
+              operated by one private individual LLC d/b/a WDWShiftX (&ldquo;WDWShiftX,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
               By creating an account or using the Service in any way, you agree to be bound by these Terms.
               If you do not agree, do not register or use the Service.
             </p>
@@ -392,7 +392,7 @@ export default async function TermsPage() {
 
         <div className="mt-10 pt-6 border-t border-border">
           <p className="text-xs text-text/40 text-center">
-            WDWShiftX is operated by Digital Elegance LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
+            WDWShiftX is operated by one private individual LLC and is not affiliated with, sponsored by, or endorsed by any employer or organization whose employees may use the Service.
           </p>
         </div>
       </div>
