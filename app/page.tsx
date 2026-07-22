@@ -169,7 +169,7 @@ export default async function HomePage() {
           <div className="animate-fade-in" style={{ animationDelay: '0ms' }}>
             <span className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-2 text-sm font-medium mb-6">
               <Zap className="w-4 h-4" />
-              Built for Shift Workers
+              Built for You
             </span>
           </div>
 
@@ -191,9 +191,9 @@ export default async function HomePage() {
           {/* Sub-copy */}
           <div className="animate-fade-in-up" style={{ animationDelay: '320ms' }}>
             <p className="text-lg md:text-xl text-text/70 max-w-2xl mx-auto mb-10">
-              WDWShiftX is the dedicated shift board for your workplace. Post open shifts,
+              WDWShiftX is the dedicated shift board for us to use. Post open shifts,
               request coverage, and organize your calendar without digging through
-              fragmented texts or out-of-date feeds.
+              fragmented texts or out-of-date Facebook feeds.
             </p>
           </div>
 
@@ -224,7 +224,7 @@ export default async function HomePage() {
               Shift Happens. We Handle It.
             </h2>
             <p className="text-text/60 text-lg max-w-xl mx-auto">
-              A complete shift management solution designed specifically for shift workers.
+              A complete shift management solution designed specifically for you.
             </p>
           </AnimateIn>
 
@@ -257,9 +257,9 @@ export default async function HomePage() {
         <div className="max-w-screen-sm mx-auto text-center">
           <AnimateIn>
             <h2 className="font-accent text-2xl md:text-3xl font-bold text-text mb-3">
-              Built For Any Workplace
+              Built For You
             </h2>
-            <p className="text-text/60 mb-8">Find shifts across every property and department you work.</p>
+            <p className="text-text/60 mb-8">Find shifts that work for you.</p>
           </AnimateIn>
           <div className="flex flex-wrap justify-center gap-3">
             {INDUSTRIES.map((industry, i) => (
@@ -333,7 +333,7 @@ export default async function HomePage() {
               Take Control of Your Work Week
             </h2>
             <p className="text-white/80 text-lg mb-8">
-              Set up a private board for your workplace in less than two minutes.
+              Join our private board in less than two minutes.
             </p>
             <Link
               href="/register"
