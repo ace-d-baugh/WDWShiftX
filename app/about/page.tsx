@@ -40,12 +40,10 @@ export default async function AboutPage() {
           <section className="card shadow-sm">
             <h2 className="font-accent text-xl font-bold text-text mb-3">How it works</h2>
             <p>
-              Anyone can spin up a board for their specific team, location, or department in
-              seconds and share a secure invite code with their co-workers — no manager
-              sign-off, no IT ticket. Once your team is in, anyone can post an offer, claim a
-              shift, or coordinate directly on the Wall. Built-in moderation tools keep board
-              admins in control of who joins and what gets posted, so the board stays as
-              trustworthy as the people on it.
+              Teams join a private, invite-only board using a 7-character code shared by their
+              organization. Once you&apos;re in, you can post an offer, claim a shift, or coordinate
+              directly on the Wall. Built-in moderation tools keep board admins in control of who
+              joins and what gets posted, so the board stays as trustworthy as the people on it.
             </p>
           </section>
 
@@ -66,10 +64,10 @@ export default async function AboutPage() {
           {/* CTA */}
           <section className="rounded-xl bg-primary text-center px-6 py-10">
             <h2 className="font-accent text-2xl font-bold text-white mb-2">
-              Ready to fix your team&apos;s schedule?
+              Ready to join your board?
             </h2>
             <p className="text-white/80 mb-6">
-              Create a board for your workplace in under two minutes.
+              Register with the invite code your team shared with you.
             </p>
             <Link
               href="/register"

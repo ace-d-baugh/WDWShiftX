@@ -54,7 +54,6 @@ export default async function DataDeletionPage() {
                 'Comments and interest marks on posts',
                 'Notification and display preferences (time zone, date format, dark mode)',
                 'OAuth connection record if you signed in via Google, Facebook, or LinkedIn',
-                'Subscription status and billing history (Pro accounts)',
               ].map(item => (
                 <li key={item} className="flex items-start gap-2 text-sm">
                   <CheckCircle className="w-4 h-4 text-success shrink-0 mt-0.5" />
@@ -63,26 +62,8 @@ export default async function DataDeletionPage() {
               ))}
             </ul>
             <p className="mt-3 text-sm text-text/60">
-              We do <strong>not</strong> store your passwords in readable form (only a cryptographic
-              hash), your full payment card numbers, CVV codes, or banking credentials — those are
-              handled entirely by Stripe and never reach our servers.
+              We do <strong>not</strong> store your passwords in readable form — only a cryptographic hash.
             </p>
-          </section>
-
-          {/* Pro subscription warning */}
-          <section className="card shadow-sm border-l-4 border-l-warning bg-warning/5">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-              <div className="space-y-1 text-sm">
-                <p className="font-semibold text-text">Pro subscribers: cancel before deleting</p>
-                <p className="text-text/70">
-                  If you have an active Pro subscription, please cancel it first through your
-                  Profile → Account Settings before requesting deletion. Deleting your account
-                  does not automatically cancel an active Stripe subscription, and you may continue
-                  to be billed until it is cancelled separately.
-                </p>
-              </div>
-            </div>
           </section>
 
           {/* Option 1 — Self-service */}
@@ -157,14 +138,6 @@ export default async function DataDeletionPage() {
               Certain records must be retained even after a deletion request due to legal obligations:
             </p>
             <ul className="space-y-1.5 list-none pl-0">
-              <li className="flex items-start gap-2 text-sm">
-                <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                <span>
-                  <strong>Billing and transaction records</strong> — retained for up to 7 years
-                  to comply with U.S. tax and financial record-keeping requirements. These records
-                  do not include your payment card details (managed by Stripe).
-                </span>
-              </li>
               <li className="flex items-start gap-2 text-sm">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <span>

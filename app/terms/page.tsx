@@ -11,7 +11,7 @@ export default async function TermsPage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <h1 className="font-accent text-3xl font-bold text-text mb-2">Terms &amp; Conditions</h1>
-        <p className="text-text/50 text-sm mb-8">Last updated: June 2026</p>
+        <p className="text-text/50 text-sm mb-8">Last updated: July 2026</p>
 
         <div className="prose prose-sm max-w-none space-y-6 text-text/80">
 
@@ -99,7 +99,6 @@ export default async function TermsPage() {
               <li>Impersonate any person or entity or misrepresent your affiliation with any person or entity</li>
               <li>Harass, threaten, intimidate, or demean any user</li>
               <li>Post false, misleading, or fraudulent information</li>
-              <li>Use the Service for any commercial purpose, including advertising or solicitation</li>
               <li>Use automated tools, bots, scrapers, or crawlers to access or collect data from the Service</li>
               <li>Reverse engineer, decompile, disassemble, or attempt to derive the source code of the Service</li>
               <li>Attempt to circumvent, disable, or interfere with security features of the Service</li>
@@ -115,7 +114,7 @@ export default async function TermsPage() {
               profanity, offensive, discriminatory, or sexually explicit language, harassment, unwanted
               advances, spam, and solicitation. Recipients can flag users who misuse messaging, and misuse
               may result in loss of messaging privileges, suspension, or permanent removal from the Service
-              (see Section 14). WDWShiftX may review message content when investigating a flag, abuse
+              (see Section 12). WDWShiftX may review message content when investigating a flag, abuse
               report, or suspected violation of these Terms.
             </p>
           </section>
@@ -159,61 +158,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">8. Subscription, Payments &amp; Refunds</h2>
-            <p>
-              WDWShiftX offers a free Basic tier and a paid Pro tier. Pro membership is available on the
-              following billing cycles, billed in advance:
-            </p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li><strong>Monthly:</strong> $5.99 / month</li>
-              <li><strong>6-Month:</strong> $31.99 every 6 months</li>
-              <li><strong>Annual:</strong> $53.99 / year</li>
-            </ul>
-            <p className="mt-3">
-              All payments are processed securely through Stripe. By providing payment information, you
-              authorize WDWShiftX to charge the applicable fee on a recurring basis until you cancel.
-            </p>
-            <p className="mt-3">
-              <strong>Cancellation:</strong> You may cancel your subscription at any time through your
-              account settings or by contacting support. Cancellations take effect at the end of the
-              current billing period. Access to Pro features continues until the period ends.
-            </p>
-            <p className="mt-3">
-              <strong>Refunds:</strong> All subscription fees are non-refundable except where required
-              by applicable law. Partial-period refunds are not provided upon cancellation.
-            </p>
-            <p className="mt-3">
-              <strong>Free Trials:</strong> If you activate a free trial, you will not be charged until
-              the trial period ends. You may cancel before the trial ends to avoid any charge. One free
-              trial per email address — additional accounts are not eligible.
-            </p>
-            <p className="mt-3">
-              WDWShiftX reserves the right to modify pricing at any time. Price changes will be communicated
-              at least 30 days in advance and will not affect the current billing period.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">9. SMS Notifications &amp; TCPA Compliance</h2>
-            <p>
-              Pro tier members may opt in to receive SMS notifications for shift matches and alerts.
-              By providing your mobile phone number and enabling SMS notifications, you expressly consent
-              to receive automated text messages from WDWShiftX at that number.
-            </p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Message frequency: up to 30 messages per month based on your activity</li>
-              <li>Message and data rates may apply based on your carrier plan</li>
-              <li>To opt out at any time, reply <strong>STOP</strong> to any message or disable SMS in your profile settings</li>
-              <li>For help, reply <strong>HELP</strong> or contact <a href="mailto:support@wdwshiftx.com" className="text-primary hover:underline">support@wdwshiftx.com</a></li>
-            </ul>
-            <p className="mt-3">
-              Consent to receive SMS is not a condition of purchasing any product or service.
-              WDWShiftX is not responsible for any charges incurred from your mobile carrier.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">10. Intellectual Property</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">8. Intellectual Property</h2>
             <p>
               The Service and all of its original content, features, functionality, design, code, logos,
               and trademarks are and will remain the exclusive property of Digital Elegance LLC and its
@@ -228,7 +173,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">11. Third-Party Services</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">9. Third-Party Services</h2>
             <p>
               WDWShiftX uses the following third-party services to operate. By using our Service, you
               acknowledge that your data may be processed by these providers in accordance with their
@@ -237,9 +182,7 @@ export default async function TermsPage() {
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><strong>Supabase</strong> — database hosting and authentication</li>
               <li><strong>Vercel</strong> — application hosting and delivery</li>
-              <li><strong>Stripe</strong> — payment processing for Pro subscriptions</li>
               <li><strong>Resend</strong> — transactional email delivery</li>
-              <li><strong>Twilio</strong> — SMS notifications (Pro tier)</li>
             </ul>
             <p className="mt-3">
               We are not responsible for the privacy practices or content of any third-party services.
@@ -249,7 +192,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">12. Privacy</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">10. Privacy</h2>
             <p>
               Your use of the Service is also governed by our{' '}
               <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>,
@@ -259,7 +202,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">13. DMCA &amp; Copyright Infringement</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">11. DMCA &amp; Copyright Infringement</h2>
             <p>
               WDWShiftX respects intellectual property rights. If you believe that content on the Service
               infringes your copyright, please submit a written notice to our designated DMCA agent at{' '}
@@ -280,7 +223,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">14. Termination</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">12. Termination</h2>
             <p>
               We reserve the right to suspend or terminate your account and access to the Service at any
               time, with or without notice, at our sole discretion, including but not limited to for
@@ -302,7 +245,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">15. Limitation of Liability &amp; Disclaimer of Warranties</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">13. Limitation of Liability &amp; Disclaimer of Warranties</h2>
             <p>
               THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND,
               EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
@@ -323,13 +266,12 @@ export default async function TermsPage() {
               <li>Any third-party content or conduct on the Service</li>
             </ul>
             <p className="mt-3">
-              In no event shall our total liability to you for all claims related to the Service exceed
-              the greater of $100 or the amount you paid WDWShiftX in the 12 months preceding the claim.
+              In no event shall our total liability to you for all claims related to the Service exceed $100.
             </p>
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">16. Indemnification</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">14. Indemnification</h2>
             <p>
               You agree to defend, indemnify, and hold harmless Digital Elegance LLC, its officers,
               directors, employees, agents, and licensors from and against any claims, damages, losses,
@@ -345,7 +287,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">17. Dispute Resolution &amp; Arbitration</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">15. Dispute Resolution &amp; Arbitration</h2>
             <p>
               <strong>Please read this section carefully — it affects your legal rights.</strong>
             </p>
@@ -376,17 +318,17 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">18. Governing Law</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">16. Governing Law</h2>
             <p>
               These Terms shall be governed by and construed in accordance with the laws of the State of
               Florida, without regard to its conflict of law provisions. To the extent any dispute is
-              not subject to arbitration under Section 17, you agree to submit to the personal and
+              not subject to arbitration under Section 15, you agree to submit to the personal and
               exclusive jurisdiction of the state and federal courts located in Florida.
             </p>
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">19. Force Majeure</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">17. Force Majeure</h2>
             <p>
               WDWShiftX shall not be liable for any failure or delay in performance resulting from causes
               beyond our reasonable control, including but not limited to acts of God, natural disasters,
@@ -396,7 +338,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">20. General Provisions</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">18. General Provisions</h2>
             <p>
               <strong>Severability:</strong> If any provision of these Terms is held to be invalid,
               illegal, or unenforceable, the remaining provisions will continue in full force and effect.
@@ -407,10 +349,10 @@ export default async function TermsPage() {
               only be effective if made in writing and signed by an authorized representative of WDWShiftX.
             </p>
             <p className="mt-3">
-              <strong>Entire Agreement:</strong> These Terms, together with our Privacy Policy, Cookie
-              Policy, and any other policies incorporated by reference, constitute the entire agreement
-              between you and WDWShiftX regarding the Service and supersede all prior agreements,
-              understandings, and communications between you and us.
+              <strong>Entire Agreement:</strong> These Terms, together with our Privacy Policy and any
+              other policies incorporated by reference, constitute the entire agreement between you and
+              WDWShiftX regarding the Service and supersede all prior agreements, understandings, and
+              communications between you and us.
             </p>
             <p className="mt-3">
               <strong>Assignment:</strong> You may not assign or transfer your rights or obligations
@@ -420,12 +362,12 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">21. Changes to These Terms</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">19. Changes to These Terms</h2>
             <p>
               We reserve the right to modify these Terms at any time. When we make material changes,
-              we will notify you by email to the address associated with your account at least 14 days
-              before the changes take effect. The updated Terms will also be posted on this page with
-              a revised &ldquo;Last updated&rdquo; date.
+              we will notify you by email to the address associated with your account before the changes
+              take effect. The updated Terms will also be posted on this page with a revised
+              &ldquo;Last updated&rdquo; date.
             </p>
             <p className="mt-3">
               Your continued use of the Service after the effective date of any update constitutes your
@@ -435,7 +377,7 @@ export default async function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-accent text-xl font-bold text-text mb-3">22. Contact Us</h2>
+            <h2 className="font-accent text-xl font-bold text-text mb-3">20. Contact Us</h2>
             <p>
               If you have questions, concerns, or feedback regarding these Terms, please contact us:
             </p>

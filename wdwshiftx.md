@@ -124,9 +124,11 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 - [x] Removed the dead (already `hidden`-classed, never rendered) "Users Are Saying Good Things" placeholder-testimonials section from `app/page.tsx` — its industry tags (Theme Parks, Retail Stores, Hotels & Resorts, etc.) were the same "works for any workplace" marketing conceit as the industry chips removed in Phase 2
 
 
-### Phase 7 — Legal/policy pages (🤝)
+### Phase 7 — Legal/policy pages (🤝) ✅ (code side)
 
-- [ ] Since this is an internal tool for employees of one operation, not a public consumer product: simplify or replace `app/privacy`, `app/terms`, `app/data-deletion`, `app/contact`, `app/about` — remove all ad/consent/GDPR-CMP language (no longer applicable with no ads), keep basic data-handling disclosure since you're still storing PII (names, shift schedules, messages) for 255 people
+- [x] Simplified `app/privacy`, `app/terms`, `app/data-deletion`, `app/about` for an internal tool: removed the GDPR Legal-Basis section, CCPA/EEA-GDPR rights subsections, International Data Transfers, and Do Not Track from the privacy policy; removed Subscription/Payments/Refunds and SMS/TCPA sections from the terms (Stripe is gone, SMS/Twilio was never actually implemented in code); dropped Stripe/Twilio from both pages' third-party-services lists; removed the Pro-subscriber cancellation warning and billing-record retention bullet from data deletion. Kept the genuinely still-applicable liability protections (disclaimer of non-affiliation, limitation of liability, indemnification, arbitration, DMCA) since Phase 7 only called for removing ad/consent/compliance language, not the operator's liability coverage
+- [x] Fixed a factual bug in `app/about` uncovered along the way: "How it works" and the CTA both described self-serve board creation ("Anyone can spin up a board... no manager sign-off," "Create a board... in under two minutes"), which Phase 5 made false. Rewrote both to describe the actual invite-code-only join flow
+- [x] `app/contact` needed no changes — it never had ad/GDPR/billing content
 - [ ] 🧑 Confirm whether this needs any sign-off from Disney/your employer's IT or legal, given it touches tour guide scheduling data — your call, flagging so it doesn't get missed
 
 ### Phase 8 — Verification (🤖, before rollout)
