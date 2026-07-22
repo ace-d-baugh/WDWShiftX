@@ -114,14 +114,14 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 - [ ] 🧑 Distribute each code to the matching team (DSAVIP7 → tour guides, VALET4U → valet team) via whatever channel you use today — people self-register at `app/(auth)/register?code=...` (or enter the code manually on the register/join screen) and land on the matching board automatically
 - [ ] ⚠️ Note on these two specific codes: `DSAVIP7` and `VALET4U` are human-memorable, not random-generated like MyShiftX's default 7-char codes — easy to share verbally/in a group chat, but also easier for someone outside the 255+30 to guess or pass along than a random code would be. Since registration is self-serve and public, anyone with the code can join. Existing rate-limit/lockout in `lookupBoardByCode()` (5 failed attempts/60s, auto-deactivate after 15/24h) still protects against brute-forcing an *unknown* code, but doesn't stop a known code from spreading beyond the intended team. If that becomes a problem post-launch, rotate the code (`regenerateInviteCode()` already exists) and redistribute — low effort, no code change needed.
 
-### Phase 6 — Rebranding (🤖 code, 🧑 assets)
+### Phase 6 — Rebranding (🤖 code, 🧑 assets) ✅
 
 - ✅ 🧑 Provide app name, logo, favicon, theme color, and any copy changes you want (currently everything says "MyShiftX")
-- [ ] 🤖 Update `app/manifest.ts` (name/short_name/description/theme_color) - Is This done?
-- [ ] 🤖 Update hardcoded domain references (~28 files) from `myshiftx.com` → `wdwshiftx.com`: `app/layout.tsx` (metadataBase, OpenGraph), `app/sitemap.ts`, `app/robots.ts`, `lib/stripe.ts` (deleted in Phase 3, moot), `lib/ical.ts` (iCal UID domain), `components/email-template.tsx`, `lib/email-constants.ts`, `components/features/InviteModal.tsx`, and the rest found by grepping `myshiftx.com` Is This done?
-- [ ] 🤖 Update `package.json` name field, `README.md` - Is This done?
+- [x] 🤖 `app/manifest.ts` already fully rebranded — name/short_name/description all say WDWShiftX
+- [x] 🤖 Hardcoded domain references — confirmed via `grep -ri myshiftx` across the whole codebase: zero hits outside `TASKS.md` (legacy MyShiftX business/legal task board, not app code) and already-applied historical migration files (never edited for cosmetic reasons). The ~28-file sweep referenced here was already done earlier in this migration
+- [x] 🤖 `package.json` name field was already `wdwshiftx`. Rewrote `README.md`'s status line, Board System feature bullet (board creation no longer self-serve), and Roadmap/Contributing sections, which still described the old public multi-tenant product (Stripe monetization, public launch, 500+ users, outside contributions) — none of which applies to this private internal fork
 - ✅ 🧑 Replace icon/logo asset files (`app/apple-icon.png`, favicon, any `public/` logo images) with WDW ShiftX branding
-- [ ] Remove Landing page stuff like in the One Board, Everyone Included Find shifts that work for you section: Locations like Retail, Hotels & Resorts, Theme Parks, etc.
+- [x] Removed the dead (already `hidden`-classed, never rendered) "Users Are Saying Good Things" placeholder-testimonials section from `app/page.tsx` — its industry tags (Theme Parks, Retail Stores, Hotels & Resorts, etc.) were the same "works for any workplace" marketing conceit as the industry chips removed in Phase 2
 
 
 ### Phase 7 — Legal/policy pages (🤝)

@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.7.0--beta-orange.svg)](package.json)
 
-**Status:** Beta — core product (auth, boards, wall, moderation, notifications, calendar sync, in-app messaging) is feature-complete. Monetization (Stripe checkout) and legal/business formation are still in progress ahead of public launch (`1.0.0`). See [TASKS.md](TASKS.md) for the full breakdown.
+**Status:** Private internal fork — no ads, no billing, no public registration. Locked to two pre-seeded, invite-only boards. See [wdwshiftx.md](wdwshiftx.md) for the migration plan and checklist.
 
 **⚠️ Disclaimer:** WDWShiftX is an independent platform and is not affiliated with, sponsored by, or endorsed by any specific employer.
 
@@ -23,7 +23,7 @@
 - [Development](#development)
 - [Database Schema](#database-schema)
 - [Security & Privacy](#security--privacy)
-- [Roadmap](#roadmap)
+- [Status](#status)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -91,10 +91,9 @@ WDWShiftX provides:
 - Auto-expires at end of requested date
 
 ### 🏷️ Board System
-- Private boards joined via 7-character invite codes
-- Leaders create boards and manage invite codes (pause/resume, regenerate)
-- Users can leave boards; Leaders can delete boards
-- Pending join requests shown to Mods/Leaders for approval
+- Two pre-seeded, private boards, joined via 7-character invite codes at onboarding
+- Self-serve board creation is disabled — boards are fixed for this fork
+- Leaders manage invite codes (pause/resume, regenerate); Mods/Leaders review pending join requests
 - Join attempt rate limiting: 5 attempts/minute, 15 failures/24h → account deactivation
 
 ### 🚩 Moderation & Flagging
@@ -258,47 +257,15 @@ npm run db:reset     # Reset local database (dev only)
 
 ---
 
-## Roadmap
+## Status
 
-### Phase 1: Alpha (Current)
-- [x] Authentication flow (register, verify, login, reset password)
-- [x] Board system (create, join, leave, manage invite codes)
-- [x] The Wall — unified shift/request feed with filtering
-- [x] Post shift offers and requests scoped to boards
-- [x] Board-level moderation (approvals, flags, archive)
-- [x] Admin panel (manage users and boards)
-- [x] PWA support
-
-### Phase 2: Beta
-- [ ] Invite-only launch
-- [ ] Push notifications
-- [ ] Trade loop — claim a shift, owner confirms, completion tracked (reliability records that solve ghosting)
-- [ ] Schedule-first onboarding — photo schedule import in the first session, so the app is useful solo on day one
-- [ ] iOS push via guided Add-to-Home-Screen install flow
-- [ ] Performance optimization and monitoring
-
-### Phase 3: Public Launch
-- [ ] Broader rollout
-- [ ] Marketing to shift-trading communities ("N shifts covered on WDWShiftX" as the proof point)
-- [ ] 500+ verified users
-
-### Future Enhancements
-- Automated shift matching
-- Weekly board-activity digest emails
-- Product analytics & error tracking (PostHog / Sentry — under discussion)
-- Analytics dashboard for Leaders
-- Multi-language support (Spanish, Portuguese)
+Core product (auth, boards, wall, moderation, notifications, calendar sync, in-app messaging, PWA support) is feature-complete and running as a private internal tool for two pre-seeded teams. See [wdwshiftx.md](wdwshiftx.md) for the full migration checklist from the original multi-tenant product.
 
 ---
 
 ## Contributing
 
-This is currently a solo project, but contributions are welcome once the alpha is stable.
-
-### Guidelines
-- Follow existing code style (Prettier + ESLint configs)
-- Write tests for new features
-- Update documentation for API changes
+This is a solo-maintained internal tool — not open to outside contributions.
 
 ---
 

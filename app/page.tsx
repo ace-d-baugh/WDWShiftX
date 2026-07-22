@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, RefreshCw, Gift, Clock, Shield, Users, Zap, Star, Quote } from 'lucide-react'
+import { ArrowRight, RefreshCw, Gift, Clock, Shield, Users, Zap } from 'lucide-react'
 import { AnimateIn } from '@/components/landing/AnimateIn'
 import { LandingHeader } from '@/components/landing/LandingHeader'
 import { Footer } from '@/components/landing/Footer'
@@ -67,60 +67,6 @@ const features = [
     border: 'border-l-secondary',
     iconBg: 'bg-secondary/30',
     iconColor: 'text-primary',
-  },
-]
-
-// Placeholder testimonials — swap for real user reviews once collected.
-// Each carries an industry tag matching the "Built For Any Workplace" chips
-// above, so the reviews grid reads as coverage across workplaces.
-const placeholderReviews = [
-  {
-    name: 'Jamie T.',
-    role: 'Attractions Team Member',
-    industry: 'Theme Parks',
-    quote:
-      "I picked up three extra shifts in my first week just from the board. So much easier than scrolling through a group chat.",
-    rating: 5,
-  },
-  {
-    name: 'Morgan R.',
-    role: 'Quick Service Associate',
-    industry: 'Restaurants',
-    quote:
-      "Posted a shift I couldn't cover and had someone take it within the hour. The filters make it easy to find people who actually work your role.",
-    rating: 5,
-  },
-  {
-    name: 'Casey L.',
-    role: 'Merchandise Associate',
-    industry: 'Retail Stores',
-    quote:
-      "Love that everything auto-expires. No more digging through a feed full of shifts that already happened.",
-    rating: 4,
-  },
-  {
-    name: 'Devon P.',
-    role: 'Custodial Team Member',
-    industry: 'Event Venues',
-    quote:
-      "Knowing every role and location on the board is verified makes a huge difference. Feels a lot safer than the old way of trading shifts.",
-    rating: 5,
-  },
-  {
-    name: 'Riley S.',
-    role: 'Front Desk Associate',
-    industry: 'Hotels & Resorts',
-    quote:
-      "Requesting a day off and having people reach out directly saved me so much back-and-forth in group chats.",
-    rating: 5,
-  },
-  {
-    name: 'Avery K.',
-    role: 'Lifeguard',
-    industry: 'Theme Parks',
-    quote:
-      "Clean, simple, and built by people who actually understand how shift trading works.",
-    rating: 4,
   },
 ]
 
@@ -249,49 +195,6 @@ export default async function HomePage() {
 
       {/* ── Photo Schedule Import highlight (gated with the feature) ── */}
       {importEnabled && <PhotoImportHighlight />}
-
-      {/* ── Reviews — hidden until real user reviews are collected ── */}
-      <section className="hidden py-20 px-4 bg-background">
-        <div className="max-w-6xl mx-auto">
-
-          <AnimateIn className="text-center mb-14">
-            <h2 className="font-accent text-3xl md:text-4xl font-bold text-text mb-4">
-              Users Are Saying Good Things
-            </h2>
-            <p className="text-text/60 text-lg max-w-xl mx-auto">
-              Real feedback from the people trading shifts every day.
-            </p>
-          </AnimateIn>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {placeholderReviews.map((review, i) => (
-              <AnimateIn key={review.name} delay={i * 90}>
-                <div className="card h-full flex flex-col">
-                  <Quote className="w-6 h-6 text-primary/30 mb-3" />
-                  <div className="flex items-center gap-0.5 mb-3">
-                    {Array.from({ length: 5 }).map((_, idx) => (
-                      <Star
-                        key={idx}
-                        className={`w-4 h-4 ${idx < review.rating ? 'text-warning fill-current' : 'text-text/15'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-text/70 text-sm leading-relaxed flex-1">&quot;{review.quote}&quot;</p>
-                  <div className="mt-4 pt-4 border-t border-border flex items-end justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-text text-sm">{review.name}</p>
-                      <p className="text-text/50 text-xs">{review.role}</p>
-                    </div>
-                    <span className="shrink-0 text-[10px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5">
-                      {review.industry}
-                    </span>
-                  </div>
-                </div>
-              </AnimateIn>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── CTA ── */}
       <section className="relative overflow-hidden py-20 px-4 bg-primary">
