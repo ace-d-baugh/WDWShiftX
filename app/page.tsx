@@ -80,7 +80,7 @@ const placeholderReviews = [
     role: 'Attractions Team Member',
     industry: 'Theme Parks',
     quote:
-      "I picked up three extra shifts in my first week just from the board. So much easier than scrolling through a Facebook group.",
+      "I picked up three extra shifts in my first week just from the board. So much easier than scrolling through a group chat.",
     rating: 5,
   },
   {
@@ -169,7 +169,7 @@ export default async function HomePage() {
           <div className="animate-fade-in" style={{ animationDelay: '0ms' }}>
             <span className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-2 text-sm font-medium mb-6">
               <Zap className="w-4 h-4" />
-              Built for You
+              Made for Your Team
             </span>
           </div>
 
@@ -191,9 +191,9 @@ export default async function HomePage() {
           {/* Sub-copy */}
           <div className="animate-fade-in-up" style={{ animationDelay: '320ms' }}>
             <p className="text-lg md:text-xl text-text/70 max-w-2xl mx-auto mb-10">
-              WDWShiftX is the dedicated shift board for us to use. Post open shifts,
-              request coverage, and organize your calendar without digging through
-              fragmented texts or out-of-date Facebook feeds.
+              WDWShiftX is a private shift board built for your team. Post open shifts,
+              request coverage, and keep your calendar organized — no more digging
+              through group chats or outdated feeds.
             </p>
           </div>
 
@@ -257,7 +257,7 @@ export default async function HomePage() {
         <div className="max-w-screen-sm mx-auto text-center">
           <AnimateIn>
             <h2 className="font-accent text-2xl md:text-3xl font-bold text-text mb-3">
-              Built For You
+              One Board, Everyone Included
             </h2>
             <p className="text-text/60 mb-8">Find shifts that work for you.</p>
           </AnimateIn>
