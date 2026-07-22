@@ -38,7 +38,7 @@ This gives you full data isolation (tour guide PII and shift data never touches 
 | Live Wall instant updates | ❌ (polling) | ✅ | **✅ — always on** |
 | Instant match-alert emails | ❌ | ✅ | ❌ (leave as Basic; can flip on later, trivial change) |
 | Calendar sync (Google/Apple/Outlook) | ❌ | ✅ | **✅ — always on** |
-| Premium themes | ❌ | ✅ | ❌ (leave as Basic, unless you want to just unlock them for fun — costs nothing) |
+| Premium themes | ❌ | ✅ | **✅ — unlocked for everyone (2026-07-22)** |
 | Billing / Stripe / upgrade prompts | — | — | **Removed entirely, not just hidden** |
 | Board creation (self-serve) | ✅ any user | ✅ any user | **❌ disabled — only 2 boards ever exist** |
 | Board joining (self-serve by code) | ✅ any board | ✅ any board | **❌ disabled — pre-assigned to one of the 2 boards** |
@@ -101,8 +101,8 @@ Legend: 🤖 = I can do this (code/config), 🧑 = only you can do this (externa
 
 - [x] Live Wall instant updates unconditional — `wall/page.tsx` now passes `liveWall={true}`
 - [x] Calendar sync unconditional — `calendar/page.tsx` now passes `isPro={true}`; DB-side gate removed via new migration `20260722120000_ical_feed_always_on.sql` (`get_or_create_ical_token`/`reset_ical_token` no longer check membership at all — cleaner than the doc's suggested "set membership='Pro' for everyone" workaround)
-- [x] Premium themes and unlimited photo import left gated OFF — `ProfileClient.tsx` now uses a dedicated `PREMIUM_THEMES_UNLOCKED = false` constant instead of reusing `isPro`
-- [x] Replaced the tier-flag approach with direct per-feature hardcoding (`liveWall={true}`, `isPro={true}`, `PREMIUM_THEMES_UNLOCKED = false`) rather than keeping a `Basic|Pro|Trial` enum driving unrelated features — `Membership`/`isProTier` still exist in `session.ts` solely for the intentionally-still-gated match-alert emails
+- [x] Premium themes (Nordic, Kitty, Midnight, Cyberpunk) initially left gated OFF via a dedicated `PREMIUM_THEMES_UNLOCKED` constant in `ProfileClient.tsx` instead of reusing `isPro`; flipped to `true` on 2026-07-22 per request — unlocked for everyone. Unlimited photo import stays Basic-only (4/month)
+- [x] Replaced the tier-flag approach with direct per-feature hardcoding (`liveWall={true}`, `isPro={true}`, `PREMIUM_THEMES_UNLOCKED = true`) rather than keeping a `Basic|Pro|Trial` enum driving unrelated features — `Membership`/`isProTier` still exist in `session.ts` solely for the intentionally-still-gated match-alert emails
 
 ### Phase 5 — Lock down to 2 boards (🤖, code + 🧑 seed data) ✅ (code side)
 

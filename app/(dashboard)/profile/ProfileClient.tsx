@@ -36,10 +36,10 @@ interface ProfileClientProps {
   sessionUserId: string
 }
 
-// Premium (seasonal/Pro) themes stay locked for everyone — no billing tier
-// in this fork to unlock them. Flip to true to unlock them for fun; costs
-// nothing since the theme CSS itself is already shipped.
-const PREMIUM_THEMES_UNLOCKED = false
+// Premium (seasonal/Pro) themes — Nordic, Kitty, Midnight, Cyberpunk —
+// unlocked for everyone. No billing tier in this fork, so there's no
+// paywall to enforce; the theme CSS was already shipped either way.
+const PREMIUM_THEMES_UNLOCKED = true
 
 // Theme picker grid placement: mobile is 2 columns / 3 rows, desktop (sm+) is
 // 3 columns / 2 rows, and each wants a DIFFERENT visual grouping (light
