@@ -1,5 +1,6 @@
 import { requireAdmin } from '@/lib/auth/session'
 import { AdminClient } from './AdminClient'
+import type { PostStats } from './AdminCharts'
 import type { GlobalRole } from '@/lib/database.types'
 
 export const dynamic = 'force-dynamic'
@@ -41,12 +42,7 @@ export default async function AdminPage() {
       boards={boards as { id: string; name: string; slug: string; invite_code_enabled: boolean; is_active: boolean; created_at: string; member_count: number }[]}
       users={(usersRes.data ?? []) as unknown as { id: string; display_name: string | null; role: GlobalRole; is_active: boolean; created_at: string }[]}
       adminId={user.id}
-      postStats={postStatsRes.data as {
-        shifts_total: number; shifts_active: number; shifts_user_removed: number; shifts_expired: number
-        shifts_covered: number; shifts_leader_removed: number; shifts_trade: number; shifts_giveaway: number
-        requests_total: number; requests_active: number; requests_user_removed: number; requests_expired: number
-        requests_leader_removed: number
-      } | null}
+      postStats={postStatsRes.data as PostStats | null}
     />
   )
 }

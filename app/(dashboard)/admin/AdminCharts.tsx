@@ -12,8 +12,9 @@ export interface PostStats {
   shifts_expired: number
   shifts_covered: number
   shifts_leader_removed: number
-  shifts_trade: number
-  shifts_giveaway: number
+  shifts_trade_only: number
+  shifts_giveaway_only: number
+  shifts_both: number
   requests_total: number
   requests_active: number
   requests_user_removed: number
@@ -34,6 +35,13 @@ const EXPIRED = { key: 'expired', label: 'Timed Out', color: '#D9720F' }
 const USER_REMOVED = { key: 'user_removed', label: 'Self-Deleted', color: '#1E8FD1' }
 const COVERED = { key: 'covered', label: 'Traded/Given Away', color: '#AA8F09' }
 const LEADER_REMOVED = { key: 'leader_removed', label: 'Removed by Mod', color: '#D14D5C' }
+
+// Same three colors ShiftCard.tsx already uses for these badges
+// (text-info/text-success/text-primary), darkened for chart-mark use and
+// validated for contrast/CVD separation.
+const TRADE = { label: 'Trade', color: '#1E8FD1' }
+const GIVEAWAY = { label: 'Giveaway', color: '#4C9A3A' }
+const BOTH = { label: 'Give/Trade', color: '#7A3FE0' }
 
 function OutcomeChart({ title, data }: { title: string; data: { label: string; value: number; color: string }[] }) {
   return (
@@ -101,7 +109,12 @@ export function AdminCharts({ stats }: AdminChartsProps) {
     { label: LEADER_REMOVED.label, value: stats.requests_leader_removed, color: LEADER_REMOVED.color },
   ]
 
-  const tradeTotal = stats.shifts_trade + stats.shifts_giveaway
+  const tradeTypeData = [
+    { label: TRADE.label, value: stats.shifts_trade_only, color: TRADE.color },
+    { label: GIVEAWAY.label, value: stats.shifts_giveaway_only, color: GIVEAWAY.color },
+    { label: BOTH.label, value: stats.shifts_both, color: BOTH.color },
+  ]
+  const tradeTypeTotal = stats.shifts_trade_only + stats.shifts_giveaway_only + stats.shifts_both
 
   return (
     <div className="space-y-4">
@@ -119,36 +132,9 @@ export function AdminCharts({ stats }: AdminChartsProps) {
       <OutcomeChart title="Shift Post Outcomes" data={shiftData} />
       <OutcomeChart title="Request Post Outcomes" data={requestData} />
 
-      {/* Bonus: what kind of shifts get posted */}
-      {tradeTotal > 0 && (
-        <div className="card">
-          <h3 className="font-accent font-bold text-text mb-3">Trades vs. Giveaways</h3>
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-3 rounded-full overflow-hidden bg-text/10 flex">
-              <div
-                className="h-full"
-                style={{ width: `${(stats.shifts_trade / tradeTotal) * 100}%`, backgroundColor: ACTIVE.color }}
-                title={`${stats.shifts_trade} trades`}
-              />
-              <div
-                className="h-full"
-                style={{ width: `${(stats.shifts_giveaway / tradeTotal) * 100}%`, backgroundColor: COVERED.color }}
-                title={`${stats.shifts_giveaway} giveaways`}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-text/60">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: ACTIVE.color }} />
-              Trades — {stats.shifts_trade.toLocaleString()}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: COVERED.color }} />
-              Giveaways — {stats.shifts_giveaway.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Bonus: what kind of shifts get posted — same Trade/Giveaway/Give-Trade
+          colors as the badges on the Wall itself */}
+      {tradeTypeTotal > 0 && <OutcomeChart title="Trade vs. Giveaway vs. Both" data={tradeTypeData} />}
     </div>
   )
 }

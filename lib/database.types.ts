@@ -825,9 +825,9 @@ export interface Database {
         Args: Record<string, never>
         Returns: {
           shifts_total: number; shifts_active: number; shifts_user_removed: number; shifts_expired: number
-          shifts_covered: number; shifts_leader_removed: number; shifts_trade: number; shifts_giveaway: number
-          requests_total: number; requests_active: number; requests_user_removed: number; requests_expired: number
-          requests_leader_removed: number
+          shifts_covered: number; shifts_leader_removed: number; shifts_trade_only: number; shifts_giveaway_only: number
+          shifts_both: number; requests_total: number; requests_active: number; requests_user_removed: number
+          requests_expired: number; requests_leader_removed: number
         }[]
       }
     }
