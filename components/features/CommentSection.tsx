@@ -36,6 +36,12 @@ interface CommentSectionProps {
   interestedCount: number
   boardId?: string
   actions?: React.ReactNode
+  /** Rendered first in the pill row, before Comments — shifts use this for
+   * their "I'll take this" claim control (requests have no equivalent). */
+  leadingAction?: React.ReactNode
+  /** Off for shifts — "I'll take this" replaces marking interest there.
+   * Requests have no claim system, so they keep it. Default true. */
+  showInterest?: boolean
   /** Post owner's user id — enables the "Message" pill for non-owners */
   ownerUserId?: string | null
   openCommentsTick?: number
@@ -53,6 +59,8 @@ export function CommentSection({
   interestedCount,
   boardId,
   actions,
+  leadingAction,
+  showInterest = true,
   ownerUserId,
   openCommentsTick,
   interestTick,
@@ -118,7 +126,7 @@ export function CommentSection({
   }, [openCommentsTick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (interestTick && !isOwner && currentUserId && !posting) handleInterestedPillClick() // eslint-disable-line react-hooks/exhaustive-deps
+    if (showInterest && interestTick && !isOwner && currentUserId && !posting) handleInterestedPillClick() // eslint-disable-line react-hooks/exhaustive-deps
   }, [interestTick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -303,6 +311,7 @@ export function CommentSection({
     <>
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 pt-3 mt-3 border-t border-border">
         <div className="flex items-center gap-2">
+          {leadingAction}
           <button
             type="button"
             onClick={toggleComments}
@@ -312,27 +321,29 @@ export function CommentSection({
             <span className="hidden sm:inline">Comments </span>({displayCommentCount})
             <ChevronDown className={cn('w-3 h-3 transition-transform', commentsOpen && 'rotate-180')} />
           </button>
-          <button
-            type="button"
-            onClick={handleInterestedPillClick}
-            disabled={isOwner ? false : !currentUserId || posting}
-            className={cn(
-              'badge inline-flex items-center gap-1 transition-colors shrink-0',
-              isOwner
-                ? 'bg-secondary-accent/20 text-text hover:bg-secondary-accent/30 cursor-pointer'
-                : myInterest
-                  ? 'bg-secondary-accent/20 text-text cursor-default'
-                  : currentUserId
-                    ? 'bg-text/10 text-text/60 hover:bg-primary-light cursor-pointer'
-                    : 'bg-text/10 text-text/50 cursor-default'
-            )}
-          >
-            {(displayInterestedCount > 0 || myInterest)
-              ? <Star className="w-3.5 h-3.5 text-secondary-accent" fill="#ffea80" strokeWidth={0} />
-              : <Star className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Interested </span>({displayInterestedCount})
-            {isOwner && <ChevronDown className={cn('w-3 h-3 transition-transform', interestedOpen && 'rotate-180')} />}
-          </button>
+          {showInterest && (
+            <button
+              type="button"
+              onClick={handleInterestedPillClick}
+              disabled={isOwner ? false : !currentUserId || posting}
+              className={cn(
+                'badge inline-flex items-center gap-1 transition-colors shrink-0',
+                isOwner
+                  ? 'bg-secondary-accent/20 text-text hover:bg-secondary-accent/30 cursor-pointer'
+                  : myInterest
+                    ? 'bg-secondary-accent/20 text-text cursor-default'
+                    : currentUserId
+                      ? 'bg-text/10 text-text/60 hover:bg-primary-light cursor-pointer'
+                      : 'bg-text/10 text-text/50 cursor-default'
+              )}
+            >
+              {(displayInterestedCount > 0 || myInterest)
+                ? <Star className="w-3.5 h-3.5 text-secondary-accent" fill="#ffea80" strokeWidth={0} />
+                : <Star className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">Interested </span>({displayInterestedCount})
+              {isOwner && <ChevronDown className={cn('w-3 h-3 transition-transform', interestedOpen && 'rotate-180')} />}
+            </button>
+          )}
           {!isOwner && currentUserId && ownerUserId && (
             <button
               type="button"
@@ -355,7 +366,7 @@ export function CommentSection({
 
       {error && <p className="text-xs text-warning mt-1.5">{error}</p>}
 
-      {interestedOpen && isOwner && (
+      {showInterest && interestedOpen && isOwner && (
         <div className="mt-3 p-3 bg-primary-light/40 rounded-lg">
           {loading && comments === null ? (
             <div className="flex justify-center py-2"><LoadingSpinner size="sm" /></div>
@@ -401,7 +412,7 @@ export function CommentSection({
                 maxLength={500}
               />
               <div className="flex items-center justify-between gap-2">
-                {!isOwner ? (
+                {!isOwner && showInterest ? (
                   <button
                     type="button"
                     onClick={() => setIsInterested(v => !v)}

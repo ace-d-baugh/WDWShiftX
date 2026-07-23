@@ -10,12 +10,12 @@ import { getSettings } from '@/lib/settings'
 import { slugify } from '@/lib/slug'
 import {
   Clock, LayoutGrid, User, Flag, Pencil, Trash2,
-  MoreVertical, MessageSquare, Star, Send, ChevronDown, HeartHandshake as Handshake,
+  MoreVertical, MessageSquare, Send, ChevronDown, HeartHandshake as Handshake,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { FlagModal } from '@/components/features/FlagModal'
 import { CommentSection } from '@/components/features/CommentSection'
-import { ClaimSection, type MyClaim, type PendingClaim, type TradeStats } from '@/components/features/ClaimSection'
+import { ClaimSection, ClaimPill, type MyClaim, type PendingClaim, type TradeStats } from '@/components/features/ClaimSection'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/utils'
 
@@ -48,13 +48,16 @@ interface ShiftCardProps {
   /** Trade Loop (Task 21) — supplied by WallClient */
   myClaim?: MyClaim | null
   pendingClaims?: PendingClaim[]
+  /** Total pending claimants — shown on the "I'll take this" control even
+   * for viewers who can't see individual claims (see ClaimPill). */
+  claimCount?: number
   posterStats?: TradeStats
   onClaimChanged?: () => void
 }
 
 export function ShiftCard({
   shift, currentUserId, currentUserName, onDeactivate,
-  myClaim, pendingClaims, posterStats, onClaimChanged,
+  myClaim, pendingClaims, claimCount, posterStats, onClaimChanged,
 }: ShiftCardProps) {
   const router = useRouter()
   const [flagOpen, setFlagOpen] = useState(false)
@@ -64,7 +67,6 @@ export function ShiftCard({
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const [openCommentsTick, setOpenCommentsTick] = useState(0)
-  const [interestTick, setInterestTick] = useState(0)
   const [messageTick, setMessageTick] = useState(0)
 
   const isOwner = currentUserId && shift.user_id === currentUserId
@@ -197,18 +199,15 @@ export function ShiftCard({
           </div>
         </div>
 
-        {/* Trade Loop: claim button (non-owners) / pending-claims panel (owner) */}
-        {shift.board_id && shift.user_id && currentUserId && (
+        {/* Trade Loop: owner's pending-claims management panel */}
+        {isOwner && (
           <ClaimSection
-            shiftId={shift.id}
-            isOwner={!!isOwner}
-            myClaim={myClaim}
             pendingClaims={pendingClaims}
             onChanged={onClaimChanged}
           />
         )}
 
-        {/* Comments / Interest / Contact | Badges */}
+        {/* Comments / Claim / Contact | Badges */}
         <CommentSection
           postType="shift"
           postId={shift.id}
@@ -220,8 +219,18 @@ export function ShiftCard({
           boardId={shift.board_id ?? undefined}
           ownerUserId={shift.user_id}
           openCommentsTick={openCommentsTick}
-          interestTick={interestTick}
           messageTick={messageTick}
+          showInterest={false}
+          leadingAction={
+            !isOwner && shift.board_id && shift.user_id && currentUserId ? (
+              <ClaimPill
+                shiftId={shift.id}
+                myClaim={myClaim}
+                claimCount={claimCount ?? 0}
+                onChanged={onClaimChanged}
+              />
+            ) : undefined
+          }
           actions={
             <div className="flex items-center gap-1">
               {isBoth ? (
@@ -270,9 +279,6 @@ export function ShiftCard({
                   onClick={() => { setMessageTick(t => t + 1); setMenuPos(null) }}
                 >
                   <Send className="w-3.5 h-3.5 shrink-0" /> Message
-                </button>
-                <button className={menuItemCls} onClick={() => { setInterestTick(t => t + 1); setMenuPos(null) }}>
-                  <Star className="w-3.5 h-3.5 shrink-0" /> Show Interest
                 </button>
                 <button className={menuItemCls} onClick={() => { setFlagOpen(true); setMenuPos(null) }}>
                   <Flag className="w-3.5 h-3.5 shrink-0" /> Flag

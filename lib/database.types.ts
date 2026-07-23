@@ -822,6 +822,10 @@ export interface Database {
         Args: { p_user_ids: string[] }
         Returns: { user_id: string; picked_up: number; covered: number; fell_through: number }[]
       }
+      get_shift_claim_counts: {
+        Args: { p_shift_ids: string[] }
+        Returns: { shift_id: string; pending_count: number }[]
+      }
       get_post_stats_admin: {
         Args: Record<string, never>
         Returns: {

@@ -115,6 +115,11 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
   const [pendingByShift, setPendingByShift] = useState<Map<string, PendingClaim[]>>(new Map())
   const [statsByUser, setStatsByUser] = useState<Map<string, TradeStats>>(new Map())
   const [awaitingFinalize, setAwaitingFinalize] = useState(0)
+  // Bare pending-claim counts for every visible shift, not just the ones the
+  // current user owns — shift_claims RLS only lets a claimant/owner see
+  // individual rows, so the "I'll take this (N)" count for a bystander comes
+  // from this identity-free aggregate instead.
+  const [claimCounts, setClaimCounts] = useState<Map<string, number>>(new Map())
 
   // Collapsed state for day-group accordions, persisted per user
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set())
@@ -264,7 +269,7 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
   const loadClaimData = useCallback(async (shiftList: ShiftData[]) => {
     const shiftIds = shiftList.map(s => s.id)
 
-    const [mineRes, pendingRes, acceptedRes] = await Promise.all([
+    const [mineRes, pendingRes, acceptedRes, countsRes] = await Promise.all([
       shiftIds.length
         ? supabase
             .from('shift_claims')
@@ -283,6 +288,11 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
         .select('id, shifts!shift_id(end_time)')
         .eq('owner_id', userId)
         .eq('status', 'accepted'),
+      // Bare counts for every visible shift, not just ones this user owns —
+      // powers the "I'll take this (N)" count for bystanders.
+      shiftIds.length
+        ? supabase.rpc('get_shift_claim_counts', { p_shift_ids: shiftIds })
+        : Promise.resolve({ data: [] }),
     ])
 
     // Latest claim per shift (a declined claimant may have claimed again)
@@ -325,10 +335,16 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       .filter(c => c.shifts && parseISO(c.shifts.end_time).getTime() < now)
       .length
 
+    const counts = new Map<string, number>()
+    for (const row of (countsRes.data ?? []) as { shift_id: string; pending_count: number }[]) {
+      counts.set(row.shift_id, row.pending_count)
+    }
+
     setMyClaims(mine)
     setPendingByShift(pending)
     setStatsByUser(stats)
     setAwaitingFinalize(awaiting)
+    setClaimCounts(counts)
   }, [supabase, userId])
 
   // Refresh claim state whenever the shift list changes (initial load,
@@ -806,6 +822,7 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
                         onDeactivate={handleDeactivateShift}
                         myClaim={myClaims.get(shift.id)}
                         pendingClaims={pendingByShift.get(shift.id)}
+                        claimCount={claimCounts.get(shift.id) ?? 0}
                         posterStats={shift.user_id ? statsByUser.get(shift.user_id) : undefined}
                         onClaimChanged={handleClaimChanged}
                       />
