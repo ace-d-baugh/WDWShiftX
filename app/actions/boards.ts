@@ -367,16 +367,56 @@ export async function transferBoardOwnership(
   }
 }
 
-// ── Remove a member from a board (Mod / Leader) ───────────────────────────────
+// ── Remove a member from a board (Mod / Leader / Admin) ───────────────────────
 
-export async function removeUserFromBoard(userBoardId: string): Promise<{ error?: string }> {
+export async function removeUserFromBoard(
+  userBoardId: string,
+  reassignToUserId?: string
+): Promise<{ error?: string; requiresReassignment?: boolean }> {
   try {
     const { supabase } = await getActionSession()
-    const { data: existing } = await supabase.from('user_boards').select('is_hidden').eq('id', userBoardId).single()
-    if (existing?.is_hidden) return { error: 'Cannot remove a hidden membership.' }
+    const { data: existing } = await supabase
+      .from('user_boards')
+      .select('is_hidden, role, board_id')
+      .eq('id', userBoardId)
+      .single()
+    if (!existing) return { error: 'Membership not found.' }
+    if (existing.is_hidden) return { error: 'Cannot remove a hidden membership.' }
+
+    // Removing the board's last Admin (Leader) would leave it ownerless —
+    // require promoting a replacement first, atomically with the removal.
+    if (existing.role === 'Leader') {
+      const { count: otherLeaders } = await supabase
+        .from('user_boards')
+        .select('id', { count: 'exact', head: true })
+        .eq('board_id', existing.board_id)
+        .eq('role', 'Leader')
+        .eq('is_approved', true)
+        .eq('is_hidden', false)
+        .neq('id', userBoardId)
+
+      if ((otherLeaders ?? 0) === 0) {
+        if (!reassignToUserId) {
+          return {
+            error: 'This is the only Admin on the board. Promote another member to Admin before removing them.',
+            requiresReassignment: true,
+          }
+        }
+        const { error: promoteErr } = await supabase
+          .from('user_boards')
+          .update({ role: 'Leader' })
+          .eq('board_id', existing.board_id)
+          .eq('user_id', reassignToUserId)
+          .eq('is_approved', true)
+          .eq('is_hidden', false)
+        if (promoteErr) return { error: promoteErr.message }
+      }
+    }
+
     const { error } = await supabase.from('user_boards').delete().eq('id', userBoardId)
     if (error) return { error: error.message }
     revalidatePath('/leader/approvals')
+    revalidatePath('/admin')
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }

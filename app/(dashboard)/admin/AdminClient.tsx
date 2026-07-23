@@ -2,20 +2,27 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
-import { Settings, LayoutGrid, Users, CheckCircle, Search, UserCog } from 'lucide-react'
+import { Settings, LayoutGrid, Users, CheckCircle, Search, UserCog, ChevronDown, UserMinus } from 'lucide-react'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
+import { removeUserFromBoard } from '@/app/actions/boards'
+import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { BOARD_ROLE_LABEL } from '@/lib/roles'
 import { cn } from '@/lib/utils'
-import type { GlobalRole } from '@/lib/database.types'
+import type { GlobalRole, BoardRole } from '@/lib/database.types'
 
 type AdminTab = 'boards' | 'users'
 
 interface Board {
   id: string
   name: string
+  slug: string
   invite_code_enabled: boolean
   is_active: boolean
   created_at: string
+  member_count: number
 }
 
 export interface UserRow {
@@ -24,6 +31,28 @@ export interface UserRow {
   role: string
   is_active: boolean
   created_at: string
+}
+
+interface BoardMembership {
+  userBoardId: string
+  boardId: string
+  boardName: string
+  boardSlug: string
+  role: BoardRole
+}
+
+interface ReassignCandidate {
+  userId: string
+  displayName: string
+}
+
+type RemoveTarget = {
+  userBoardId: string
+  boardId: string
+  boardName: string
+  role: BoardRole
+  userId: string
+  displayName: string
 }
 
 interface AdminClientProps {
@@ -36,9 +65,14 @@ const roleVariant: Record<GlobalRole, 'guest' | 'user' | 'admin'> = {
   Guest: 'guest', User: 'user', Admin: 'admin',
 }
 
+const boardRoleVariant: Record<BoardRole, 'user' | 'mod' | 'leader'> = {
+  User: 'user', Mod: 'mod', Leader: 'leader',
+}
+
 const globalRoleOptions: GlobalRole[] = ['Guest', 'User', 'Admin']
 
 export function AdminClient({ boards: initBoards, users: initUsers, adminId }: AdminClientProps) {
+  const supabase = createClient()
   const [tab, setTab] = useState<AdminTab>('users')
   const [boards, setBoards] = useState(initBoards)
   const [users, setUsers] = useState(initUsers)
@@ -49,6 +83,18 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
   // Users tab filters
   const [userSearch, setUserSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
+
+  // Per-user board membership accordion
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
+  const [membershipsByUser, setMembershipsByUser] = useState<Record<string, BoardMembership[] | 'loading' | 'error'>>({})
+
+  // Remove-from-board confirmation (with last-Admin reassignment flow)
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null)
+  const [removeLoading, setRemoveLoading] = useState(false)
+  const [removeError, setRemoveError] = useState<string | null>(null)
+  const [needsReassignment, setNeedsReassignment] = useState(false)
+  const [reassignCandidates, setReassignCandidates] = useState<ReassignCandidate[] | 'loading' | null>(null)
+  const [reassignToUserId, setReassignToUserId] = useState('')
 
   // Tab indicator animation
   const tabRefs = useRef<Map<AdminTab, HTMLButtonElement | null>>(new Map())
@@ -95,6 +141,113 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
       showSuccess(current ? 'User deactivated.' : 'User reactivated.')
     }
     setProcessing(null)
+  }
+
+  const loadMemberships = async (userId: string) => {
+    setMembershipsByUser(prev => ({ ...prev, [userId]: 'loading' }))
+    const { data, error: e } = await supabase
+      .from('user_boards')
+      .select('id, board_id, role, boards(name, slug)')
+      .eq('user_id', userId)
+      .eq('is_approved', true)
+      .eq('is_hidden', false)
+    if (e || !data) {
+      setMembershipsByUser(prev => ({ ...prev, [userId]: 'error' }))
+      return
+    }
+    const list: BoardMembership[] = (data as unknown as {
+      id: string; board_id: string; role: BoardRole
+      boards: { name: string; slug: string } | null
+    }[]).map(row => ({
+      userBoardId: row.id,
+      boardId: row.board_id,
+      boardName: row.boards?.name ?? '',
+      boardSlug: row.boards?.slug ?? '',
+      role: row.role,
+    }))
+    setMembershipsByUser(prev => ({ ...prev, [userId]: list }))
+  }
+
+  const toggleUserExpanded = (userId: string) => {
+    setExpandedUsers(prev => {
+      const next = new Set(prev)
+      if (next.has(userId)) { next.delete(userId) } else { next.add(userId) }
+      return next
+    })
+    if (!membershipsByUser[userId]) loadMemberships(userId)
+  }
+
+  const loadReassignCandidates = async (boardId: string, excludeUserId: string) => {
+    setReassignCandidates('loading')
+    const { data, error: e } = await supabase
+      .from('user_boards')
+      .select('user_id, users(display_name)')
+      .eq('board_id', boardId)
+      .eq('is_approved', true)
+      .eq('is_hidden', false)
+      .neq('user_id', excludeUserId)
+    if (e || !data) { setReassignCandidates([]); return }
+    setReassignCandidates((data as unknown as { user_id: string; users: { display_name: string | null } | null }[])
+      .map(row => ({ userId: row.user_id, displayName: row.users?.display_name ?? 'Unnamed member' })))
+  }
+
+  const openRemove = (membership: BoardMembership, userId: string, displayName: string) => {
+    setRemoveTarget({
+      userBoardId: membership.userBoardId,
+      boardId: membership.boardId,
+      boardName: membership.boardName,
+      role: membership.role,
+      userId,
+      displayName,
+    })
+    setRemoveError(null)
+    setNeedsReassignment(false)
+    setReassignCandidates(null)
+    setReassignToUserId('')
+  }
+
+  const closeRemove = () => {
+    setRemoveTarget(null)
+    setRemoveError(null)
+    setNeedsReassignment(false)
+    setReassignCandidates(null)
+    setReassignToUserId('')
+  }
+
+  const handleRemove = async () => {
+    if (!removeTarget) return
+    setRemoveLoading(true)
+    setRemoveError(null)
+    const result = await removeUserFromBoard(
+      removeTarget.userBoardId,
+      needsReassignment ? (reassignToUserId || undefined) : undefined
+    )
+    setRemoveLoading(false)
+
+    if (result.requiresReassignment) {
+      setNeedsReassignment(true)
+      loadReassignCandidates(removeTarget.boardId, removeTarget.userId)
+      return
+    }
+    if (result.error) { setRemoveError(result.error); return }
+
+    setMembershipsByUser(prev => {
+      const list = prev[removeTarget.userId]
+      if (!Array.isArray(list)) return prev
+      return { ...prev, [removeTarget.userId]: list.filter(m => m.userBoardId !== removeTarget.userBoardId) }
+    })
+    // The promoted replacement's own cached membership list (if already
+    // loaded elsewhere) is now stale — drop it so a re-expand refetches.
+    if (needsReassignment && reassignToUserId) {
+      setMembershipsByUser(prev => {
+        const next = { ...prev }
+        delete next[reassignToUserId]
+        return next
+      })
+    }
+    setBoards(prev => prev.map(b => b.id === removeTarget.boardId ? { ...b, member_count: Math.max(0, b.member_count - 1) } : b))
+    showSuccess(`Removed ${removeTarget.displayName} from ${removeTarget.boardName}.`)
+    closeRemove()
   }
 
   const tabs: { key: AdminTab; label: string; icon: React.ReactNode; count: number | null }[] = [
@@ -163,8 +316,17 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
             boards.map(b => (
               <div key={b.id} className="card flex items-center justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className={cn('font-medium text-text', !b.is_active && 'text-text/40 line-through')}>{b.name}</p>
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    {b.is_active ? (
+                      <Link href={`/boards/${b.slug}`} className="font-medium text-text hover:text-primary hover:underline transition-colors min-h-0 min-w-0">
+                        {b.name}
+                      </Link>
+                    ) : (
+                      <p className="font-medium text-text/40 line-through">{b.name}</p>
+                    )}
+                    <span className="badge text-xs bg-primary/10 text-primary shrink-0">
+                      {b.member_count} {b.member_count === 1 ? 'member' : 'members'}
+                    </span>
                     {!b.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
                     {!b.invite_code_enabled && b.is_active && <span className="badge text-xs bg-text/10 text-text/50">Code Paused</span>}
                   </div>
@@ -218,48 +380,167 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
             {filteredUsers.length === 0 ? (
               <p className="text-sm text-text/50 italic text-center py-8">No users match.</p>
             ) : (
-              filteredUsers.map(u => (
-                <div key={u.id} className="card flex items-center justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className={cn('font-medium', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
-                        {u.display_name ?? <span className="italic text-text/40">No display name</span>}
-                      </p>
-                      <Badge variant={roleVariant[u.role as GlobalRole] ?? 'user'}>{u.role}</Badge>
-                      {!u.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {u.id !== adminId && (
-                      <Link
-                        href={`/admin/users/${u.id}`}
-                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/70 px-2 py-1 rounded border border-primary/30 hover:bg-primary-light transition-colors min-h-0"
-                      >
-                        <UserCog className="w-3.5 h-3.5" />Edit
-                      </Link>
-                    )}
-                    {u.id !== adminId ? (
-                      <button
-                        onClick={() => toggleUserActive(u.id, u.is_active)}
-                        disabled={processing === u.id}
-                        className={cn(
-                          'badge text-xs cursor-pointer min-h-0 min-w-0 transition-colors',
-                          u.is_active
-                            ? 'bg-warning/20 text-warning hover:bg-warning/30'
-                            : 'bg-success/20 text-success hover:bg-success/30'
+              filteredUsers.map(u => {
+                const isExpanded = expandedUsers.has(u.id)
+                const memberships = membershipsByUser[u.id]
+                const displayName = u.display_name ?? 'this user'
+                return (
+                  <div key={u.id} className="card">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={cn('font-medium', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
+                            {u.display_name ?? <span className="italic text-text/40">No display name</span>}
+                          </p>
+                          <Badge variant={roleVariant[u.role as GlobalRole] ?? 'user'}>{u.role}</Badge>
+                          {!u.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {u.id !== adminId && (
+                          <Link
+                            href={`/admin/users/${u.id}`}
+                            className="flex items-center gap-1 text-xs text-primary hover:text-primary/70 px-2 py-1 rounded border border-primary/30 hover:bg-primary-light transition-colors min-h-0"
+                          >
+                            <UserCog className="w-3.5 h-3.5" />Edit
+                          </Link>
                         )}
-                      >
-                        {u.is_active ? 'Deactivate' : 'Reactivate'}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-text/40 italic">You</span>
+                        {u.id !== adminId ? (
+                          <button
+                            onClick={() => toggleUserActive(u.id, u.is_active)}
+                            disabled={processing === u.id}
+                            className={cn(
+                              'badge text-xs cursor-pointer min-h-0 min-w-0 transition-colors',
+                              u.is_active
+                                ? 'bg-warning/20 text-warning hover:bg-warning/30'
+                                : 'bg-success/20 text-success hover:bg-success/30'
+                            )}
+                          >
+                            {u.is_active ? 'Deactivate' : 'Reactivate'}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-text/40 italic">You</span>
+                        )}
+                        <button
+                          onClick={() => toggleUserExpanded(u.id)}
+                          className="p-1 text-text/40 hover:text-primary min-h-0 min-w-0"
+                          aria-label={isExpanded ? 'Collapse boards' : 'Show boards'}
+                          aria-expanded={isExpanded}
+                        >
+                          <ChevronDown className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-border space-y-1.5">
+                        {memberships === 'loading' && (
+                          <p className="text-xs text-text/50 italic">Loading boards...</p>
+                        )}
+                        {memberships === 'error' && (
+                          <p className="text-xs text-warning">Failed to load boards.</p>
+                        )}
+                        {Array.isArray(memberships) && memberships.length === 0 && (
+                          <p className="text-xs text-text/50 italic">Not a member of any board.</p>
+                        )}
+                        {Array.isArray(memberships) && memberships.map(m => (
+                          <div key={m.userBoardId} className="flex items-center justify-between gap-2">
+                            <Link
+                              href={`/boards/${m.boardSlug}`}
+                              className="text-sm text-text hover:text-primary hover:underline truncate min-h-0 min-w-0"
+                            >
+                              {m.boardName}
+                            </Link>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant={boardRoleVariant[m.role]} className="text-xs">{BOARD_ROLE_LABEL[m.role]}</Badge>
+                              <button
+                                onClick={() => openRemove(m, u.id, displayName)}
+                                className="p-1 text-text/40 hover:text-warning min-h-0 min-w-0"
+                                aria-label={`Remove ${displayName} from ${m.boardName}`}
+                                title="Remove from board"
+                              >
+                                <UserMinus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
+      )}
+
+      {/* ── Remove-from-board confirmation / last-Admin reassignment ────── */}
+      {removeTarget && (
+        <Modal
+          open
+          onClose={closeRemove}
+          size="sm"
+          title={needsReassignment ? 'Promote a Replacement Admin' : 'Remove from Board?'}
+        >
+          {removeError && (
+            <div className="mb-3 p-2.5 rounded-md bg-warning/10 border border-warning/20 text-warning text-xs">
+              {removeError}
+            </div>
+          )}
+
+          {!needsReassignment ? (
+            <>
+              <p className="text-sm text-text/70 mb-4">
+                Remove <strong>{removeTarget.displayName}</strong> from <strong>{removeTarget.boardName}</strong>?
+                {removeTarget.role === 'Leader' && ' They are an Admin of this board.'}{' '}
+                This cannot be undone.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={closeRemove}>Cancel</Button>
+                <Button variant="danger" size="sm" loading={removeLoading} onClick={handleRemove}>Remove</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-text/70 mb-3">
+                <strong>{removeTarget.displayName}</strong> is the only Admin on <strong>{removeTarget.boardName}</strong>.
+                Choose another member to promote to Admin before removing them.
+              </p>
+              {reassignCandidates === 'loading' && (
+                <p className="text-xs text-text/50 italic mb-3">Loading members...</p>
+              )}
+              {Array.isArray(reassignCandidates) && reassignCandidates.length === 0 && (
+                <p className="text-xs text-warning mb-3">
+                  No other members on this board to promote. Add another member before removing the only Admin.
+                </p>
+              )}
+              {Array.isArray(reassignCandidates) && reassignCandidates.length > 0 && (
+                <select
+                  className="input text-sm mb-4"
+                  value={reassignToUserId}
+                  onChange={e => setReassignToUserId(e.target.value)}
+                >
+                  <option value="">Select a member...</option>
+                  {reassignCandidates.map(c => (
+                    <option key={c.userId} value={c.userId}>{c.displayName}</option>
+                  ))}
+                </select>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={closeRemove}>Cancel</Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  loading={removeLoading}
+                  disabled={!reassignToUserId}
+                  onClick={handleRemove}
+                >
+                  Promote &amp; Remove
+                </Button>
+              </div>
+            </>
+          )}
+        </Modal>
       )}
     </div>
   )
