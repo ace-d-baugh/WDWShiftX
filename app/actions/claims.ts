@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { getActionSession } from '@/lib/auth/session'
 import { notifyClaimCreated, notifyClaimResolved, notifyClaimFinalized } from '@/app/actions/notifications'
 
@@ -53,7 +54,11 @@ export async function withdrawClaim(claimId: string): Promise<{ error?: string }
   }
 }
 
-/** Owner: record whether an accepted trade actually went through. */
+/**
+ * Owner: record whether an accepted trade actually went through. A "fell
+ * through" outcome reopens the shift (see finalize_claim() in
+ * 20260723140000_reactivate_covered_shift.sql) so it goes back on the wall.
+ */
 export async function finalizeClaim(claimId: string, completed: boolean): Promise<{ error?: string }> {
   try {
     const { supabase } = await getActionSession()
@@ -66,6 +71,28 @@ export async function finalizeClaim(claimId: string, completed: boolean): Promis
     if (!data) return { error: 'Claim not found or not awaiting confirmation.' }
 
     void notifyClaimFinalized(claimId, completed)
+    if (!completed) revalidatePath('/calendar')
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Unknown error' }
+  }
+}
+
+/**
+ * Owner: reactivate a covered shift directly (e.g. from the calendar's
+ * Given Away marker) without going through claim finalization. Also
+ * auto-finalizes any still-accepted claim on it as fell-through, so the
+ * claim record stays consistent either way.
+ */
+export async function reactivateShift(shiftId: string): Promise<{ error?: string }> {
+  try {
+    const { supabase } = await getActionSession()
+
+    const { data, error } = await supabase.rpc('reactivate_shift', { p_shift_id: shiftId })
+    if (error) return { error: error.message }
+    if (!data) return { error: 'Shift not found, not yours, or not currently given away.' }
+
+    revalidatePath('/calendar')
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }

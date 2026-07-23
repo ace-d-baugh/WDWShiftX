@@ -817,6 +817,7 @@ export interface Database {
       respond_to_claim: { Args: { p_claim_id: string; p_accept: boolean }; Returns: string[] }
       withdraw_claim:   { Args: { p_claim_id: string }; Returns: boolean }
       finalize_claim:   { Args: { p_claim_id: string; p_completed: boolean }; Returns: boolean }
+      reactivate_shift: { Args: { p_shift_id: string }; Returns: boolean }
       get_trade_stats_for_users: {
         Args: { p_user_ids: string[] }
         Returns: { user_id: string; picked_up: number; covered: number; fell_through: number }[]

@@ -17,13 +17,25 @@ export default async function CalendarPage() {
   const endMonth = new Date(now.getFullYear(), now.getMonth() + 4, 0)
   const windowEnd = new Date(endMonth.getFullYear(), endMonth.getMonth(), endMonth.getDate(), 23, 59, 59).toISOString()
 
-  const [{ data: myShifts }, { data: boardShifts }, { data: boardRequests }, { data: profile }, { data: memberRows }] = await Promise.all([
+  const [{ data: myShifts }, { data: givenAwayShifts }, { data: boardShifts }, { data: boardRequests }, { data: profile }, { data: memberRows }] = await Promise.all([
     // User's own shifts (all types — personal calendar entries)
     supabase
       .from('shifts')
       .select('id, shift_title, start_time, end_time, is_trade, is_giveaway, board_id')
       .eq('user_id', user.id)
       .eq('is_active', true)
+      .gte('start_time', windowStart)
+      .lte('start_time', windowEnd)
+      .order('start_time', { ascending: true }),
+    // Shifts the user gave away/traded (claim accepted) — shown with a Given
+    // Away marker instead of disappearing, with a reactivate option in case
+    // the handoff doesn't actually go through.
+    supabase
+      .from('shifts')
+      .select('id, shift_title, start_time, end_time, is_trade, is_giveaway, board_id')
+      .eq('user_id', user.id)
+      .eq('is_active', false)
+      .eq('removed_reason', 'covered')
       .gte('start_time', windowStart)
       .lte('start_time', windowEnd)
       .order('start_time', { ascending: true }),
@@ -63,15 +75,20 @@ export default async function CalendarPage() {
   // same env-var-flip pattern as AdSense.
   const importEnabled = Boolean(optionalServerEnv.GEMINI_API_KEY)
 
+  const combinedShifts = [
+    ...(myShifts ?? []).map(s => ({ ...s, given_away: false })),
+    ...(givenAwayShifts ?? []).map(s => ({ ...s, given_away: true })),
+  ].sort((a, b) => a.start_time.localeCompare(b.start_time))
+
   return (
     <CalendarClient
       userId={user.id}
       displayName={profile?.display_name ?? 'User'}
       importEnabled={importEnabled}
       today={now.toISOString()}
-      myShifts={(myShifts ?? []) as {
+      myShifts={combinedShifts as {
         id: string; shift_title: string; start_time: string; end_time: string
-        is_trade: boolean; is_giveaway: boolean; board_id: string | null
+        is_trade: boolean; is_giveaway: boolean; board_id: string | null; given_away: boolean
       }[]}
       boardShifts={(boardShifts ?? []) as {
         id: string; start_time: string; is_trade: boolean; is_giveaway: boolean; board_id: string | null

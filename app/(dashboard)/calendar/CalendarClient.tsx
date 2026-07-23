@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Camera, Crown, Plus, RefreshCw } from 'lucide-react'
+import { CalendarDays, Camera, Crown, Plus, RefreshCw, Undo2 } from 'lucide-react'
 import Link from 'next/link'
 import { formatInTimeZone } from 'date-fns-tz'
 import { parseISO, addMonths, startOfMonth, getDaysInMonth, getDay } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { getSettings, fmtTime, type UserSettings } from '@/lib/settings'
 import { ScheduleImportModal } from '@/components/features/ScheduleImportModal'
+import { reactivateShift } from '@/app/actions/claims'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
 
 const ET = 'America/New_York'
 
@@ -17,6 +20,9 @@ const ET = 'America/New_York'
 interface MyShift {
   id: string; shift_title: string; start_time: string; end_time: string
   is_trade: boolean; is_giveaway: boolean; board_id: string | null
+  /** true if this was given away/traded (claim accepted) — shown with a
+   * marker instead of disappearing, with a reactivate option. */
+  given_away: boolean
 }
 interface BoardShift {
   id: string; start_time: string; is_trade: boolean; is_giveaway: boolean; board_id: string | null
@@ -98,6 +104,22 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterBoardId, setFilterBoardId] = useState('')
   const toggleFilter = () => setFilterOpen(open => !open)
+
+  // Reactivate a given-away shift (the claim it was covered by didn't pan out)
+  const [reactivateTarget, setReactivateTarget] = useState<MyShift | null>(null)
+  const [reactivating, setReactivating] = useState(false)
+  const [reactivateError, setReactivateError] = useState<string | null>(null)
+
+  const handleReactivate = async () => {
+    if (!reactivateTarget) return
+    setReactivating(true)
+    setReactivateError(null)
+    const result = await reactivateShift(reactivateTarget.id)
+    setReactivating(false)
+    if (result.error) { setReactivateError(result.error); return }
+    setReactivateTarget(null)
+    router.refresh()
+  }
 
   useEffect(() => { setSettings(getSettings()) }, [])
 
@@ -248,25 +270,46 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                         {day}
                       </span>
 
-                      {/* User's personal shifts */}
+                      {/* User's personal shifts — given-away ones stay visible
+                          (not filtered out) with a muted/struck marker and a
+                          reactivate action, and sit fine alongside a new,
+                          fully-active shift at the same time since each is
+                          just its own row here, never a shared slot. */}
                       <div className="flex-1 space-y-0.5">
                         {(data?.myShifts ?? []).map(s => (
-                          <button
-                            key={s.id}
-                            onClick={() => router.push(`/wall/edit-shift/${s.id}?from=calendar`)}
-                            className={cn(
-                              'w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight transition-colors border-l-2',
-                              s.is_trade && s.is_giveaway ? 'border-l-primary bg-primary/5 hover:bg-primary/10' :
-                              s.is_trade    ? 'border-l-info    bg-info/5    hover:bg-info/10'    :
-                              s.is_giveaway ? 'border-l-success bg-success/5 hover:bg-success/10' :
-                                              'border-l-text/20 bg-text/5   hover:bg-text/10'
-                            )}
-                          >
-                            <div className="font-medium text-text truncate">{s.shift_title}</div>
-                            <div className="text-text/50 tabular-nums">
-                              {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
-                            </div>
-                          </button>
+                          s.given_away ? (
+                            <button
+                              key={s.id}
+                              onClick={() => setReactivateTarget(s)}
+                              title="Given away — tap to reactivate if it fell through"
+                              className="w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight transition-colors border-l-2 border-l-text/20 bg-text/5 hover:bg-text/10 opacity-60"
+                            >
+                              <div className="flex items-center gap-1 min-w-0">
+                                <span className="font-medium text-text/60 truncate line-through">{s.shift_title}</span>
+                                <span className="shrink-0 text-[8px] font-semibold uppercase tracking-wide text-text/40">Given Away</span>
+                              </div>
+                              <div className="text-text/40 tabular-nums">
+                                {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
+                              </div>
+                            </button>
+                          ) : (
+                            <button
+                              key={s.id}
+                              onClick={() => router.push(`/wall/edit-shift/${s.id}?from=calendar`)}
+                              className={cn(
+                                'w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight transition-colors border-l-2',
+                                s.is_trade && s.is_giveaway ? 'border-l-primary bg-primary/5 hover:bg-primary/10' :
+                                s.is_trade    ? 'border-l-info    bg-info/5    hover:bg-info/10'    :
+                                s.is_giveaway ? 'border-l-success bg-success/5 hover:bg-success/10' :
+                                                'border-l-text/20 bg-text/5   hover:bg-text/10'
+                              )}
+                            >
+                              <div className="font-medium text-text truncate">{s.shift_title}</div>
+                              <div className="text-text/50 tabular-nums">
+                                {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
+                              </div>
+                            </button>
+                          )
                         ))}
                       </div>
 
@@ -327,6 +370,27 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
           )
         })}
       </div>
+
+      {/* ── Reactivate a given-away shift ─────────────────────────────── */}
+      {reactivateTarget && (
+        <Modal open onClose={() => setReactivateTarget(null)} size="sm" title="Reactivate Shift?">
+          <p className="text-sm text-text/70 mb-4">
+            Put <strong>{reactivateTarget.shift_title}</strong> back on the wall? Use this if the
+            handoff didn&apos;t actually go through — anyone can claim it again.
+          </p>
+          {reactivateError && (
+            <div className="mb-3 p-2.5 rounded-md bg-warning/10 border border-warning/20 text-warning text-xs">
+              {reactivateError}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setReactivateTarget(null)}>Cancel</Button>
+            <Button size="sm" loading={reactivating} onClick={handleReactivate} className="gap-1.5">
+              <Undo2 className="w-4 h-4" /> Reactivate
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
