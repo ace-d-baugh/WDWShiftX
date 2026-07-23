@@ -9,7 +9,7 @@ export const metadata = { title: 'Overlord' }
 export default async function AdminPage() {
   const { supabase, user } = await requireAdmin()
 
-  const [boardsRes, usersRes, memberRowsRes] = await Promise.all([
+  const [boardsRes, usersRes, memberRowsRes, postStatsRes] = await Promise.all([
     supabase
       .from('boards')
       .select('id, name, slug, invite_code_enabled, is_active, created_at')
@@ -25,6 +25,8 @@ export default async function AdminPage() {
       .eq('is_approved', true)
       .eq('is_hidden', false)
       .limit(2000),
+    // Also internally gated to Admins only — see get_post_stats_admin().
+    supabase.rpc('get_post_stats_admin').single(),
   ])
 
   const memberCounts = new Map<string, number>()
@@ -39,6 +41,12 @@ export default async function AdminPage() {
       boards={boards as { id: string; name: string; slug: string; invite_code_enabled: boolean; is_active: boolean; created_at: string; member_count: number }[]}
       users={(usersRes.data ?? []) as unknown as { id: string; display_name: string | null; role: GlobalRole; is_active: boolean; created_at: string }[]}
       adminId={user.id}
+      postStats={postStatsRes.data as {
+        shifts_total: number; shifts_active: number; shifts_user_removed: number; shifts_expired: number
+        shifts_covered: number; shifts_leader_removed: number; shifts_trade: number; shifts_giveaway: number
+        requests_total: number; requests_active: number; requests_user_removed: number; requests_expired: number
+        requests_leader_removed: number
+      } | null}
     />
   )
 }

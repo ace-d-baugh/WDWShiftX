@@ -821,6 +821,15 @@ export interface Database {
         Args: { p_user_ids: string[] }
         Returns: { user_id: string; picked_up: number; covered: number; fell_through: number }[]
       }
+      get_post_stats_admin: {
+        Args: Record<string, never>
+        Returns: {
+          shifts_total: number; shifts_active: number; shifts_user_removed: number; shifts_expired: number
+          shifts_covered: number; shifts_leader_removed: number; shifts_trade: number; shifts_giveaway: number
+          requests_total: number; requests_active: number; requests_user_removed: number; requests_expired: number
+          requests_leader_removed: number
+        }[]
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

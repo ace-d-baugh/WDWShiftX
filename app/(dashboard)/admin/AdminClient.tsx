@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
-import { Settings, LayoutGrid, Users, CheckCircle, Search, UserCog, ChevronDown, UserMinus } from 'lucide-react'
+import { Settings, LayoutGrid, Users, BarChart3, CheckCircle, Search, UserCog, ChevronDown, UserMinus } from 'lucide-react'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
 import { removeUserFromBoard } from '@/app/actions/boards'
 import { createClient } from '@/lib/supabase/client'
@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { BOARD_ROLE_LABEL } from '@/lib/roles'
 import { cn } from '@/lib/utils'
+import { AdminCharts, type PostStats } from './AdminCharts'
 import type { GlobalRole, BoardRole } from '@/lib/database.types'
 
-type AdminTab = 'boards' | 'users'
+type AdminTab = 'boards' | 'users' | 'charts'
 
 interface Board {
   id: string
@@ -59,6 +60,7 @@ interface AdminClientProps {
   boards: Board[]
   users: UserRow[]
   adminId: string
+  postStats: PostStats | null
 }
 
 const roleVariant: Record<GlobalRole, 'guest' | 'user' | 'admin'> = {
@@ -71,7 +73,7 @@ const boardRoleVariant: Record<BoardRole, 'user' | 'mod' | 'leader'> = {
 
 const globalRoleOptions: GlobalRole[] = ['Guest', 'User', 'Admin']
 
-export function AdminClient({ boards: initBoards, users: initUsers, adminId }: AdminClientProps) {
+export function AdminClient({ boards: initBoards, users: initUsers, adminId, postStats }: AdminClientProps) {
   const supabase = createClient()
   const [tab, setTab] = useState<AdminTab>('users')
   const [boards, setBoards] = useState(initBoards)
@@ -253,6 +255,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
   const tabs: { key: AdminTab; label: string; icon: React.ReactNode; count: number | null }[] = [
     { key: 'boards', label: 'Boards', icon: <LayoutGrid className="w-4 h-4" />, count: boards.length },
     { key: 'users',  label: 'Users',  icon: <Users className="w-4 h-4" />,     count: users.length },
+    { key: 'charts', label: 'Stats',  icon: <BarChart3 className="w-4 h-4" />, count: null },
   ]
 
   return (
@@ -473,6 +476,9 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId }: A
           </div>
         </div>
       )}
+
+      {/* Stats Tab */}
+      {tab === 'charts' && <AdminCharts stats={postStats} />}
 
       {/* ── Remove-from-board confirmation / last-Admin reassignment ────── */}
       {removeTarget && (
