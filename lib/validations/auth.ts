@@ -33,6 +33,15 @@ const passwordSchema = z.string().refine(passwordMeetsRequirements, {
   message: 'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a symbol',
 })
 
+// Mirrored in the handle_new_user() DB trigger so a direct API call can't
+// bypass this — see supabase/migrations for the matching domain check.
+const BLOCKED_EMAIL_DOMAINS = ['disney.com']
+
+function hasBlockedEmailDomain(email: string): boolean {
+  const domain = email.trim().toLowerCase().split('@').pop() ?? ''
+  return BLOCKED_EMAIL_DOMAINS.includes(domain)
+}
+
 export const registerSchema = z.object({
   first_name: z.string().trim()
     .min(1, 'First name is required')
@@ -42,7 +51,8 @@ export const registerSchema = z.object({
     .min(1, 'Last name is required')
     .max(40, 'Last name is too long')
     .regex(nameRegex, 'Letters, spaces, and hyphens only'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address')
+    .refine(email => !hasBlockedEmailDomain(email), 'Please use a different email address to register.'),
   password: passwordSchema,
   confirm_password: z.string().min(1, 'Please confirm your password'),
   terms_accepted: z.literal(true, { errorMap: () => ({ message: 'You must accept the Terms & Conditions' }) }),
