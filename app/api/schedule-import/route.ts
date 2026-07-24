@@ -195,6 +195,13 @@ export async function POST(req: NextRequest) {
       if (res.status !== 401 && res.status !== 403) break
     }
     if (!res) throw new Error('unreachable')
+    if (res.status === 429) {
+      console.error('[schedule-import] Gemini rate limit hit (429)')
+      return NextResponse.json(
+        { error: "Schedule import is really popular right now — please try again in a moment." },
+        { status: 429 }
+      )
+    }
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
       console.error(`[schedule-import] Gemini HTTP ${res.status}:`, detail.slice(0, 500))
