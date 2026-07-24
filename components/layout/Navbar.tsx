@@ -6,23 +6,17 @@ import { usePathname } from 'next/navigation'
 import {
   CalendarDays,
   LayoutGrid,
-  User,
-  ShieldCheck,
-  Flag,
-  Archive,
-  LogOut,
   Menu,
   X,
   ChevronDown,
   HelpCircle,
-  Settings,
-  Kanban,
   MessageSquare,
 } from 'lucide-react'
 import { ThemedLogo } from '@/components/ui/ThemedLogo'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { GlobalRole } from '@/lib/database.types'
+import { buildRoleDropdownItems, DropdownContent, fmtBadge } from '@/components/layout/AccountDropdown'
 
 interface NavbarProps {
   userRole: GlobalRole
@@ -53,8 +47,6 @@ export function Navbar({
   const showModItems = isBoardModerator || isAdmin
   const hasUnresolved = pendingApprovalsCount > 0 || pendingFlagsCount > 0
 
-  const fmt = (n: number) => n > 99 ? '99+' : n > 0 ? String(n) : null
-
   const handleLogout = async () => {
     await supabase.auth.signOut()
     window.location.href = '/login'
@@ -82,9 +74,9 @@ export function Navbar({
   const isActive = (href: string) => pathname.startsWith(href)
 
   // ── Dropdown menu items (role-scoped) ──────────────────────────────────────
-  const dropdownItems = buildDropdownItems({
+  const dropdownItems = buildRoleDropdownItems({
     isAdmin, showModItems, isLeader,
-    pendingApprovalsCount, pendingFlagsCount, fmt,
+    pendingApprovalsCount, pendingFlagsCount,
   })
 
   return (
@@ -197,9 +189,9 @@ export function Navbar({
                   )}
                 </span>
                 Messages
-                {fmt(unreadMessagesCount) && (
+                {fmtBadge(unreadMessagesCount) && (
                   <span className="flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-warning text-white text-[10px] font-bold leading-none">
-                    {fmt(unreadMessagesCount)}
+                    {fmtBadge(unreadMessagesCount)}
                   </span>
                 )}
               </Link>
@@ -314,9 +306,9 @@ export function Navbar({
           >
             <span className="relative">
               <MessageSquare className="w-5 h-5" />
-              {fmt(unreadMessagesCount) && (
+              {fmtBadge(unreadMessagesCount) && (
                 <span className="absolute -top-1.5 -right-2.5 flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-warning text-white text-[10px] font-bold leading-none ring-2 ring-card">
-                  {fmt(unreadMessagesCount)}
+                  {fmtBadge(unreadMessagesCount)}
                 </span>
               )}
             </span>
@@ -324,119 +316,6 @@ export function Navbar({
           </Link>
         </div>
       </nav>
-    </>
-  )
-}
-
-// ── Dropdown items builder ─────────────────────────────────────────────────────
-
-interface DropdownItemDef {
-  type: 'link' | 'separator'
-  href?: string
-  label?: string
-  icon?: React.ComponentType<{ className?: string }>
-  badge?: string | null
-}
-
-function buildDropdownItems({
-  isAdmin, showModItems, isLeader,
-  pendingApprovalsCount, pendingFlagsCount, fmt,
-}: {
-  isAdmin: boolean
-  showModItems: boolean
-  isLeader: boolean
-  pendingApprovalsCount: number
-  pendingFlagsCount: number
-  fmt: (n: number) => string | null
-}): DropdownItemDef[] {
-  const items: DropdownItemDef[] = [
-    { type: 'link', href: '/profile', label: 'Profile', icon: User },
-    { type: 'link', href: '/help',    label: 'Help & Support', icon: HelpCircle },
-  ]
-
-  if (showModItems) {
-    items.push({ type: 'separator' })
-    items.push({
-      type: 'link',
-      href: '/leader/approvals',
-      label: 'Approvals',
-      icon: ShieldCheck,
-      badge: fmt(pendingApprovalsCount),
-    })
-    items.push({
-      type: 'link',
-      href: '/leader/flags',
-      label: 'Flags',
-      icon: Flag,
-      badge: fmt(pendingFlagsCount),
-    })
-    if (isLeader) {
-      items.push({
-        type: 'link',
-        href: '/leader/archive',
-        label: 'Archive',
-        icon: Archive,
-      })
-    }
-  }
-
-  if (isAdmin) {
-    items.push({ type: 'separator' })
-    items.push({ type: 'link', href: '/admin',  label: 'Overlord Panel', icon: Settings })
-    items.push({ type: 'link', href: '/kanban', label: 'Roadmap',     icon: Kanban })
-  }
-
-  return items
-}
-
-// ── Shared dropdown renderer ──────────────────────────────────────────────────
-
-function DropdownContent({
-  items, handleLogout, onNavigate, mobile = false,
-}: {
-  items: DropdownItemDef[]
-  handleLogout: () => void
-  onNavigate: () => void
-  mobile?: boolean
-}) {
-  const base = mobile
-    ? 'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors w-full text-left'
-    : 'flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors w-full text-left'
-
-  return (
-    <>
-      {items.map((item, i) => {
-        if (item.type === 'separator') {
-          return <div key={i} className="my-1 border-t border-border" />
-        }
-        const Icon = item.icon!
-        return (
-          <Link
-            key={item.href}
-            href={item.href!}
-            onClick={onNavigate}
-            className={cn(base, 'text-text/80 hover:bg-primary-light/50 hover:text-text')}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="flex-1">{item.label}</span>
-            {item.badge && (
-              <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-warning text-white text-xs font-bold leading-none">
-                {item.badge}
-              </span>
-            )}
-          </Link>
-        )
-      })}
-
-      {/* Log out */}
-      <div className="my-1 border-t border-border" />
-      <button
-        onClick={handleLogout}
-        className={cn(base, 'text-warning hover:bg-warning/10')}
-      >
-        <LogOut className="w-4 h-4 shrink-0" />
-        Log Out
-      </button>
     </>
   )
 }

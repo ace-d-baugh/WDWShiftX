@@ -1,26 +1,61 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronDown, LayoutGrid, CalendarDays, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
-import { ChevronDown, LayoutGrid, User, LogOut } from 'lucide-react'
 import { ThemedLogo } from '@/components/ui/ThemedLogo'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import type { GlobalRole } from '@/lib/database.types'
+import { buildRoleDropdownItems, DropdownContent, fmtBadge, type DropdownItemDef } from '@/components/layout/AccountDropdown'
 
 interface LandingHeaderProps {
   displayName: string | null
+  userRole?: GlobalRole
+  isBoardModerator?: boolean
+  isLeader?: boolean
+  pendingApprovalsCount?: number
+  pendingFlagsCount?: number
+  unreadMessagesCount?: number
 }
 
-export function LandingHeader({ displayName }: LandingHeaderProps) {
+export function LandingHeader({
+  displayName,
+  userRole = 'Guest',
+  isBoardModerator = false,
+  isLeader = false,
+  pendingApprovalsCount = 0,
+  pendingFlagsCount = 0,
+  unreadMessagesCount = 0,
+}: LandingHeaderProps) {
   const supabase = createClient()
   const [menuOpen, setMenuOpen] = useState(false)
   const isLoggedIn = !!displayName
+
+  const isAdmin = userRole === 'Admin'
+  const showModItems = isBoardModerator || isAdmin
+  const hasNotifications = pendingApprovalsCount > 0 || pendingFlagsCount > 0 || unreadMessagesCount > 0
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setMenuOpen(false)
     window.location.reload()
   }
+
+  // Unlike the dashboard Navbar (which has a separate Wall/Calendar/Messages
+  // tab strip), this header has only the one dropdown — so those live here
+  // as ordinary items, each carrying its own badge when it has something
+  // pending, ahead of the same role-gated items the dashboard menu shows.
+  const primaryItems: DropdownItemDef[] = [
+    { type: 'link', href: '/wall', label: 'The Wall', icon: LayoutGrid },
+    { type: 'link', href: '/calendar', label: 'My Calendar', icon: CalendarDays },
+    { type: 'link', href: '/messages', label: 'Messages', icon: MessageSquare, badge: fmtBadge(unreadMessagesCount) },
+    { type: 'separator' },
+  ]
+  const dropdownItems = [
+    ...primaryItems,
+    ...buildRoleDropdownItems({ isAdmin, showModItems, isLeader, pendingApprovalsCount, pendingFlagsCount }),
+  ]
 
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur border-b border-border animate-slide-down">
@@ -47,7 +82,12 @@ export function LandingHeader({ displayName }: LandingHeaderProps) {
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
               >
-                <span className="font-medium">{displayName}</span>
+                <span className="relative">
+                  <span className="font-medium">{displayName}</span>
+                  {hasNotifications && (
+                    <span className="absolute -top-0.5 -right-2 w-2 h-2 rounded-full bg-warning ring-2 ring-card" />
+                  )}
+                </span>
                 <ChevronDown className={cn('w-4 h-4 transition-transform', menuOpen && 'rotate-180')} />
               </button>
 
@@ -56,29 +96,13 @@ export function LandingHeader({ displayName }: LandingHeaderProps) {
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full mt-2 w-52 rounded-xl border border-border bg-card shadow-xl z-50 py-1.5 overflow-hidden"
+                    className="absolute right-0 top-full mt-2 w-60 rounded-xl border border-border bg-card shadow-xl z-50 py-1.5 overflow-hidden"
                   >
-                    <Link
-                      href="/wall"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
-                    >
-                      <LayoutGrid className="w-4 h-4" /> The Wall
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
-                    >
-                      <User className="w-4 h-4" /> Profile
-                    </Link>
-                    <div className="my-1 border-t border-border" />
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm text-warning hover:bg-warning/10 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" /> Log Out
-                    </button>
+                    <DropdownContent
+                      items={dropdownItems}
+                      handleLogout={handleLogout}
+                      onNavigate={() => setMenuOpen(false)}
+                    />
                   </div>
                 </>
               )}
