@@ -565,7 +565,7 @@ Because the existing codebase is React/TypeScript, Expo is the natural path — 
 
 ---
 
-### 15 — Photo Schedule Import (Gemini 2.5 Flash) `CODE COMPLETE — needs Vercel env var`
+### 15 — Photo Schedule Import (Gemini 2.5 Flash) `CODE COMPLETE — needs your testing`
 
 **Fix 2026-07-18 (found in Ace's onboarding test):** wide weekly-grid screenshots returned "No shifts were found" while tall list layouts worked. Root cause: the client downscale capped the *longest* side at 1600px, so a 2000×661 grid shrank to 1600×529 — crushing the text height (which lives in the short side) below what Gemini could read. `toJpeg` now scales by pixel *area* (small screenshots upload untouched; big photos shrink but never below ~720px on the short side), and the extraction prompt explicitly describes weekly-grid layouts (dates as column headers, multiple stacked week-tables, "No Shifts" cells). Re-test both orientations.
 
@@ -587,7 +587,7 @@ Gemini reads the photo with a hand-tuned parsing prompt that isolates the target
 
 **👤 You handle:**
 - ✅ `2026-07-08`: Created Google AI Studio project + free-tier API key (in `.env.local` as `GEMINI_API_KEY`); wrote the parsing prompt the route now uses
-- [ ] Add `GEMINI_API_KEY` to Vercel env vars to turn the feature (and its landing/Help marketing) on in production — free-tier key works; the paid Vertex key (project 126596084990) needs API + billing enabled in its Cloud project if/when volume justifies it
+- ✅ `2026-07-23`: Added `GEMINI_API_KEY` to Vercel env vars — free-tier key works; the paid Vertex key (project 126596084990) still needs API + billing enabled in its Cloud project if/when volume justifies it
 - ✅ `2026-07-08`: Remove the retired `VPS_OLLAMA_URL` / `VPS_OLLAMA_SECRET` / `OLLAMA_VISION_MODEL` vars from Vercel
 - ✅ `2026-07-08`: Delete the `ai.myshiftx.com` DNS A record; refund/repurpose the Contabo VPS (wiped clean 2026-07-08)
 
