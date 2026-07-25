@@ -60,3 +60,6 @@ Test-Schedule-Image.png
 .agents/
 .claude/
 .env*
+
+# Local-only notes, not for the repo
+PORTABLE_FEATURES.md

@@ -6,7 +6,7 @@ import {
 import { PlusCircle, UserX, Clock, ArrowRightLeft } from 'lucide-react'
 
 export interface PostStats {
-  shifts_total: number
+  shifts_added: number
   shifts_active: number
   shifts_user_removed: number
   shifts_expired: number
@@ -82,7 +82,13 @@ export function AdminCharts({ stats }: AdminChartsProps) {
     return <p className="text-sm text-text/50 italic text-center py-8">Stats unavailable.</p>
   }
 
-  const postsAdded = stats.shifts_total + stats.requests_total
+  // Every wall-posted shift has exactly one of trade-only/giveaway-only/both
+  // true, so these three (already wall-scoped by definition) sum to the full
+  // wall-posted count — no separate RPC column needed.
+  const shiftsPosted = stats.shifts_trade_only + stats.shifts_giveaway_only + stats.shifts_both
+  const shiftsPostedPct = stats.shifts_added > 0 ? Math.round((shiftsPosted / stats.shifts_added) * 100) : 0
+
+  const postsAdded = shiftsPosted + stats.requests_total
   const selfDeleted = stats.shifts_user_removed + stats.requests_user_removed
   const timedOut = stats.shifts_expired + stats.requests_expired
   const tradedAway = stats.shifts_covered
@@ -127,6 +133,24 @@ export function AdminCharts({ stats }: AdminChartsProps) {
             <p className="text-xs text-text/50">{t.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* How much of the calendar is personal-only vs. actually posted to the
+          Wall — context for the outcome chart below, which only covers the
+          posted subset */}
+      <div className="card flex items-center justify-center gap-4 sm:gap-8 py-4 text-center">
+        <div>
+          <p className="text-2xl font-bold text-text">{stats.shifts_added.toLocaleString()}</p>
+          <p className="text-xs text-text/50">Shifts Added to Calendar</p>
+        </div>
+        <div className="text-text/30 text-xl">→</div>
+        <div>
+          <p className="text-2xl font-bold text-text">
+            {shiftsPosted.toLocaleString()}{' '}
+            <span className="text-sm font-normal text-text/50">({shiftsPostedPct}%)</span>
+          </p>
+          <p className="text-xs text-text/50">Posted to the Wall</p>
+        </div>
       </div>
 
       <OutcomeChart title="Shift Post Outcomes" data={shiftData} />
