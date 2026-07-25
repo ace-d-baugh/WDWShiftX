@@ -77,9 +77,29 @@ function OutcomeChart({ title, data }: { title: string; data: { label: string; v
   )
 }
 
-export function AdminCharts({ stats }: AdminChartsProps) {
-  if (!stats) {
+export function AdminCharts({ stats: rawStats }: AdminChartsProps) {
+  if (!rawStats) {
     return <p className="text-sm text-text/50 italic text-center py-8">Stats unavailable.</p>
+  }
+
+  // Defensive against a field the RPC didn't actually send this call (e.g. a
+  // stale client bundle briefly out of sync with a renamed column right after
+  // deploy) — every downstream number should degrade to 0, never to NaN.
+  const stats: PostStats = {
+    shifts_added: rawStats.shifts_added ?? 0,
+    shifts_active: rawStats.shifts_active ?? 0,
+    shifts_user_removed: rawStats.shifts_user_removed ?? 0,
+    shifts_expired: rawStats.shifts_expired ?? 0,
+    shifts_covered: rawStats.shifts_covered ?? 0,
+    shifts_leader_removed: rawStats.shifts_leader_removed ?? 0,
+    shifts_trade_only: rawStats.shifts_trade_only ?? 0,
+    shifts_giveaway_only: rawStats.shifts_giveaway_only ?? 0,
+    shifts_both: rawStats.shifts_both ?? 0,
+    requests_total: rawStats.requests_total ?? 0,
+    requests_active: rawStats.requests_active ?? 0,
+    requests_user_removed: rawStats.requests_user_removed ?? 0,
+    requests_expired: rawStats.requests_expired ?? 0,
+    requests_leader_removed: rawStats.requests_leader_removed ?? 0,
   }
 
   // Every wall-posted shift has exactly one of trade-only/giveaway-only/both
