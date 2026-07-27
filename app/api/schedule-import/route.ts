@@ -8,8 +8,32 @@ import { optionalServerEnv } from '@/lib/env'
 export const maxDuration = 90
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
-const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash'
+
+// Total time budget for reaching the model, shared across both endpoint
+// attempts. maxDuration is 90s, so two independent 60s timeouts could exceed
+// the function's own lifetime and get us killed mid-retry — the user sees a
+// generic failure and we may still have been billed for the first call.
+const MODEL_BUDGET_MS = 75_000
+
+// file.type is whatever the uploader's browser claimed in the multipart
+// headers — it is not derived from the bytes, so it validates nothing. Sniff
+// the actual magic bytes instead and use the sniffed type downstream.
+const SIGNATURES: [string, number[]][] = [
+  ['image/jpeg', [0xff, 0xd8, 0xff]],
+  ['image/png',  [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  ['image/webp', [0x52, 0x49, 0x46, 0x46]], // 'RIFF'; bytes 8-11 must be 'WEBP'
+]
+
+function sniffImageType(buf: Buffer): string | null {
+  for (const [mime, sig] of SIGNATURES) {
+    if (sig.every((b, i) => buf[i] === b)) {
+      if (mime === 'image/webp' && buf.subarray(8, 12).toString('ascii') !== 'WEBP') continue
+      return mime
+    }
+  }
+  return null
+}
 
 // Shape returned to the client (ScheduleImportModal).
 const parsedShiftSchema = z.object({
@@ -119,21 +143,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 })
   }
 
-  // Quota check up front so a Basic user over the limit never triggers a
-  // model call. Consumption happens after a successful parse so a backend
-  // failure doesn't burn an import.
-  const { data: statusRows, error: statusErr } = await supabase.rpc('get_schedule_import_status')
-  const status = statusRows?.[0]
-  if (statusErr || !status) {
-    return NextResponse.json({ error: 'Could not verify your import quota. Please try again.' }, { status: 500 })
-  }
-  if (status.import_limit >= 0 && status.used >= status.import_limit) {
-    return NextResponse.json(
-      { error: `You've used all ${status.import_limit} schedule imports for this month. Upgrade to Pro for unlimited imports.` },
-      { status: 403 }
-    )
-  }
-
+  // Validate the upload BEFORE spending a quota credit: a malformed request
+  // should never cost the user an import, and doing it in this order means
+  // those paths need no refund.
   let file: File | null = null
   let userName = ''
   try {
@@ -150,14 +162,37 @@ export async function POST(req: NextRequest) {
   if (!file) {
     return NextResponse.json({ error: 'No image provided.' }, { status: 400 })
   }
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json({ error: 'Please upload a JPEG, PNG, or WebP image.' }, { status: 400 })
-  }
   if (file.size > MAX_IMAGE_BYTES) {
     return NextResponse.json({ error: 'Image is too large (8 MB max).' }, { status: 400 })
   }
 
-  const imageB64 = Buffer.from(await file.arrayBuffer()).toString('base64')
+  const raw = Buffer.from(await file.arrayBuffer())
+  const mimeType = sniffImageType(raw)
+  if (!mimeType) {
+    return NextResponse.json({ error: 'Please upload a JPEG, PNG, or WebP image.' }, { status: 400 })
+  }
+
+  // Atomically claim the import slot. Checking and spending in one locked
+  // statement is what stops fifty simultaneous uploads from all passing a
+  // check that none of them had yet incremented.
+  const { data: reserveRows, error: reserveErr } = await supabase.rpc('reserve_schedule_import')
+  const reservation = reserveRows?.[0]
+  if (reserveErr || !reservation) {
+    return NextResponse.json({ error: 'Could not verify your import quota. Please try again.' }, { status: 500 })
+  }
+  if (!reservation.reserved) {
+    return NextResponse.json(
+      { error: `You've used all ${reservation.import_limit} schedule imports for this month. Upgrade to Pro for unlimited imports.` },
+      { status: 403 }
+    )
+  }
+
+  // From here on the credit is spent, so every exit path that isn't a
+  // successful read must hand it back. The finally block below does that for
+  // all of them at once rather than relying on each early return remembering.
+  let creditUsed = false
+  try {
+  const imageB64 = raw.toString('base64')
   const geminiModel = optionalServerEnv.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL
   // Google mints look-alike keys for two different surfaces (the key prefix
   // does NOT distinguish them): AI Studio keys work on the free-tier
@@ -169,32 +204,44 @@ export async function POST(req: NextRequest) {
     'https://aiplatform.googleapis.com/v1/publishers/google/models',
   ]
 
+  // Build the request body once, then drop our own references to the large
+  // intermediates. An 8 MB upload otherwise sits in memory four times over
+  // (ArrayBuffer + Buffer + base64 string + serialized body) for the whole
+  // duration of the network wait.
+  const body = JSON.stringify({
+    contents: [{
+      role: 'user',
+      parts: [
+        { inlineData: { mimeType, data: imageB64 } },
+        { text: buildGeminiPrompt(userName) },
+      ],
+    }],
+    generationConfig: { temperature: 0 },
+  })
+  file = null
+
   let content: string
   try {
+    const deadline = Date.now() + MODEL_BUDGET_MS
     let res: Response | null = null
     for (const base of geminiBases) {
+      const remaining = deadline - Date.now()
+      // Not enough of the budget left for a meaningful attempt — better to
+      // fail cleanly than be killed mid-request by the function timeout.
+      if (remaining <= 5_000) break
       res = await fetch(`${base}/${geminiModel}:generateContent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-goog-api-key': GEMINI_API_KEY,
         },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [
-              { inlineData: { mimeType: file.type, data: imageB64 } },
-              { text: buildGeminiPrompt(userName) },
-            ],
-          }],
-          generationConfig: { temperature: 0 },
-        }),
-        signal: AbortSignal.timeout(60_000),
+        body,
+        signal: AbortSignal.timeout(remaining),
       })
       // 401/403 = wrong surface for this key type — try the other one.
       if (res.status !== 401 && res.status !== 403) break
     }
-    if (!res) throw new Error('unreachable')
+    if (!res) throw new Error('Ran out of time budget before reaching the model')
     if (res.status === 429) {
       console.error('[schedule-import] Gemini rate limit hit (429)')
       return NextResponse.json(
@@ -251,18 +298,27 @@ export async function POST(req: NextRequest) {
   }
 
   if (shifts.length === 0) {
-    // A readable photo with no shifts shouldn't cost an import.
-    return NextResponse.json({ shifts: [], remaining: remainingFrom(status.used, status.import_limit) })
+    // A readable photo with no shifts shouldn't cost an import — leaving
+    // creditUsed false makes the finally block refund it.
+    return NextResponse.json({
+      shifts: [],
+      remaining: remainingFrom(reservation.used - 1, reservation.import_limit),
+    })
   }
 
-  // Consume quota only after a successful parse.
-  const { data: newUsed } = await supabase.rpc('consume_schedule_import')
-  const used = typeof newUsed === 'number' && newUsed >= 0 ? newUsed : status.used + 1
+  // A real result: the credit reserved up front is now genuinely spent, so
+  // the finally block must not hand it back.
+  creditUsed = true
 
   return NextResponse.json({
     shifts,
-    remaining: remainingFrom(used, status.import_limit),
+    remaining: remainingFrom(reservation.used, reservation.import_limit),
   })
+  } finally {
+    if (!creditUsed) {
+      await supabase.rpc('release_schedule_import')
+    }
+  }
 }
 
 /** -1 = unlimited */
