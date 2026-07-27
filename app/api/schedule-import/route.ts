@@ -62,7 +62,7 @@ For the isolated data blocks belonging to the target employee, transcribe the fo
 - The specific calendar date or day of the week header bound to that entry.
 - The literal raw time window text exactly as written in the cell/block (e.g., "15:30 - 00:30").
 - The literal location, role, or activity text associated with that specific time block.
-Note: If a specific day is explicitly marked "OFF", "RDO", "LOA", "No Shifts", or is completely blank, note it as empty and skip it.
+Note: If a specific day is explicitly marked "OFF", "RDO", "LOA", "No Shifts", or with a named absence code — Holiday, FMLA, ADO, Vacation, PTO, Sick, or similar — note it as empty and skip it. These are not shifts and never carry a start/end time; do not invent one. The same applies to any day that is completely blank.
 
 ### Step 3: Normalization & Structural Rules
 Convert your findings from Step 2 using these strict parameters:
