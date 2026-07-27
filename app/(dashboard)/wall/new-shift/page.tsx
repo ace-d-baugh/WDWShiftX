@@ -8,7 +8,7 @@ export const metadata = {
   title: 'Post a Shift – WDWShiftX',
 }
 
-export default async function NewShiftPage({ searchParams }: { searchParams: { from?: string } }) {
+export default async function NewShiftPage({ searchParams }: { searchParams: { from?: string; date?: string } }) {
   const supabase = createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -30,6 +30,7 @@ export default async function NewShiftPage({ searchParams }: { searchParams: { f
         displayName={userProfile?.display_name ?? 'User'}
         wallExpanded={searchParams.from !== 'calendar'}
         returnTo={searchParams.from === 'calendar' ? '/calendar' : '/wall'}
+        initialDate={/^\d{4}-\d{2}-\d{2}$/.test(searchParams.date ?? '') ? searchParams.date : undefined}
       />
     </div>
   )

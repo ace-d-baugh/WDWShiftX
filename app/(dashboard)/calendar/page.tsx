@@ -21,7 +21,7 @@ export default async function CalendarPage() {
     // User's own shifts (all types — personal calendar entries)
     supabase
       .from('shifts')
-      .select('id, shift_title, start_time, end_time, is_trade, is_giveaway, board_id')
+      .select('id, shift_title, start_time, end_time, is_trade, is_giveaway, board_id, bundle_id')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .gte('start_time', windowStart)
@@ -32,7 +32,7 @@ export default async function CalendarPage() {
     // the handoff doesn't actually go through.
     supabase
       .from('shifts')
-      .select('id, shift_title, start_time, end_time, is_trade, is_giveaway, board_id')
+      .select('id, shift_title, start_time, end_time, is_trade, is_giveaway, board_id, bundle_id')
       .eq('user_id', user.id)
       .eq('is_active', false)
       .eq('removed_reason', 'covered')
@@ -88,7 +88,8 @@ export default async function CalendarPage() {
       today={now.toISOString()}
       myShifts={combinedShifts as {
         id: string; shift_title: string; start_time: string; end_time: string
-        is_trade: boolean; is_giveaway: boolean; board_id: string | null; given_away: boolean
+        is_trade: boolean; is_giveaway: boolean; board_id: string | null
+        bundle_id: string | null; given_away: boolean
       }[]}
       boardShifts={(boardShifts ?? []) as {
         id: string; start_time: string; is_trade: boolean; is_giveaway: boolean; board_id: string | null

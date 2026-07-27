@@ -50,7 +50,6 @@ export default async function WallPage({ searchParams }: { searchParams: { tab?:
       hasBoards={boards.length > 0}
       initialTab={searchParams.tab === 'requests' ? 'requests' : 'offers'}
       initialDate={searchParams.date ?? ''}
-      liveWall={true}
     />
   )
 }

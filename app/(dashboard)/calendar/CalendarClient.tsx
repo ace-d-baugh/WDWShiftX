@@ -1,8 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Camera, Crown, Plus, RefreshCw, Undo2 } from 'lucide-react'
+import {
+  CalendarDays, Camera, Crown, Layers, LayoutGrid, List as ListIcon,
+  MoreVertical, Pencil, Plus, RefreshCw, Trash2, Undo2,
+} from 'lucide-react'
 import Link from 'next/link'
 import { formatInTimeZone } from 'date-fns-tz'
 import { parseISO, addMonths, startOfMonth, getDaysInMonth, getDay } from 'date-fns'
@@ -10,8 +14,11 @@ import { cn } from '@/lib/utils'
 import { getSettings, fmtTime, type UserSettings } from '@/lib/settings'
 import { ScheduleImportModal } from '@/components/features/ScheduleImportModal'
 import { reactivateShift } from '@/app/actions/claims'
+import { deactivateShift, dissolveBundle } from '@/app/actions/posts'
+import { bundleBreakupWarning } from '@/lib/bundles'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const ET = 'America/New_York'
 
@@ -20,6 +27,8 @@ const ET = 'America/New_York'
 interface MyShift {
   id: string; shift_title: string; start_time: string; end_time: string
   is_trade: boolean; is_giveaway: boolean; board_id: string | null
+  /** Set when the shift is part of a take-them-all-together bundle. */
+  bundle_id: string | null
   /** true if this was given away/traded (claim accepted) — shown with a
    * marker instead of disappearing, with a reactivate option. */
   given_away: boolean
@@ -88,12 +97,82 @@ function buildDayMap(
   return map
 }
 
+function hasAnyDots(data?: DayData): boolean {
+  return !!data && (data.hasBoth || data.hasTradeOnly || data.hasGiveawayOnly || data.hasRequest)
+}
+
+// ── Activity dots — shared between Grid and List ────────────────────────────
+// Big tappable circles: the three wall dots (offers) overlap like an avatar
+// stack (giveaway in front, trade behind it, both at the back), the request
+// dot sits alone on the other side since it opens the Requests tab instead.
+
+function ActivityDots({ data, dateStr, router }: { data?: DayData; dateStr: string; router: ReturnType<typeof useRouter> }) {
+  if (!hasAnyDots(data)) return null
+  const d = data!
+  return (
+    <div className="flex items-center shrink-0">
+      <div className="flex items-center">
+        {d.hasBoth && (
+          <button
+            onClick={e => { e.stopPropagation(); router.push(`/wall?tab=offers&date=${dateStr}`) }}
+            title="Trade + Giveaway on this day"
+            className="relative z-0 min-h-0 min-w-0"
+          >
+            <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-primary ring-1 ring-card hover:opacity-70 transition-opacity" />
+          </button>
+        )}
+        {d.hasTradeOnly && (
+          <button
+            onClick={e => { e.stopPropagation(); router.push(`/wall?tab=offers&date=${dateStr}`) }}
+            title="Trade shift on this day"
+            className={cn('relative z-10 min-h-0 min-w-0', d.hasBoth && '-ml-1 min-[505px]:-ml-2')}
+          >
+            <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-info ring-1 ring-card hover:opacity-70 transition-opacity" />
+          </button>
+        )}
+        {d.hasGiveawayOnly && (
+          <button
+            onClick={e => { e.stopPropagation(); router.push(`/wall?tab=offers&date=${dateStr}`) }}
+            title="Giveaway shift on this day"
+            className={cn('relative z-20 min-h-0 min-w-0', (d.hasBoth || d.hasTradeOnly) && '-ml-1 min-[505px]:-ml-2')}
+          >
+            <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-success ring-1 ring-card hover:opacity-70 transition-opacity" />
+          </button>
+        )}
+      </div>
+      {d.hasRequest && (
+        <button
+          onClick={e => { e.stopPropagation(); router.push(`/wall?tab=requests&date=${dateStr}`) }}
+          title="Shift request on this day"
+          className="ml-1 relative z-30 min-h-0 min-w-0"
+        >
+          <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-accent hover:opacity-70 transition-opacity" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+type ViewMode = 'grid' | 'list'
+
 // ── Calendar client ───────────────────────────────────────────────────────────
 
 export function CalendarClient({ userId, displayName, importEnabled, today, myShifts, boardShifts, boardRequests, boards, isPro }: CalendarClientProps) {
   const router = useRouter()
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+
+  const [view, setView] = useState<ViewMode>('grid')
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`calendar-view-${userId}`)
+      if (saved === 'grid' || saved === 'list') setView(saved)
+    } catch {}
+  }, [userId])
+  const changeView = (v: ViewMode) => {
+    setView(v)
+    try { localStorage.setItem(`calendar-view-${userId}`, v) } catch {}
+  }
 
   // Hidden board filter for marketing screenshots: clicking the calendar
   // icon in the heading toggles a dropdown that narrows every shift, dot,
@@ -121,7 +200,45 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
     router.refresh()
   }
 
+  // List view's per-shift ⋮ menu: Edit / Remove. Portalled to <body> with a
+  // computed fixed position — a day-card uses overflow-hidden for its rounded
+  // corners, which would otherwise clip a same-container dropdown (the same
+  // containing-block trap the Wall's card menu and Modal already hit).
+  // Remove reuses the same bundle-breakup warning and dissolve-then-delete
+  // sequence built for the Wall's owner menu, so leaving a bundle mid-way is
+  // explained consistently no matter where the user acts from.
+  const [menuFor, setMenuFor] = useState<{ id: string; top: number; left: number } | null>(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const [removeTarget, setRemoveTarget] = useState<MyShift | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [removeError, setRemoveError] = useState<string | null>(null)
+
+  const bundleSizeOf = (s: MyShift) =>
+    s.bundle_id ? myShifts.filter(x => x.bundle_id === s.bundle_id).length : 0
+
+  const handleRemove = async () => {
+    if (!removeTarget) return
+    setRemoving(true)
+    setRemoveError(null)
+    if (removeTarget.bundle_id) await dissolveBundle(removeTarget.bundle_id)
+    const result = await deactivateShift(removeTarget.id)
+    setRemoving(false)
+    if (result.error) { setRemoveError(result.error); return }
+    setRemoveTarget(null)
+    router.refresh()
+  }
+
   useEffect(() => { setSettings(getSettings()) }, [])
+
+  // Close the menu on any scroll — its fixed position wouldn't track the
+  // button underneath it otherwise (same guard ShiftCard's ⋮ menu uses).
+  useEffect(() => {
+    if (!menuFor) return
+    const close = () => setMenuFor(null)
+    document.addEventListener('scroll', close, { passive: true, capture: true })
+    return () => document.removeEventListener('scroll', close, { capture: true })
+  }, [menuFor])
 
   const todayDate = parseISO(today)
   const fMyShifts      = filterBoardId ? myShifts.filter(s => s.board_id === filterBoardId) : myShifts
@@ -136,6 +253,26 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
   const orderedDays = Array.from({ length: 7 }, (_, i) => DAY_LABELS[(i + weekStart) % 7])
 
   const todayStr = formatInTimeZone(todayDate, ET, 'yyyy-MM-dd')
+
+  const goCreate = (dateStr: string) => router.push(`/wall/new-shift?from=calendar&date=${dateStr}`)
+
+  // Flat, today-forward day list for the List view — built from the same
+  // months/daysInMonth data as the grid, just walked linearly instead of
+  // dropped into a 7-column layout, and trimmed to today onward.
+  const listDays = months.flatMap(monthStart => {
+    const year = monthStart.getFullYear()
+    const month = monthStart.getMonth()
+    const daysInMonth = getDaysInMonth(monthStart)
+    const monthLabel = monthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const label = new Date(year, month, day, 12).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'long', day: 'numeric', year: 'numeric',
+      })
+      return { dateStr, monthLabel, label }
+    })
+  }).filter(d => d.dateStr >= todayStr)
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -213,14 +350,33 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
         </div>
       )}
 
-      {/* Dot legend */}
-      <div className="flex items-center gap-5 mb-6 flex-wrap text-xs text-text/60">
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary inline-block" />Trade + Giveaway</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-info inline-block" />Trade</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-success inline-block" />Giveaway</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />Request</span>
+      {/* Dot legend + view toggle */}
+      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+        <div className="flex items-center gap-5 flex-wrap text-xs text-text/60">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary inline-block" />Trade + Giveaway</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-info inline-block" />Trade</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-success inline-block" />Giveaway</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />Request</span>
+        </div>
+        <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 shrink-0">
+          <button
+            onClick={() => changeView('grid')}
+            aria-label="Grid view" title="Grid view"
+            className={cn('p-1.5 rounded-md transition-colors min-h-0 min-w-0', view === 'grid' ? 'bg-primary-light text-primary' : 'text-text/50 hover:text-text')}
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => changeView('list')}
+            aria-label="List view" title="List view"
+            className={cn('p-1.5 rounded-md transition-colors min-h-0 min-w-0', view === 'list' ? 'bg-primary-light text-primary' : 'text-text/50 hover:text-text')}
+          >
+            <ListIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
+      {view === 'grid' ? (
       <div className="space-y-10">
         {months.map(monthStart => {
           const year  = monthStart.getFullYear()
@@ -257,9 +413,11 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                   return (
                     <div
                       key={dateStr}
+                      onClick={() => { if (!isPast) goCreate(dateStr) }}
                       className={cn(
-                        'bg-card p-1.5 min-h-[90px] flex flex-col',
-                        isPast && 'opacity-50'
+                        'relative bg-card p-1.5 min-h-[90px] flex flex-col',
+                        isPast && 'opacity-50',
+                        !isPast && 'cursor-pointer hover:bg-primary-light/10 transition-colors'
                       )}
                     >
                       {/* Day number */}
@@ -274,13 +432,15 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                           (not filtered out) with a muted/struck marker and a
                           reactivate action, and sit fine alongside a new,
                           fully-active shift at the same time since each is
-                          just its own row here, never a shared slot. */}
+                          just its own row here, never a shared slot. Every
+                          shift button stops propagation so tapping it opens
+                          that shift, not the day's "add a shift" action. */}
                       <div className="flex-1 space-y-0.5">
                         {(data?.myShifts ?? []).map(s => (
                           s.given_away ? (
                             <button
                               key={s.id}
-                              onClick={() => setReactivateTarget(s)}
+                              onClick={e => { e.stopPropagation(); setReactivateTarget(s) }}
                               title="Given away — tap to reactivate if it fell through"
                               className="w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight transition-colors border-l-2 border-l-text/20 bg-text/5 hover:bg-text/10 opacity-60"
                             >
@@ -295,7 +455,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                           ) : (
                             <button
                               key={s.id}
-                              onClick={() => router.push(`/wall/edit-shift/${s.id}?from=calendar`)}
+                              onClick={e => { e.stopPropagation(); router.push(`/wall/edit-shift/${s.id}?from=calendar`) }}
                               className={cn(
                                 'w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight transition-colors border-l-2',
                                 s.is_trade && s.is_giveaway ? 'border-l-primary bg-primary/5 hover:bg-primary/10' :
@@ -304,7 +464,12 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                                                 'border-l-text/20 bg-text/5   hover:bg-text/10'
                               )}
                             >
-                              <div className="font-medium text-text truncate">{s.shift_title}</div>
+                              <div className="flex items-center gap-0.5 min-w-0">
+                                {s.bundle_id && (
+                                  <Layers className="w-2.5 h-2.5 shrink-0 text-primary" aria-label="Part of a bundle" />
+                                )}
+                                <span className="font-medium text-text truncate">{s.shift_title}</span>
+                              </div>
                               <div className="text-text/50 tabular-nums">
                                 {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
                               </div>
@@ -313,53 +478,9 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                         ))}
                       </div>
 
-                      {/* Activity dots — big tappable circles in one row at
-                          the bottom of the cell. The three wall dots (offers)
-                          overlap like an avatar stack: giveaway in front,
-                          trade behind it, both at the back (-ml-2 ≈ 40%
-                          overlap at the 20px desktop size). The request dot
-                          sits alone on the other side of the row, same size,
-                          since it opens the Requests tab instead. */}
-                      {data && (data.hasBoth || data.hasTradeOnly || data.hasGiveawayOnly || data.hasRequest) && (
-                        <div className="flex items-center mt-auto pt-1">
-                          <div className="flex items-center">
-                            {data.hasBoth && (
-                              <button
-                                onClick={() => router.push(`/wall?tab=offers&date=${dateStr}`)}
-                                title="Trade + Giveaway on this day"
-                                className="relative z-0 min-h-0 min-w-0"
-                              >
-                                <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-primary ring-1 ring-card hover:opacity-70 transition-opacity" />
-                              </button>
-                            )}
-                            {data.hasTradeOnly && (
-                              <button
-                                onClick={() => router.push(`/wall?tab=offers&date=${dateStr}`)}
-                                title="Trade shift on this day"
-                                className={cn('relative z-10 min-h-0 min-w-0', data.hasBoth && '-ml-1 min-[505px]:-ml-2')}
-                              >
-                                <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-info ring-1 ring-card hover:opacity-70 transition-opacity" />
-                              </button>
-                            )}
-                            {data.hasGiveawayOnly && (
-                              <button
-                                onClick={() => router.push(`/wall?tab=offers&date=${dateStr}`)}
-                                title="Giveaway shift on this day"
-                                className={cn('relative z-20 min-h-0 min-w-0', (data.hasBoth || data.hasTradeOnly) && '-ml-1 min-[505px]:-ml-2')}
-                              >
-                                <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-success ring-1 ring-card hover:opacity-70 transition-opacity" />
-                              </button>
-                            )}
-                          </div>
-                          {data.hasRequest && (
-                            <button
-                              onClick={() => router.push(`/wall?tab=requests&date=${dateStr}`)}
-                              title="Shift request on this day"
-                              className="ml-auto relative z-30 min-h-0 min-w-0"
-                            >
-                              <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-accent hover:opacity-70 transition-opacity" />
-                            </button>
-                          )}
+                      {hasAnyDots(data) && (
+                        <div className="mt-auto pt-1" onClick={e => e.stopPropagation()}>
+                          <ActivityDots data={data} dateStr={dateStr} router={router} />
                         </div>
                       )}
                     </div>
@@ -370,6 +491,136 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
           )
         })}
       </div>
+      ) : (
+        // ── List view ──────────────────────────────────────────────────────
+        <div className="space-y-4">
+          {listDays.map((d, idx) => {
+            const data = dayMap.get(d.dateStr)
+            const shifts = data?.myShifts ?? []
+            const isToday = d.dateStr === todayStr
+            const showMonthHeader = idx === 0 || listDays[idx - 1].monthLabel !== d.monthLabel
+
+            return (
+              <div key={d.dateStr}>
+                {showMonthHeader && (
+                  <h2 className="font-accent text-lg font-bold text-text mb-2 mt-2 first:mt-0">{d.monthLabel}</h2>
+                )}
+                <div className="rounded-lg border border-border overflow-hidden bg-card">
+                  {/* Row 1: date header — a link to create a shift on this day */}
+                  <button
+                    onClick={() => goCreate(d.dateStr)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-3 py-2 text-left text-sm font-semibold transition-colors min-h-0',
+                      isToday ? 'bg-primary-light/40 text-primary' : 'text-text hover:bg-primary-light/20'
+                    )}
+                  >
+                    {d.label}
+                    <Plus className="w-3.5 h-3.5 text-text/30 shrink-0" />
+                  </button>
+
+                  {shifts.length === 0 ? (
+                    <div className="flex items-center justify-between px-3 py-2 border-t border-border">
+                      <span className="text-sm text-text/40">No Shifts</span>
+                      <ActivityDots data={data} dateStr={d.dateStr} router={router} />
+                    </div>
+                  ) : (
+                    shifts.map((s, si) => {
+                      const isLast = si === shifts.length - 1
+                      if (s.given_away) {
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => setReactivateTarget(s)}
+                            title="Given away — tap to reactivate if it fell through"
+                            className="w-full text-left px-3 py-2 border-t border-border opacity-60 hover:bg-text/5 transition-colors min-h-0"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium text-text/60 truncate line-through">{s.shift_title}</span>
+                              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-text/40">Given Away</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-0.5">
+                              <span className="text-xs text-text/40 tabular-nums">
+                                {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
+                              </span>
+                              {isLast && <ActivityDots data={data} dateStr={d.dateStr} router={router} />}
+                            </div>
+                          </button>
+                        )
+                      }
+                      return (
+                        <div key={s.id} className="border-t border-border">
+                          {/* Row 2: shift title + ⋮ menu (Edit / Remove) */}
+                          <div className="flex items-center justify-between gap-2 px-3 pt-2">
+                            <button
+                              onClick={() => router.push(`/wall/edit-shift/${s.id}?from=calendar`)}
+                              className="flex items-center gap-1 min-w-0 text-left hover:underline min-h-0"
+                            >
+                              {s.bundle_id && <Layers className="w-3 h-3 shrink-0 text-primary" aria-label="Part of a bundle" />}
+                              <span className="text-sm font-medium text-text truncate">{s.shift_title}</span>
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation()
+                                const rect = e.currentTarget.getBoundingClientRect()
+                                const W = 160 // w-40
+                                setMenuFor(prev => prev?.id === s.id ? null : {
+                                  id: s.id, top: rect.bottom + 4,
+                                  left: Math.max(8, Math.min(rect.right - W, window.innerWidth - W - 8)),
+                                })
+                              }}
+                              aria-label="More options"
+                              className="p-1 rounded text-text/40 hover:text-text hover:bg-primary-light/50 transition-colors min-h-0 min-w-0 shrink-0"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {/* Row 3: start–end time, dots on the last shift only */}
+                          <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-0.5">
+                            <span className="text-xs text-text/50 tabular-nums">
+                              {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
+                            </span>
+                            {isLast && <ActivityDots data={data} dateStr={d.dateStr} router={router} />}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ⋮ menu (List view) — portalled to body so the day-card's
+          overflow-hidden (for its rounded corners) can't clip it */}
+      {mounted && menuFor && createPortal(
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
+          <div
+            style={{ position: 'fixed', top: menuFor.top, left: menuFor.left }}
+            className="w-40 rounded-lg border border-border bg-card shadow-xl z-50 py-1 overflow-hidden"
+          >
+            <button
+              onClick={() => { const id = menuFor.id; setMenuFor(null); router.push(`/wall/edit-shift/${id}?from=calendar`) }}
+              className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5 shrink-0" /> Edit
+            </button>
+            <button
+              onClick={() => {
+                const target = fMyShifts.find(s => s.id === menuFor.id) ?? null
+                setMenuFor(null)
+                setRemoveTarget(target)
+              }}
+              className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-warning hover:bg-warning/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5 shrink-0" /> Remove
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* ── Reactivate a given-away shift ─────────────────────────────── */}
       {reactivateTarget && (
@@ -390,6 +641,25 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
             </Button>
           </div>
         </Modal>
+      )}
+
+      {/* ── Remove a shift (List view's ⋮ menu) ───────────────────────── */}
+      <ConfirmDialog
+        open={!!removeTarget}
+        title="Delete Shift"
+        message={`Are you sure you want to delete this shift? This removes it from your calendar and the Wall. This cannot be undone.${removeTarget ? bundleBreakupWarning(bundleSizeOf(removeTarget), 'deleting it') : ''}`}
+        confirmLabel="Delete"
+        loading={removing}
+        onConfirm={handleRemove}
+        onCancel={() => { setRemoveTarget(null); setRemoveError(null) }}
+      />
+
+      {/* Delete failed (rare — e.g. lost ownership mid-session) */}
+      {removeError && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)] p-3 rounded-md bg-warning/10 border border-warning/20 text-warning text-sm flex items-center justify-between gap-2 shadow-lg">
+          <span>{removeError}</span>
+          <button onClick={() => setRemoveError(null)} className="shrink-0 underline text-xs">Dismiss</button>
+        </div>
       )}
     </div>
   )
