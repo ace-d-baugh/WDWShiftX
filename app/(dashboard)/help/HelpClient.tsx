@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   HelpCircle, ChevronDown, Send, X, CheckCircle,
-  LayoutGrid, Star, UserPlus, MessageSquare,
+  LayoutGrid, UserPlus, MessageSquare, Layers,
+  HeartHandshake as Handshake,
   Bell, Monitor, Laptop, Smartphone, CalendarDays, Camera,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -31,15 +32,15 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
   },
   {
     q: 'How do I post a shift?',
-    a: "Tap the + button on the Wall. Choose Post Shift Offer if you have a shift to give away, or Post Shift Request if you're looking to pick one up. Fill in the board, date, time, and any details, then submit. Your post goes live immediately for all members of that board to see.",
+    a: "Tap the + button on the Wall (or on My Calendar). Choose Post Shift Offer if you have a shift to give away, or Post Shift Request if you're looking to pick one up. Fill in the board, date, time, and any details, then submit. Your post goes live immediately for all members of that board to see. Posting several shifts as one package — a multi-day run that only makes sense to trade together — is also possible; see Shift Bundles below.",
   },
   {
-    q: 'How do I mark interest in a shift?',
-    a: "Tap the ⭐ button on any shift card to let the owner know you're interested. They'll receive an email notification right away. You can also expand the card and leave a comment with more context — for example, if you're a good fit for that shift type or location. The post owner will see your name and can reach out directly.",
+    q: 'How do I ask for a shift someone posted?',
+    a: "Tap \"I'll take this\" on any shift card. This doesn't hand the shift over — it sends the owner a request and notifies them by email and push right away, and the post stays right where it is on the Wall. The pill shows how many people have asked (its count) and turns solid once you've sent yours; tap it again to withdraw before the owner responds. The owner reviews everyone who asked — including each person's trade history — and chooses who to accept. See Claiming a Shift below for what happens next.",
   },
   {
     q: 'How do I contact someone about a shift?',
-    a: "Open the three-dot menu (⋮) on any shift or request card and choose Message — this opens a private in-app chat with the post owner where you can work out the details. There's also a Message button in the card's footer row. You can find all your conversations under Messages in the navigation, and start a new one anytime with the Start a chat button there.",
+    a: "Open the three-dot menu (⋮) on any shift or request card and choose Message — this opens a private in-app chat with the post owner where you can work out the details. There's also a Message button in the card's footer row. If you're the owner and you Accept or Message someone from your Interested list, the chat opens with the shift's details already sent, so neither of you has to retype them. You can find all your conversations under Messages in the navigation, and start a new one anytime with the Start a chat button there.",
   },
   {
     q: 'Who can I message, and who can see my messages?',
@@ -51,7 +52,7 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
   },
   {
     q: 'Can WDWShiftX read my work schedule from a photo?',
-    a: "Yes — that's Photo Schedule Import. On the Calendar page, tap Import Schedule, then snap a photo of the posted schedule (paper or a screenshot from your scheduling app). Your shifts are read in seconds and shown next to your photo for review — you can edit, uncheck, or add rows before anything is saved, and shifts that overlap something already on your calendar are flagged. Free accounts get 4 imports per month; Pro is unlimited. See the Photo Schedule Import section below for details.",
+    a: "Yes — that's Photo Schedule Import. On the Calendar page, tap Import Schedule, then attach a photo of the posted schedule (paper or a screenshot from your scheduling app). Your shifts are read in seconds and shown below to your photo for review — you can edit, uncheck, or add rows before anything is saved, and shifts that overlap something already on your calendar are flagged. You get 4 imports per month. See the Photo Schedule Import section below for details.",
     importOnly: true,
   },
   {
@@ -61,6 +62,18 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
   {
     q: 'How do I report a post, comment, or user?',
     a: "Tap the three-dot menu (⋯) on any post or comment and select Flag. Describe the issue briefly and submit — a board moderator will review it. To flag a specific user, open the board member list (My Boards page), tap their three-dot menu, and choose Flag User.",
+  },
+  {
+    q: "What's the difference between Remove from Wall and Delete?",
+    a: "The ⋮ menu on your own posts has four options: Comment, Edit, Remove from Wall, and Delete. Remove from Wall clears the Giveaway/Trade flags so the post comes off the Wall, but it stays on your calendar — edit it anytime to post it again. Delete removes it completely, from the Wall and your calendar, and can't be undone. If the post is part of a bundle, either action warns you first: doing it breaks up the bundle, and the other shifts in the set stay posted individually rather than disappearing too.",
+  },
+  {
+    q: 'Can I bundle multiple shifts together, like a multi-day block?',
+    a: "Yes — when posting or editing a shift, open \"Bundle with other shifts?\" to tie two or more shifts together so one person takes all of them, not just one. See Shift Bundles below for the full walkthrough.",
+  },
+  {
+    q: 'Can I see my calendar as a list, and quickly add a shift for a specific day?',
+    a: "Yes — on My Calendar, use the grid/list toggle near the top of the page (list view tends to read better on a phone).",
   },
   {
     q: 'How do I change my display name, timezone, or notification settings?',
@@ -197,7 +210,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
           {[
             { icon: UserPlus, step: '1', title: 'Get Invited', desc: 'Ask a board manager for an invite link or 7-character code to join your first board.' },
             { icon: LayoutGrid, step: '2', title: 'Browse the Wall', desc: 'See shift offers and requests from everyone on your boards, filtered by date or board.' },
-            { icon: Star,      step: '3', title: 'Post or Connect', desc: 'Post your own shifts or tap ⭐ to mark interest — the owner gets an email instantly.' },
+            { icon: Handshake, step: '3', title: 'Post or Claim', desc: 'Post your own shifts, or tap "I’ll take this" on someone else’s — the owner reviews requests and picks who to accept.' },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div key={step} className="flex gap-3">
               <div className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -237,6 +250,51 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Claiming a Shift ──────────────────────────────────────────────────── */}
+      <section className="mb-10 scroll-mt-20" id="claiming">
+        <div className="flex items-center gap-2 mb-1">
+          <Handshake className="w-5 h-5 text-primary" />
+          <h2 className="font-accent text-xl font-bold text-text">Claiming a Shift</h2>
+        </div>
+        <p className="text-sm text-text/60 mb-4">
+          Tapping <strong>&ldquo;I&rsquo;ll take this&rdquo;</strong> raises your hand — it never removes the post or
+          hands the shift over automatically. That matters because more than one person can ask for the
+          same shift (some workplaces have seniority or union rules the owner has to honor), so the owner
+          always gets to choose.
+        </p>
+        <div className="border border-border rounded-xl px-5 py-4">
+          <ul className="space-y-2.5 text-sm text-text/70 leading-relaxed list-disc list-inside">
+            <li><strong>Asking:</strong> tap the pill on a shift card — it turns solid and its count goes up. Tap it again to withdraw your request any time before the owner responds.</li>
+            <li><strong>Owner&rsquo;s view:</strong> the same pill reads &ldquo;(N) Interested&rdquo; — tap it to open the list of everyone who asked, each with their trade record (completed trades and any that fell through) so you can judge reliability.</li>
+            <li><strong>Accept:</strong> locks in that person, automatically declines everyone else on the list, archives the post as covered, and opens a private chat with the shift&rsquo;s details already sent.</li>
+            <li><strong>Message:</strong> opens that same chat without committing to anyone — use it to ask a question first.</li>
+            <li><strong>Change of heart:</strong> if a trade you accepted falls through, reopen it from your Calendar — tap the &ldquo;Given Away&rdquo; shift and choose Reactivate. It goes right back on the Wall (as long as it hasn&rsquo;t expired).</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ── Shift Bundles ─────────────────────────────────────────────────────── */}
+      <section className="mb-10 scroll-mt-20" id="bundles">
+        <div className="flex items-center gap-2 mb-1">
+          <Layers className="w-5 h-5 text-primary" />
+          <h2 className="font-accent text-xl font-bold text-text">Shift Bundles</h2>
+        </div>
+        <p className="text-sm text-text/60 mb-4">
+          Some shifts only make sense to trade as a set — a whole weekend, a training week, anything
+          where taking just one day would leave you (or someone else) stuck covering the rest.
+          Bundling ties two or more of your shifts together so a claimant takes all of them or none.
+        </p>
+        <div className="border border-border rounded-xl px-5 py-4">
+          <ul className="space-y-2.5 text-sm text-text/70 leading-relaxed list-disc list-inside">
+            <li><strong>Creating one:</strong> when posting or editing a shift, check &ldquo;Bundle with other shifts?&rdquo; Add shifts three ways — pick from your own upcoming schedule, add a brand-new one inline (it defaults to the next day, so a multi-day run fills in fast), or join one of your other existing bundles on the same board.</li>
+            <li><strong>No double-booking:</strong> a shift you add through the bundle section can&rsquo;t overlap anything else already on your schedule — you&rsquo;ll get an error naming the exact conflict if it does.</li>
+            <li><strong>Spotting one:</strong> a small stacked-layers icon appears before a bundled shift&rsquo;s title on the Wall and on your Calendar. Tap it to filter the Wall down to just that bundle&rsquo;s shifts; use Clear Filters to go back to everything.</li>
+            <li><strong>Claiming one:</strong> &ldquo;I&rsquo;ll take this&rdquo; becomes &ldquo;I&rsquo;ll take all&rdquo; — tapping it lists every shift in the set and confirms you understand it&rsquo;s all-or-nothing before sending the request. Accepting archives every shift in the bundle at once.</li>
+            <li><strong>Breaking one up:</strong> editing a bundled shift shows its current partners so you can untick one to drop it from the set. Removing or deleting any single shift in a bundle warns you first, then breaks up the whole bundle — the rest stay on the Wall as ordinary single shifts, nothing else is deleted.</li>
+          </ul>
         </div>
       </section>
 
