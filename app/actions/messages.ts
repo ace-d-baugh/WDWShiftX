@@ -45,6 +45,29 @@ export async function startConversation(
   }
 }
 
+/**
+ * Open (or create) a conversation and drop a shift summary in as the first
+ * message. Used by the Wall's interest list so both sides land in the thread
+ * already knowing which shift is being discussed — the owner shouldn't have
+ * to retype it, and the claimant shouldn't have to guess.
+ *
+ * Returns the conversation id even if the summary fails to send, so the
+ * caller can still navigate to the (now open) thread.
+ */
+export async function messageAboutShift(
+  otherUserId: string,
+  summary: string
+): Promise<{ conversationId?: string; error?: string }> {
+  const convo = await startConversation(otherUserId)
+  if (!convo.conversationId) {
+    return { error: convo.error ?? 'Could not open the conversation.' }
+  }
+  const sent = await sendMessage(convo.conversationId, summary)
+  return sent.error
+    ? { conversationId: convo.conversationId, error: sent.error }
+    : { conversationId: convo.conversationId }
+}
+
 export interface SentMessage {
   id: string
   conversation_id: string

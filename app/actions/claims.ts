@@ -20,6 +20,24 @@ export async function claimShift(shiftId: string): Promise<{ error?: string; cla
 }
 
 /**
+ * Claimant: "I'll take all of these" on a bundled shift. One claim covers the
+ * whole bundle — accepting it archives every shift in the bundle at once.
+ */
+export async function claimBundle(bundleId: string): Promise<{ error?: string; claimId?: string }> {
+  try {
+    const { supabase } = await getActionSession()
+
+    const { data, error } = await supabase.rpc('claim_bundle', { p_bundle_id: bundleId })
+    if (error) return { error: error.message }
+
+    void notifyClaimCreated(data)
+    return { claimId: data }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Unknown error' }
+  }
+}
+
+/**
  * Owner: accept or decline a pending claim. Accepting archives the post as
  * covered and auto-declines rival pending claims (they get a push).
  */

@@ -17,7 +17,7 @@ export default async function EditShiftPage({ params, searchParams }: PageProps)
 
   const { data: shift } = await supabase
     .from('shifts')
-    .select('id, board_id, shift_title, start_time, end_time, is_trade, is_giveaway, is_overtime_approved, details, user_id')
+    .select('id, board_id, shift_title, start_time, end_time, is_trade, is_giveaway, is_overtime_approved, details, user_id, bundle_id')
     .eq('id', params.id)
     .eq('user_id', user.id)
     .single()
@@ -50,6 +50,7 @@ export default async function EditShiftPage({ params, searchParams }: PageProps)
             is_giveaway:          shift.is_giveaway,
             is_overtime_approved: shift.is_overtime_approved,
             details:              shift.details,
+            bundle_id:            shift.bundle_id,
           }}
       />
     </div>

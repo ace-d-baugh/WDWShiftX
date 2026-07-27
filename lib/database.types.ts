@@ -12,7 +12,6 @@ export type RoadmapColumn   = 'done' | 'in_progress' | 'next' | 'backlog' | 'def
 export type RemovedReason   = 'expired' | 'leader_removed' | 'user_removed' | 'covered'
 export type ClaimStatus     = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'completed' | 'fell_through'
 export type MessageReaction = 'thumbs_up' | 'laugh' | 'surprise' | 'sad' | 'mad' | 'star'
-export type BillingCycle    = 'monthly' | 'quarterly' | 'semi_annual' | 'yearly'
 
 export interface Database {
   public: {
@@ -30,11 +29,6 @@ export interface Database {
           onboarding_dismissed_at: string | null
           role: GlobalRole
           membership: Membership
-          trial_ends_at: string | null
-          trial_used: boolean
-          billing_cycle: BillingCycle | null
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
           schedule_import_count: number
           schedule_import_month: string | null
           ical_token: string | null
@@ -55,11 +49,6 @@ export interface Database {
           onboarding_dismissed_at?: string | null
           role?: GlobalRole
           membership?: Membership
-          trial_ends_at?: string | null
-          trial_used?: boolean
-          billing_cycle?: BillingCycle | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           schedule_import_count?: number
           schedule_import_month?: string | null
           ical_token?: string | null
@@ -80,11 +69,6 @@ export interface Database {
           onboarding_dismissed_at?: string | null
           role?: GlobalRole
           membership?: Membership
-          trial_ends_at?: string | null
-          trial_used?: boolean
-          billing_cycle?: BillingCycle | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           schedule_import_count?: number
           schedule_import_month?: string | null
           ical_token?: string | null
@@ -240,6 +224,7 @@ export interface Database {
           expires_at: string
           removed_reason: RemovedReason | null
           removed_by_user_id: string | null
+          bundle_id: string | null
         }
         Insert: {
           id?: string
@@ -257,6 +242,7 @@ export interface Database {
           created_at?: string
           removed_reason?: RemovedReason | null
           removed_by_user_id?: string | null
+          bundle_id?: string | null
         }
         Update: {
           id?: string
@@ -274,6 +260,7 @@ export interface Database {
           created_at?: string
           removed_reason?: RemovedReason | null
           removed_by_user_id?: string | null
+          bundle_id?: string | null
         }
         Relationships: [
           {
@@ -600,6 +587,7 @@ export interface Database {
           claimant_id: string
           owner_id: string
           board_id: string | null
+          bundle_id: string | null
           status: ClaimStatus
           created_at: string
           responded_at: string | null
@@ -611,6 +599,7 @@ export interface Database {
           claimant_id: string
           owner_id: string
           board_id?: string | null
+          bundle_id?: string | null
           status?: ClaimStatus
           created_at?: string
           responded_at?: string | null
@@ -622,10 +611,32 @@ export interface Database {
           claimant_id?: string
           owner_id?: string
           board_id?: string | null
+          bundle_id?: string | null
           status?: ClaimStatus
           created_at?: string
           responded_at?: string | null
           finalized_at?: string | null
+        }
+        Relationships: []
+      }
+      shift_bundles: {
+        Row: {
+          id: string
+          user_id: string
+          board_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          board_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          board_id?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -759,10 +770,6 @@ export interface Database {
         Args: { p_code: string }
         Returns: { id: string; name: string; is_active: boolean; invite_code_enabled: boolean }[]
       }
-      get_own_membership: {
-        Args: Record<string, never>
-        Returns: { membership: Membership; trial_ends_at: string | null; trial_used: boolean; billing_cycle: BillingCycle | null }[]
-      }
       get_schedule_import_status: {
         Args: Record<string, never>
         Returns: { membership: Membership; used: number; import_limit: number }[]
@@ -774,7 +781,7 @@ export interface Database {
         Args: Record<string, never>
         Returns: {
           id: string; display_name: string | null; role: GlobalRole; is_active: boolean
-          created_at: string; membership: Membership; billing_cycle: BillingCycle | null
+          created_at: string; membership: Membership
         }[]
       }
       get_pending_board_requests: {
@@ -825,6 +832,11 @@ export interface Database {
       get_shift_claim_counts: {
         Args: { p_shift_ids: string[] }
         Returns: { shift_id: string; pending_count: number }[]
+      }
+      claim_bundle: { Args: { p_bundle_id: string }; Returns: string }
+      get_bundle_claim_counts: {
+        Args: { p_bundle_ids: string[] }
+        Returns: { bundle_id: string; pending_count: number }[]
       }
       get_post_stats_admin: {
         Args: Record<string, never>

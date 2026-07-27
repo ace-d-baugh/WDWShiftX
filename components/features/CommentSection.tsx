@@ -39,6 +39,10 @@ interface CommentSectionProps {
   /** Rendered first in the pill row, before Comments — shifts use this for
    * their "I'll take this" claim control (requests have no equivalent). */
   leadingAction?: React.ReactNode
+  /** Accordion content shown directly under the pill row — shifts use this for
+   * the owner's list of interested claimants. Caller owns the open/closed
+   * state (it's driven by a pill in `leadingAction`). */
+  expandedPanel?: React.ReactNode
   /** Off for shifts — "I'll take this" replaces marking interest there.
    * Requests have no claim system, so they keep it. Default true. */
   showInterest?: boolean
@@ -60,6 +64,7 @@ export function CommentSection({
   boardId,
   actions,
   leadingAction,
+  expandedPanel,
   showInterest = true,
   ownerUserId,
   openCommentsTick,
@@ -365,6 +370,8 @@ export function CommentSection({
       </div>
 
       {error && <p className="text-xs text-warning mt-1.5">{error}</p>}
+
+      {expandedPanel}
 
       {showInterest && interestedOpen && isOwner && (
         <div className="mt-3 p-3 bg-primary-light/40 rounded-lg">

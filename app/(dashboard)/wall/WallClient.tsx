@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, forwardRef } from 'react'
 import Link from 'next/link'
-import { parseISO } from 'date-fns'
+import { parseISO, format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
-import { Plus, RefreshCw, Inbox, Search, SlidersHorizontal, ChevronDown, X, Check } from 'lucide-react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
+import { Plus, RefreshCw, Inbox, Search, SlidersHorizontal, ChevronDown, X, Check, Layers, Calendar } from 'lucide-react'
+import { getSettings } from '@/lib/settings'
 import { createClient } from '@/lib/supabase/client'
 import { deactivateShift, deactivateRequest } from '@/app/actions/posts'
 import { PushPromptBanner } from '@/components/features/PushPromptBanner'
@@ -24,7 +27,7 @@ interface Board { id: string; name: string }
 const SHIFT_SELECT = `
   id, shift_title, created_by, user_id, board_id,
   start_time, end_time, is_trade, is_giveaway, is_overtime_approved,
-  details, is_active, expires_at, created_at,
+  details, is_active, expires_at, created_at, bundle_id,
   boards(name),
   users!user_id(notify_via_email, notify_via_sms, phone_number)
 `
@@ -60,6 +63,7 @@ function mapShiftRow(s: Record<string, unknown>) {
     is_active: s.is_active as boolean,
     expires_at: s.expires_at as string,
     created_at: s.created_at as string,
+    bundle_id: (s.bundle_id as string | null) ?? null,
     contactReady: posterContactReady(s.users as PosterContact),
   }
 }
@@ -82,6 +86,35 @@ function mapRequestRow(r: Record<string, unknown>) {
   }
 }
 
+/** Read-only trigger for the filter's calendar popup, with a clear button
+ *  once a date is picked (react-datepicker's isClearable supplies onClear). */
+const FilterDateInput = forwardRef<HTMLInputElement, {
+  value?: string; onClick?: () => void; placeholder?: string; onClear?: () => void
+}>(({ value, onClick, placeholder, onClear }, ref) => (
+  <div className="relative">
+    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 dark:text-primary pointer-events-none z-10" />
+    <input
+      ref={ref}
+      readOnly
+      value={value ?? ''}
+      onClick={onClick}
+      placeholder={placeholder ?? 'Any date'}
+      className={`input text-sm h-9 pl-9 ${value ? 'pr-8' : ''} cursor-pointer`}
+    />
+    {value && onClear && (
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); onClear() }}
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-text/40 hover:text-text min-h-0 min-w-0 z-10"
+        aria-label="Clear date"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    )}
+  </div>
+))
+FilterDateInput.displayName = 'FilterDateInput'
+
 interface WallClientProps {
   userId: string
   displayName: string
@@ -89,14 +122,13 @@ interface WallClientProps {
   hasBoards: boolean
   initialTab?: Tab
   initialDate?: string
-  /** Pro/Trial perk: apply realtime updates live. Basic gets a refresh banner. */
-  liveWall?: boolean
 }
 
 type Tab = 'offers' | 'requests'
 
-export function WallClient({ userId, displayName, boards, hasBoards, initialTab = 'offers', initialDate = '', liveWall = false }: WallClientProps) {
+export function WallClient({ userId, displayName, boards, hasBoards, initialTab = 'offers', initialDate = '' }: WallClientProps) {
   const supabase = useMemo(() => createClient(), [])
+  const settings = getSettings()
   const [tab, setTab] = useState<Tab>(initialTab)
   const [shifts, setShifts] = useState<ShiftData[]>([])
   const [requests, setRequests] = useState<RequestData[]>([])
@@ -109,6 +141,8 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
   const [myPostsOnly, setMyPostsOnly] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [deactivateError, setDeactivateError] = useState<string | null>(null)
+  /** Set by tapping a card's bundle icon — narrows the Wall to one bundle. */
+  const [bundleFilter, setBundleFilter] = useState<string | null>(null)
 
   // Trade Loop (Task 21): claim state for the visible shifts
   const [myClaims, setMyClaims] = useState<Map<string, MyClaim>>(new Map())
@@ -120,6 +154,9 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
   // individual rows, so the "I'll take this (N)" count for a bystander comes
   // from this identity-free aggregate instead.
   const [claimCounts, setClaimCounts] = useState<Map<string, number>>(new Map())
+  // Same idea for bundles: one claim covers the whole set, so every card in a
+  // bundle shows that bundle's count rather than its own (always zero).
+  const [bundleClaimCounts, setBundleClaimCounts] = useState<Map<string, number>>(new Map())
 
   // Collapsed state for day-group accordions, persisted per user
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set())
@@ -268,19 +305,20 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
   // how many accepted trades are past their shift end awaiting confirmation.
   const loadClaimData = useCallback(async (shiftList: ShiftData[]) => {
     const shiftIds = shiftList.map(s => s.id)
+    const bundleIds = [...new Set(shiftList.map(s => s.bundle_id).filter((b): b is string => !!b))]
 
-    const [mineRes, pendingRes, acceptedRes, countsRes] = await Promise.all([
+    const [mineRes, pendingRes, acceptedRes, countsRes, bundleCountsRes] = await Promise.all([
       shiftIds.length
         ? supabase
             .from('shift_claims')
-            .select('id, shift_id, status')
+            .select('id, shift_id, bundle_id, status')
             .eq('claimant_id', userId)
-            .in('shift_id', shiftIds)
+            .or(`shift_id.in.(${shiftIds.join(',')})${bundleIds.length ? `,bundle_id.in.(${bundleIds.join(',')})` : ''}`)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] }),
       supabase
         .from('shift_claims')
-        .select('id, shift_id, claimant_id, claimant:users!claimant_id(display_name)')
+        .select('id, shift_id, bundle_id, claimant_id, claimant:users!claimant_id(display_name)')
         .eq('owner_id', userId)
         .eq('status', 'pending'),
       supabase
@@ -293,17 +331,31 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       shiftIds.length
         ? supabase.rpc('get_shift_claim_counts', { p_shift_ids: shiftIds })
         : Promise.resolve({ data: [] }),
+      bundleIds.length
+        ? supabase.rpc('get_bundle_claim_counts', { p_bundle_ids: bundleIds })
+        : Promise.resolve({ data: [] }),
     ])
 
-    // Latest claim per shift (a declined claimant may have claimed again)
+    // Latest claim per shift (a declined claimant may have claimed again).
+    // A bundle claim is anchored to one shift but applies to every card in
+    // the bundle, so fan it out across the bundle's siblings.
+    const bundleMembers = new Map<string, string[]>()
+    for (const s of shiftList) {
+      if (!s.bundle_id) continue
+      bundleMembers.set(s.bundle_id, [...(bundleMembers.get(s.bundle_id) ?? []), s.id])
+    }
+
     const mine = new Map<string, MyClaim>()
-    for (const c of (mineRes.data ?? []) as { id: string; shift_id: string; status: MyClaim['status'] }[]) {
-      if (!mine.has(c.shift_id)) mine.set(c.shift_id, { id: c.id, status: c.status })
+    for (const c of (mineRes.data ?? []) as { id: string; shift_id: string; bundle_id: string | null; status: MyClaim['status'] }[]) {
+      const targets = c.bundle_id ? (bundleMembers.get(c.bundle_id) ?? [c.shift_id]) : [c.shift_id]
+      for (const t of targets) {
+        if (!mine.has(t)) mine.set(t, { id: c.id, status: c.status })
+      }
     }
 
     // Reliability stats for everyone we'll display: posters + pending claimants
     const pendingRows = (pendingRes.data ?? []) as unknown as {
-      id: string; shift_id: string; claimant_id: string
+      id: string; shift_id: string; bundle_id: string | null; claimant_id: string
       claimant: { display_name: string | null } | null
     }[]
     const statUserIds = [...new Set([
@@ -320,12 +372,14 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
 
     const pending = new Map<string, PendingClaim[]>()
     for (const c of pendingRows) {
+      const size = c.bundle_id ? (bundleMembers.get(c.bundle_id)?.length ?? 0) : 0
       const list = pending.get(c.shift_id) ?? []
       list.push({
         id: c.id,
         claimant_id: c.claimant_id,
         claimant_name: c.claimant?.display_name ?? 'A board member',
         stats: stats.get(c.claimant_id),
+        bundleSize: size || undefined,
       })
       pending.set(c.shift_id, list)
     }
@@ -340,11 +394,17 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       counts.set(row.shift_id, row.pending_count)
     }
 
+    const bundleCounts = new Map<string, number>()
+    for (const row of (bundleCountsRes.data ?? []) as { bundle_id: string; pending_count: number }[]) {
+      bundleCounts.set(row.bundle_id, row.pending_count)
+    }
+
     setMyClaims(mine)
     setPendingByShift(pending)
     setStatsByUser(stats)
     setAwaitingFinalize(awaiting)
     setClaimCounts(counts)
+    setBundleClaimCounts(bundleCounts)
   }, [supabase, userId])
 
   // Refresh claim state whenever the shift list changes (initial load,
@@ -374,11 +434,8 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
     else loadRequests()
   }, [tab, loadShifts, loadRequests])
 
-  // Realtime subscriptions. Pro/Trial (liveWall): changes are applied to the
-  // list the moment they land. Basic: the same events only raise a "new
-  // activity" banner — the refresh is manual, which is the upsell.
-  const [newActivity, setNewActivity] = useState(false)
-
+  // Realtime subscriptions — new/updated/removed shifts and requests apply
+  // to the list the moment they land.
   useEffect(() => {
     if (!hasBoards) return
 
@@ -395,7 +452,6 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shifts', filter: boardFilter },
         (payload) => {
-          if (!liveWall) { setNewActivity(true); return }
           if (payload.eventType === 'DELETE') {
             setShifts(prev => prev.filter(s => s.id !== (payload.old as { id: string }).id))
           } else if (payload.eventType === 'UPDATE' && !(payload.new as { is_active: boolean }).is_active) {
@@ -413,7 +469,6 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
         'postgres_changes',
         { event: '*', schema: 'public', table: 'requests', filter: boardFilter },
         (payload) => {
-          if (!liveWall) { setNewActivity(true); return }
           if (payload.eventType === 'DELETE') {
             setRequests(prev => prev.filter(r => r.id !== (payload.old as { id: string }).id))
           } else if (payload.eventType === 'UPDATE' && !(payload.new as { is_active: boolean }).is_active) {
@@ -429,13 +484,14 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       supabase.removeChannel(shiftsChannel)
       supabase.removeChannel(requestsChannel)
     }
-  }, [hasBoards, boards, liveWall, supabase, upsertShift, upsertRequest])
+  }, [hasBoards, boards, supabase, upsertShift, upsertRequest])
 
-  const handleManualRefresh = () => {
-    setNewActivity(false)
+  // Un-post path: the card already wrote to the server, so just prune it and
+  // re-pull — dissolving a bundle also rewrites its siblings' bundle_id.
+  const handleShiftRemoved = useCallback((id: string) => {
+    setShifts(prev => prev.filter(s => s.id !== id))
     loadShifts(true)
-    loadRequests(true)
-  }
+  }, [loadShifts])
 
   const handleDeactivateShift = async (id: string) => {
     setDeactivateError(null)
@@ -483,6 +539,7 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
 
   const filteredShifts = useMemo(() => {
     let list = shifts
+    if (bundleFilter)       list = list.filter(s => s.bundle_id === bundleFilter)
     if (myPostsOnly)        list = list.filter(s => s.user_id === userId)
     if (boardFilters.size)  list = list.filter(s => s.board_id != null && boardFilters.has(s.board_id))
     if (dateFilter)         list = list.filter(s => formatInTimeZone(parseISO(s.start_time), ET, 'yyyy-MM-dd') === dateFilter)
@@ -496,7 +553,7 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       )
     }
     return list
-  }, [shifts, search, dateFilter, boardFilters, myPostsOnly, userId])
+  }, [shifts, search, dateFilter, boardFilters, myPostsOnly, bundleFilter, userId])
 
   const filteredRequests = useMemo(() => {
     let list = requests
@@ -538,6 +595,34 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
     })
     return [...groups.entries()].map(([dayKey, v]) => ({ dayKey, ...v }))
   }, [filteredRequests])
+
+  // Bundle groupings come from the full shift list, not the filtered one — a
+  // bundle's size shouldn't shrink just because a date filter hid one card.
+  const bundlesById = useMemo(() => {
+    const m = new Map<string, ShiftData[]>()
+    for (const s of shifts) {
+      if (!s.bundle_id) continue
+      m.set(s.bundle_id, [...(m.get(s.bundle_id) ?? []), s])
+    }
+    return m
+  }, [shifts])
+
+  const handleFilterBundle = useCallback((bundleId: string) => {
+    setBundleFilter(bundleId)
+    setTab('offers')
+    setFiltersOpen(true)
+  }, [])
+
+  const hasActiveFilters = !!bundleFilter || myPostsOnly || boardFilters.size > 0 ||
+    !!dateFilter || !!search.trim()
+
+  const clearFilters = () => {
+    setBundleFilter(null)
+    setMyPostsOnly(false)
+    setBoardFilters(new Set())
+    setDateFilter('')
+    setSearch('')
+  }
 
   const currentPostCount = tab === 'offers' ? shifts.length : requests.length
 
@@ -590,21 +675,6 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       {/* iOS Safari tab: push needs a Home Screen install first (Task 23) */}
       <IosInstallPrompt />
 
-      {/* Basic-tier realtime gate: something changed, refresh is manual */}
-      {newActivity && (
-        <div className="mb-4 p-3 rounded-md bg-info/10 border border-info/20 text-sm flex flex-wrap items-center justify-between gap-2">
-          <span className="text-text/80">
-            New activity on the Wall —{' '}
-            <button onClick={handleManualRefresh} className="text-primary font-medium underline min-h-0 min-w-0">
-              refresh to see it
-            </button>
-          </span>
-          <Link href="/upgrade" className="text-xs text-text/50 hover:text-primary min-h-0 min-w-0">
-            ⭐ Pro members see new posts instantly
-          </Link>
-        </div>
-      )}
-
       {/* Trade Loop: accepted trades past their shift end, awaiting confirmation */}
       {awaitingFinalize > 0 && (
         <div className="mb-4 p-3 rounded-md bg-success/10 border border-success/20 text-sm flex flex-wrap items-center justify-between gap-2">
@@ -645,7 +715,7 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
       </div>
 
       {/* Filters */}
-      {currentPostCount > 1 && (
+      {(currentPostCount > 1 || hasActiveFilters) && (
         <>
           <button
             onClick={() => setFiltersOpen(o => !o)}
@@ -653,12 +723,43 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filters
+            {hasActiveFilters && (
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-label="filters active" />
+            )}
             <ChevronDown className={cn('w-4 h-4 transition-transform', filtersOpen && 'rotate-180')} />
           </button>
 
           {filtersOpen && (
             <div className="mb-6 p-4 bg-primary-light/40 rounded-lg space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Scope row: my posts + the bundle chip, with a single reset */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <label className="flex items-center gap-2 cursor-pointer min-h-0">
+                  <Checkbox
+                    checked={myPostsOnly}
+                    onChange={e => setMyPostsOnly(e.target.checked)}
+                  />
+                  <span className="text-sm text-text whitespace-nowrap">My posts only</span>
+                </label>
+
+                {bundleFilter && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/15 text-primary px-2 py-1 rounded-full">
+                    <Layers className="w-3 h-3" />
+                    Showing 1 bundle ({bundlesById.get(bundleFilter)?.length ?? 0})
+                  </span>
+                )}
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
+                  >
+                    <X className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Board multi-select dropdown */}
                 <div ref={boardDropdownRef} className="relative">
                   <label className="block text-xs font-medium text-text/60 mb-1">Board</label>
@@ -719,40 +820,25 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
                   )}
                 </div>
 
-                {/* Date */}
+                {/* Date — react-datepicker so it's a real calendar popup on
+                    every browser, matching the post/edit forms (the native
+                    input[type=date] renders as a bare text field in some). */}
                 <div>
                   <label className="block text-xs font-medium text-text/60 mb-1">Date</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      className={`input text-sm h-9 pr-8${dateFilter ? ' date-has-value' : ''}`}
-                      value={dateFilter}
-                      min={formatInTimeZone(new Date(), ET, 'yyyy-MM-dd')}
-                      onChange={e => setDateFilter(e.target.value)}
-                    />
-                    {dateFilter && (
-                      <button
-                        type="button"
-                        onClick={() => setDateFilter('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text/40 hover:text-text min-h-0 min-w-0 p-0.5"
-                        aria-label="Clear date"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                  <DatePicker
+                    selected={dateFilter ? parseISO(`${dateFilter}T12:00:00`) : null}
+                    onChange={(d: Date | null) => setDateFilter(d ? format(d, 'yyyy-MM-dd') : '')}
+                    dateFormat={settings.dateFormat === 'dmy' ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
+                    calendarStartDay={settings.weekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6}
+                    minDate={new Date(new Date().setHours(0, 0, 0, 0))}
+                    placeholderText="Any date"
+                    isClearable
+                    customInput={<FilterDateInput />}
+                    popperPlacement="bottom-start"
+                    wrapperClassName="w-full"
+                  />
                 </div>
 
-                {/* My posts only */}
-                <div className="flex items-end pb-1">
-                  <label className="flex items-center gap-2 cursor-pointer min-h-0">
-                    <Checkbox
-                      checked={myPostsOnly}
-                      onChange={e => setMyPostsOnly(e.target.checked)}
-                    />
-                    <span className="text-sm text-text whitespace-nowrap">My posts only</span>
-                  </label>
-                </div>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 pointer-events-none" />
@@ -820,11 +906,21 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
                         currentUserId={userId}
                         currentUserName={displayName}
                         onDeactivate={handleDeactivateShift}
+                        onRemoved={handleShiftRemoved}
                         myClaim={myClaims.get(shift.id)}
                         pendingClaims={pendingByShift.get(shift.id)}
-                        claimCount={claimCounts.get(shift.id) ?? 0}
+                        claimCount={shift.bundle_id
+                          ? bundleClaimCounts.get(shift.bundle_id) ?? 0
+                          : claimCounts.get(shift.id) ?? 0}
                         posterStats={shift.user_id ? statsByUser.get(shift.user_id) : undefined}
                         onClaimChanged={handleClaimChanged}
+                        bundleSize={shift.bundle_id ? bundlesById.get(shift.bundle_id)?.length : undefined}
+                        bundleSiblings={shift.bundle_id
+                          ? bundlesById.get(shift.bundle_id)?.map(s => ({
+                              id: s.id, shift_title: s.shift_title, start_time: s.start_time,
+                            }))
+                          : undefined}
+                        onFilterBundle={handleFilterBundle}
                       />
                     </div>
                   ))}

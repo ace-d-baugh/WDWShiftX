@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +16,11 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children, className, size = 'md' }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  // Portalled to <body>, so a transformed ancestor (e.g. ShiftCard's
+  // hover:-translate-y-0.5) can't become the containing block for the fixed
+  // overlay and shrink the dialog to the card. Mount flag keeps SSR happy.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
     if (open) {
@@ -33,7 +39,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
     return () => document.removeEventListener('keydown', handleEsc)
   }, [open, onClose])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
   const sizes = {
     sm: 'max-w-sm',
@@ -41,7 +47,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
     lg: 'max-w-lg',
   }
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -80,6 +86,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
           * scrolling (flex children with min-height floors) shrinks first. */}
         <div className="flex min-h-0 flex-col overflow-y-auto">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

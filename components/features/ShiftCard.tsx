@@ -9,13 +9,15 @@ import { parseISO } from 'date-fns'
 import { getSettings } from '@/lib/settings'
 import { slugify } from '@/lib/slug'
 import {
-  Clock, LayoutGrid, User, Flag, Pencil, Trash2,
-  MoreVertical, MessageSquare, Send, ChevronDown, HeartHandshake as Handshake,
+  Clock, LayoutGrid, User, Flag, Pencil, Trash2, EyeOff,
+  MoreVertical, MessageSquare, Send, ChevronDown, HeartHandshake as Handshake, Layers,
 } from 'lucide-react'
+import { unpostShift, dissolveBundle } from '@/app/actions/posts'
+import { bundleBreakupWarning } from '@/lib/bundles'
 import { Badge } from '@/components/ui/Badge'
 import { FlagModal } from '@/components/features/FlagModal'
 import { CommentSection } from '@/components/features/CommentSection'
-import { ClaimSection, ClaimPill, type MyClaim, type PendingClaim, type TradeStats } from '@/components/features/ClaimSection'
+import { ClaimSection, ClaimPill, InterestedPill, type MyClaim, type PendingClaim, type TradeStats } from '@/components/features/ClaimSection'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +37,7 @@ export interface ShiftData {
   is_active: boolean
   expires_at: string
   created_at: string
+  bundle_id: string | null
   comment_count?: number
   interested_count?: number
   contactReady?: boolean
@@ -45,6 +48,10 @@ interface ShiftCardProps {
   currentUserId?: string
   currentUserName?: string
   onDeactivate?: (id: string) => void
+  /** Called after this card un-posts itself (the server write already
+   *  happened here) so the parent can prune it from the list — unlike
+   *  onDeactivate, which performs the delete itself. */
+  onRemoved?: (id: string) => void
   /** Trade Loop (Task 21) — supplied by WallClient */
   myClaim?: MyClaim | null
   pendingClaims?: PendingClaim[]
@@ -53,21 +60,31 @@ interface ShiftCardProps {
   claimCount?: number
   posterStats?: TradeStats
   onClaimChanged?: () => void
+  /** How many active shifts share this card's bundle (for the claim modal). */
+  bundleSize?: number
+  /** Titles + times of the sibling shifts, listed in the claim modal. */
+  bundleSiblings?: { id: string; shift_title: string; start_time: string }[]
+  /** Clicking the bundle icon filters the Wall down to that bundle. */
+  onFilterBundle?: (bundleId: string) => void
 }
 
 export function ShiftCard({
-  shift, currentUserId, currentUserName, onDeactivate,
+  shift, currentUserId, currentUserName, onDeactivate, onRemoved,
   myClaim, pendingClaims, claimCount, posterStats, onClaimChanged,
+  bundleSize, bundleSiblings, onFilterBundle,
 }: ShiftCardProps) {
   const router = useRouter()
   const [flagOpen, setFlagOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [confirmUnpost, setConfirmUnpost] = useState(false)
+  const [unposting, setUnposting] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const [openCommentsTick, setOpenCommentsTick] = useState(0)
   const [messageTick, setMessageTick] = useState(0)
+  const [claimsOpen, setClaimsOpen] = useState(false)
 
   const isOwner = currentUserId && shift.user_id === currentUserId
   const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('12h')
@@ -103,6 +120,20 @@ export function ShiftCard({
   const startTime = formatInTimeZone(parseISO(shift.start_time), tz, timePat)
   const endTime   = formatInTimeZone(parseISO(shift.end_time),   tz, timePat)
 
+  // Seeded into the chat when the owner hits Accept or Message, so the thread
+  // opens with the shift already spelled out. Capped to the 1000-char message
+  // limit — a large bundle would otherwise overflow it.
+  const shiftSummary = (() => {
+    const day = (iso: string) => formatInTimeZone(parseISO(iso), tz, 'EEE, MMM d')
+    const lines = shift.bundle_id && bundleSiblings?.length
+      ? bundleSiblings.map(s => `• ${s.shift_title} — ${day(s.start_time)}`)
+      : [`• ${shift.shift_title} — ${day(shift.start_time)}, ${startTime} → ${endTime}`]
+    const header = shift.bundle_id && (bundleSiblings?.length ?? 0) > 1
+      ? `About my ${bundleSiblings!.length}-shift bundle on ${shift.board_name} (taken together):`
+      : `About my shift on ${shift.board_name}:`
+    return [header, ...lines].join('\n').slice(0, 1000)
+  })()
+
   // Derive shift type for consistent colour theming
   const isBoth      = shift.is_trade && shift.is_giveaway
   const isTradeOnly = shift.is_trade && !shift.is_giveaway
@@ -122,6 +153,24 @@ export function ShiftCard({
     </span>
   )
 
+  const unpostWarning = bundleBreakupWarning(shift.bundle_id ? bundleSize : 0, 'removing it')
+  const deleteWarning = bundleBreakupWarning(shift.bundle_id ? bundleSize : 0, 'deleting it')
+
+  const handleUnpost = async () => {
+    setUnposting(true)
+    if (shift.bundle_id) await dissolveBundle(shift.bundle_id)
+    const res = await unpostShift(shift.id)
+    setUnposting(false)
+    setConfirmUnpost(false)
+    if (!res.error) onRemoved?.(shift.id)
+  }
+
+  const handleDelete = async () => {
+    if (shift.bundle_id) await dissolveBundle(shift.bundle_id)
+    onDeactivate?.(shift.id)
+    setConfirmRemove(false)
+  }
+
   const menuItemCls = 'flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm transition-colors text-text/80 hover:bg-primary-light/50 hover:text-text'
   const menuDangerCls = 'flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm transition-colors text-warning hover:bg-warning/10'
   const menuDisabledCls = 'flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-text/25 cursor-not-allowed'
@@ -137,6 +186,19 @@ export function ShiftCard({
         <div className="mb-1">
           <div className="flex items-start gap-2">
             <h3 className={cn('font-accent font-bold text-lg leading-snug flex-1 min-w-0 break-words hyphens-auto', typeColor)}>
+              {shift.bundle_id && (
+                <button
+                  type="button"
+                  onClick={() => onFilterBundle?.(shift.bundle_id!)}
+                  title={bundleSize
+                    ? `Bundled with ${bundleSize - 1} other shift${bundleSize === 2 ? '' : 's'} — tap to show only this bundle`
+                    : 'Part of a bundle — tap to show only this bundle'}
+                  aria-label="Show only this bundle"
+                  className="inline-flex items-center align-middle mr-1.5 -mt-0.5 p-0.5 rounded text-primary hover:bg-primary-light/60 transition-colors min-h-0 min-w-0"
+                >
+                  <Layers className="w-4 h-4" />
+                </button>
+              )}
               {shift.shift_title}
             </h3>
             <div className="flex items-center gap-1 shrink-0">
@@ -199,14 +261,6 @@ export function ShiftCard({
           </div>
         </div>
 
-        {/* Trade Loop: owner's pending-claims management panel */}
-        {isOwner && (
-          <ClaimSection
-            pendingClaims={pendingClaims}
-            onChanged={onClaimChanged}
-          />
-        )}
-
         {/* Comments / Claim / Contact | Badges */}
         <CommentSection
           postType="shift"
@@ -222,11 +276,28 @@ export function ShiftCard({
           messageTick={messageTick}
           showInterest={false}
           leadingAction={
-            !isOwner && shift.board_id && shift.user_id && currentUserId ? (
+            isOwner ? (
+              <InterestedPill
+                count={pendingClaims?.length ?? 0}
+                open={claimsOpen}
+                onToggle={() => setClaimsOpen(o => !o)}
+              />
+            ) : shift.board_id && shift.user_id && currentUserId ? (
               <ClaimPill
                 shiftId={shift.id}
+                bundleId={shift.bundle_id}
+                bundleSiblings={bundleSiblings}
                 myClaim={myClaim}
                 claimCount={claimCount ?? 0}
+                onChanged={onClaimChanged}
+              />
+            ) : undefined
+          }
+          expandedPanel={
+            isOwner && claimsOpen ? (
+              <ClaimSection
+                pendingClaims={pendingClaims}
+                shiftSummary={shiftSummary}
                 onChanged={onClaimChanged}
               />
             ) : undefined
@@ -291,8 +362,12 @@ export function ShiftCard({
                 <button className={menuItemCls} onClick={() => { router.push(`/wall/edit-shift/${shift.id}`); setMenuPos(null) }}>
                   <Pencil className="w-3.5 h-3.5 shrink-0" /> Edit
                 </button>
+                {/* Un-post without deleting: the shift stays on your calendar */}
+                <button className={menuItemCls} onClick={() => { setConfirmUnpost(true); setMenuPos(null) }}>
+                  <EyeOff className="w-3.5 h-3.5 shrink-0" /> Remove from Wall
+                </button>
                 <button className={menuDangerCls} onClick={() => { setConfirmRemove(true); setMenuPos(null) }}>
-                  <Trash2 className="w-3.5 h-3.5 shrink-0" /> Remove
+                  <Trash2 className="w-3.5 h-3.5 shrink-0" /> Delete
                 </button>
               </>
             )}
@@ -310,11 +385,21 @@ export function ShiftCard({
       />
 
       <ConfirmDialog
+        open={confirmUnpost}
+        title="Remove from Wall"
+        message={`This takes the shift off the Wall but keeps it on your calendar — you can post it again later from there.${unpostWarning}`}
+        confirmLabel="Remove from Wall"
+        loading={unposting}
+        onConfirm={handleUnpost}
+        onCancel={() => setConfirmUnpost(false)}
+      />
+
+      <ConfirmDialog
         open={confirmRemove}
-        title="Remove Post"
-        message="Are you sure you want to remove this shift? This cannot be undone."
-        confirmLabel="Remove"
-        onConfirm={() => { onDeactivate?.(shift.id); setConfirmRemove(false) }}
+        title="Delete Shift"
+        message={`This deletes the shift entirely — it comes off the Wall and your calendar, and can't be undone.${deleteWarning}`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
         onCancel={() => setConfirmRemove(false)}
       />
     </>
