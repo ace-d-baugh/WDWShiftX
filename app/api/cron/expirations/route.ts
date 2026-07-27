@@ -23,14 +23,6 @@ export async function GET(req: NextRequest) {
     const { error: requestsError } = await supabase.rpc('expire_requests')
     if (requestsError) throw requestsError
 
-    // Downgrade Trial members whose trial period has ended
-    const { error: trialError } = await supabase
-      .from('users')
-      .update({ membership: 'Basic', trial_ends_at: null })
-      .eq('membership', 'Trial')
-      .lte('trial_ends_at', new Date().toISOString())
-    if (trialError) throw trialError
-
     return NextResponse.json({
       success: true,
       message: 'Expirations processed successfully',
