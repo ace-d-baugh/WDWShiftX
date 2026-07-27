@@ -850,7 +850,7 @@ Board role **"Leader" now displays as "Admin"**; global role **"Admin" now displ
 
 Claude can reach MyShiftX's Supabase directly but not this one, so these are run by hand. Both sit in the repo root:
 
-1. **`APPLY_TO_DATABASE_STEP1.sql`** — ✅ **safe to run right now**, even with the site live. Nothing is dropped, no data changes, no page breaks. Open Supabase → SQL Editor → paste → Run. The last query prints PASS/FAIL per fix.
+1. **`APPLY_TO_DATABASE_STEP1.sql`** — ✅ **RUN 2026-07-27, all checks PASS.** Nothing further needed here. This project's database is now current with its deployed code.
 2. **`APPLY_TO_DATABASE_STEP2_AFTER_DEPLOY.sql`** — ⛔ **do NOT run yet.** It removes the app's direct access to invite codes and **will break every board page** until the new app code is deployed. That code is still to be written. The file's header has a three-item checklist and a one-line undo.
 
 Both files record themselves so a later `supabase db push` won't re-run them. Both verification blocks were dry-run against MyShiftX first to confirm they're real checks, not ones that always pass.
