@@ -34,13 +34,29 @@ export async function middleware(request: NextRequest) {
     console.log(`[MW] ${fullPath} | user=${user?.email ?? 'none'} | err=${error?.message ?? 'none'}`)
   }
 
-  const protectedRoutes = ['/dashboard', '/profile', '/wall', '/archive', '/admin', '/leader']
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  // Public prefixes, i.e. a DENYlist — everything not listed requires a session.
+  //
+  // This used to be the other way round: an allowlist of protected routes,
+  // which fails OPEN. A new page was unprotected unless someone remembered to
+  // add it, and the list had already drifted — /calendar, /messages, /boards
+  // and /kanban were all missing from it. They were safe only because each
+  // page happens to guard itself.
+  //
+  // Inverted so the default is private. Adding a page now requires a
+  // deliberate act to make it public, and forgetting fails closed.
+  const PUBLIC_PREFIXES = [
+    '/login', '/register', '/forgot-password', '/reset-password', '/verify-email',
+    '/about', '/contact', '/privacy', '/terms', '/data-deletion',
+    '/for', '/survey', '/api',
+  ]
+  const isPublicRoute =
+    pathname === '/' ||
+    PUBLIC_PREFIXES.some(p => pathname === p || pathname.startsWith(`${p}/`))
 
   const authRoutes = ['/login', '/register']
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
-  if (isProtectedRoute && !user) {
+  if (!isPublicRoute && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

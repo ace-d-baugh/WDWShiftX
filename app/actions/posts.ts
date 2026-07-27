@@ -52,12 +52,17 @@ export async function dissolveBundle(bundleId: string): Promise<{ error?: string
   try {
     const { supabase, userId } = await getActionSession()
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('shifts')
       .update({ bundle_id: null })
       .eq('bundle_id', bundleId)
       .eq('user_id', userId)
+      .select('id')
     if (error) return { error: error.message }
+    // Both statements are scoped to the caller's own rows, so a bundle that
+    // isn't theirs simply matches nothing. Returning {} there reported success
+    // for a no-op and the UI updated as though the bundle had dissolved.
+    if (!data || data.length === 0) return { error: 'Bundle not found or you do not own it.' }
 
     // Ignore a delete failure: with no members left the row is inert, and the
     // caller's real action (delete/unpost) has already succeeded.

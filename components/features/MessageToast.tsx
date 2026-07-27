@@ -24,18 +24,63 @@ export function MessageToast({ currentUserId }: { currentUserId: string }) {
   const pathname = usePathname()
   const [toast, setToast] = useState<ToastData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const refreshRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Conversation ids this user belongs to, used to scope the subscription.
+  const [conversationIds, setConversationIds] = useState<string[] | null>(null)
 
   // Read inside the subscription callback without resubscribing on navigation
   const pathnameRef = useRef(pathname)
   pathnameRef.current = pathname
 
+  // Load the id list, and watch for being added to a NEW conversation so the
+  // first message in it still raises a toast. Without this watch, scoping the
+  // subscription below would silently drop exactly that case.
   useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
+
+    const load = async () => {
+      const { data } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', currentUserId)
+      if (!cancelled) setConversationIds((data ?? []).map(r => r.conversation_id as string))
+    }
+    load()
+
+    const channel = supabase
+      .channel(`realtime:participants:${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT', schema: 'public', table: 'conversation_participants',
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        () => { load() }
+      )
+      .subscribe()
+
+    return () => { cancelled = true; supabase.removeChannel(channel) }
+  }, [currentUserId])
+
+  useEffect(() => {
+    // Wait for the id list; nothing to listen to until then.
+    if (conversationIds === null || conversationIds.length === 0) return
+
     const supabase = createClient()
     const channel = supabase
       .channel('realtime:messages:toast')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        {
+          event: 'INSERT', schema: 'public', table: 'messages',
+          // Scope server-side. This used to listen to EVERY message inserted
+          // anywhere in the app and lean on RLS to discard the irrelevant ones,
+          // which made Realtime evaluate a policy per connected client per
+          // message sent site-wide.
+          filter: `conversation_id=in.(${conversationIds.join(',')})`,
+        },
         async (payload) => {
           const msg = payload.new as {
             id: string; conversation_id: string; sender_id: string | null; body: string
@@ -58,17 +103,23 @@ export function MessageToast({ currentUserId }: { currentUserId: string }) {
           if (timerRef.current) clearTimeout(timerRef.current)
           timerRef.current = setTimeout(() => setToast(null), TOAST_MS)
 
-          // Keep the Navbar unread badge current without a page reload
-          router.refresh()
+          // Keep the Navbar unread badge current without a page reload —
+          // coalesced, because router.refresh() re-fetches and re-renders the
+          // whole server tree. One per message meant a burst of chat queued a
+          // burst of full-tree refreshes.
+          if (refreshRef.current) clearTimeout(refreshRef.current)
+          refreshRef.current = setTimeout(() => router.refresh(), 1000)
         }
       )
       .subscribe()
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
+      if (refreshRef.current) clearTimeout(refreshRef.current)
       supabase.removeChannel(channel)
     }
-  }, [currentUserId, router])
+    // Re-subscribes when the conversation list changes (joined a new chat).
+  }, [conversationIds, currentUserId, router])
 
   if (!toast) return null
 

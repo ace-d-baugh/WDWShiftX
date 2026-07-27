@@ -174,7 +174,7 @@ function formatDisplayDate(isoDate: string): string {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 }
 
-async function sendMatchNotifications(opts: {
+interface MatchPayload {
   boardId: string
   shiftId: string
   requestId: string
@@ -190,7 +190,33 @@ async function sendMatchNotifications(opts: {
   requesterEmail: string | null
   requesterName: string
   requesterNotify: boolean
-}) {
+}
+
+/**
+ * Fan out in small parallel batches instead of one recipient at a time.
+ *
+ * Each call does an insert plus up to two pushes and two emails, so a shift
+ * matching 40 requests used to serialise 40 rounds of external I/O. On a busy
+ * board that ran past the serverless timeout and the tail of the list silently
+ * never got notified -- which also left match_events holding only a prefix,
+ * quietly skewing the very metric Phase 5 added.
+ *
+ * allSettled, not all: one unreachable recipient must not abort the rest.
+ */
+const NOTIFY_BATCH_SIZE = 8
+
+async function sendMatchNotificationsBatched(payloads: MatchPayload[]): Promise<void> {
+  for (let i = 0; i < payloads.length; i += NOTIFY_BATCH_SIZE) {
+    const results = await Promise.allSettled(
+      payloads.slice(i, i + NOTIFY_BATCH_SIZE).map(p => sendMatchNotifications(p))
+    )
+    for (const r of results) {
+      if (r.status === 'rejected') console.error('[sendMatchNotifications] batch item failed:', r.reason)
+    }
+  }
+}
+
+async function sendMatchNotifications(opts: MatchPayload) {
   const wallUrl = `${BASE_URL}/wall`
   const displayDate = formatDisplayDate(opts.shiftDate)
   const sends: Promise<void>[] = []
@@ -338,6 +364,7 @@ export async function notifyShiftPosted(opts: { shiftId: string }): Promise<void
 
     // Deduplicate by requester user_id — same person may have multiple matching requests
     const seenRequesters = new Set<string>()
+    const payloads: MatchPayload[] = []
     for (const req of (requests ?? [])) {
       const requesterId = req.user_id as string | null
       if (!requesterId || seenRequesters.has(requesterId)) continue
@@ -349,7 +376,7 @@ export async function notifyShiftPosted(opts: { shiftId: string }): Promise<void
       const requester = (req.users as unknown) as { email: string; display_name: string | null; notify_via_email: boolean } | null
       const board     = (req.boards as unknown) as { name: string } | null
 
-      await sendMatchNotifications({
+      payloads.push({
         boardId,
         shiftId:           opts.shiftId,
         requestId:         req.id as string,
@@ -367,6 +394,7 @@ export async function notifyShiftPosted(opts: { shiftId: string }): Promise<void
         requesterNotify:   requester?.notify_via_email ?? false,
       })
     }
+    await sendMatchNotificationsBatched(payloads)
   } catch (err) {
     console.error('[notifyShiftPosted] unexpected error:', err)
   }
@@ -434,6 +462,7 @@ export async function notifyRequestPosted(opts: { requestId: string }): Promise<
 
     // Deduplicate by shift poster user_id — same person may have multiple matching shifts
     const seenPosters = new Set<string>()
+    const payloads: MatchPayload[] = []
     for (const shift of (shifts ?? [])) {
       const posterId = shift.user_id as string | null
       if (!posterId || seenPosters.has(posterId)) continue
@@ -446,7 +475,7 @@ export async function notifyRequestPosted(opts: { requestId: string }): Promise<
       const poster = (shift.users as unknown) as { email: string; display_name: string | null; notify_via_email: boolean } | null
       const board  = (shift.boards as unknown) as { name: string } | null
 
-      await sendMatchNotifications({
+      payloads.push({
         boardId,
         shiftId:           shift.id as string,
         requestId:         opts.requestId,
@@ -464,6 +493,7 @@ export async function notifyRequestPosted(opts: { requestId: string }): Promise<
         requesterNotify:   requesterData?.notify_via_email ?? false,
       })
     }
+    await sendMatchNotificationsBatched(payloads)
   } catch (err) {
     console.error('[notifyRequestPosted] unexpected error:', err)
   }
