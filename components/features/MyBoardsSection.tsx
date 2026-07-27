@@ -83,14 +83,26 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
     setLoading(true)
     const { data } = await supabase
       .from('user_boards')
-      .select('id, board_id, role, is_approved, boards(id, name, slug, invite_code, invite_code_enabled)')
+      .select('id, board_id, role, is_approved, boards(id, name, slug, invite_code_enabled)')
       .eq('user_id', userId)
       .eq('is_hidden', false)
       .order('requested_at', { ascending: true })
 
+    // invite_code is column-locked (S8) and comes from a membership-gated
+    // function. This list includes boards the user is still *pending* on, and
+    // the function deliberately returns nothing for those — a pending
+    // applicant reading the code was the leak being closed.
+    const approvedIds = (data ?? []).filter(r => r.is_approved).map(r => r.board_id as string)
+    const codes = new Map<string, string>()
+    if (approvedIds.length) {
+      const { data: codeRows } = await supabase
+        .rpc('get_board_invite_codes', { p_board_ids: approvedIds })
+      for (const r of codeRows ?? []) codes.set(r.board_id, r.invite_code)
+    }
+
     const list = (data ?? []).map((row: {
       id: string; board_id: string; role: BoardRole; is_approved: boolean;
-      boards: { id: string; name: string; slug: string; invite_code: string; invite_code_enabled: boolean } | null
+      boards: { id: string; name: string; slug: string; invite_code_enabled: boolean } | null
     }) => ({
       userBoardId: row.id,
       board_id: row.board_id,
@@ -98,7 +110,7 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
       slug: row.boards?.slug ?? '',
       role: row.role,
       is_approved: row.is_approved,
-      invite_code: row.boards?.invite_code ?? '',
+      invite_code: codes.get(row.board_id) ?? '',
       invite_code_enabled: row.boards?.invite_code_enabled ?? false,
     }))
     setBoards(list)

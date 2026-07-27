@@ -50,7 +50,7 @@ export default async function BoardSlugPage({ params, searchParams }: Props) {
   // Look up board by slug
   const { data: board } = await supabase
     .from('boards')
-    .select('id, name, slug, invite_code, invite_code_enabled')
+    .select('id, name, slug, invite_code_enabled')
     .eq('slug', params.slug)
     .eq('is_active', true)
     .single()
@@ -131,11 +131,17 @@ export default async function BoardSlugPage({ params, searchParams }: Props) {
     myRole = membership!.role as BoardRole
   }
 
+  // invite_code is column-locked (S8) — read it through the membership-gated
+  // function instead. Only reached below the non-member early return, so the
+  // caller is an approved member or an Admin either way.
+  const { data: codeRows } = await supabase
+    .rpc('get_board_invite_codes', { p_board_ids: [board.id] })
+
   const managedBoards: ManagedBoard[] = [{
     boardId:           board.id,
     boardName:         board.name,
     boardSlug:         board.slug,
-    inviteCode:        board.invite_code,
+    inviteCode:        codeRows?.[0]?.invite_code ?? '',
     inviteCodeEnabled: board.invite_code_enabled,
     myRole,
     members:           membersByBoard.get(board.id) ?? [],

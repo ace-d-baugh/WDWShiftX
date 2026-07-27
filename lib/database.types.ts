@@ -796,6 +796,10 @@ export interface Database {
     }
     Views: Record<string, never>
     Functions: {
+      get_board_invite_codes: {
+        Args: { p_board_ids: string[] }
+        Returns: { board_id: string; invite_code: string }[]
+      }
       lookup_board_by_invite_code: {
         Args: { p_code: string }
         Returns: { id: string; name: string; is_active: boolean; invite_code_enabled: boolean }[]
