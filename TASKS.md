@@ -870,7 +870,9 @@ Both files record themselves so a later `supabase db push` won't re-run them. Bo
 | S8 — invite code leak 🟠 | ⚠️ **half done** — DB function ready; app code + STEP2 SQL still to do | `440e3b7` |
 | SQL files for this database | ✅ **DONE 2026-07-27 03:22** | `6ae7247` |
 | S6 | ❌ **N/A here** — no billing in this fork | — |
-| S9, S10, S12, S13, S14 | ⏳ not started | — |
+| S9, S10, S12, S13, S14 | ✅ **DONE 2026-07-27 04:40** — needs deploy | `d5a5561` |
+| **S16** self-promote to board Admin 🔴 | ✅ **DONE 2026-07-27 04:20** — STEP3 run, no rows found | `42775d1`-equiv |
+| STEP1 / STEP2 / STEP3 SQL | ✅ **all run, all PASS** | — |
 | **S16** *(new — found while fixing S8)* | ⏳ not started — see below | — |
 
 **🟠 S16 — NEW. Anyone can join any board's approval queue without an invite code.**
