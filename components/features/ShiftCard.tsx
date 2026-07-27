@@ -10,14 +10,14 @@ import { getSettings } from '@/lib/settings'
 import { slugify } from '@/lib/slug'
 import {
   Clock, LayoutGrid, User, Flag, Pencil, Trash2, EyeOff,
-  MoreVertical, MessageSquare, Send, ChevronDown, HeartHandshake as Handshake, Layers,
+  MoreVertical, MessageSquare, Send, ChevronDown, Layers,
 } from 'lucide-react'
 import { unpostShift, dissolveBundle } from '@/app/actions/posts'
 import { bundleBreakupWarning } from '@/lib/bundles'
 import { Badge } from '@/components/ui/Badge'
 import { FlagModal } from '@/components/features/FlagModal'
 import { CommentSection } from '@/components/features/CommentSection'
-import { ClaimSection, ClaimPill, InterestedPill, type MyClaim, type PendingClaim, type TradeStats } from '@/components/features/ClaimSection'
+import { ClaimSection, ClaimPill, InterestedPill, type MyClaim, type PendingClaim } from '@/components/features/ClaimSection'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/utils'
 
@@ -57,7 +57,6 @@ interface ShiftCardProps {
   /** Total pending claimants — shown on the "I'll take this" control even
    * for viewers who can't see individual claims (see ClaimPill). */
   claimCount?: number
-  posterStats?: TradeStats
   onClaimChanged?: () => void
   /** How many active shifts share this card's bundle (for the claim modal). */
   bundleSize?: number
@@ -69,7 +68,7 @@ interface ShiftCardProps {
 
 export function ShiftCard({
   shift, currentUserId, onDeactivate, onRemoved,
-  myClaim, pendingClaims, claimCount, posterStats, onClaimChanged,
+  myClaim, pendingClaims, claimCount, onClaimChanged,
   bundleSize, bundleSiblings, onFilterBundle,
 }: ShiftCardProps) {
   const router = useRouter()
@@ -140,17 +139,9 @@ export function ShiftCard({
   const typeColor   = isBoth ? 'text-primary' : isTradeOnly ? 'text-info' : isGiveOnly ? 'text-success' : 'text-text/40'
   const borderColor = isBoth ? 'border-l-primary' : isTradeOnly ? 'border-l-info' : isGiveOnly ? 'border-l-success' : 'border-l-text/20'
 
-  // Completed-trade count badge next to the poster's name (Trade Loop)
-  const posterTrades = posterStats ? posterStats.picked_up + posterStats.covered : 0
-  const tradeBadge = posterTrades > 0 && (
-    <span
-      title={`${posterTrades} completed trade${posterTrades === 1 ? '' : 's'} on WDWShiftX`}
-      className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-success/15 text-success px-1.5 py-0.5 rounded-full leading-none"
-    >
-      <Handshake className="w-2.5 h-2.5" />
-      {posterTrades}
-    </span>
-  )
+  // The poster's completed-trade badge was removed along with the rest of the
+  // cross-member reliability display — see the note in ClaimSection. Trade
+  // stats are now visible only to the person they describe, and to Overlord.
 
   const unpostWarning = bundleBreakupWarning(shift.bundle_id ? bundleSize : 0, 'removing it')
   const deleteWarning = bundleBreakupWarning(shift.bundle_id ? bundleSize : 0, 'deleting it')
@@ -205,7 +196,6 @@ export function ShiftCard({
               <span className="hidden sm:flex text-xs text-text/50 items-center gap-1.5 whitespace-nowrap">
                 <User className={cn('w-3 h-3 shrink-0', typeColor)} />
                 {shift.created_by}
-                {tradeBadge}
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
                 )}
@@ -221,7 +211,6 @@ export function ShiftCard({
           <div className="sm:hidden flex items-center gap-1.5 mt-0.5 text-xs text-text/50">
             <User className={cn('w-3 h-3 shrink-0', typeColor)} />
             {shift.created_by}
-            {tradeBadge}
             {isOwner && (
               <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
             )}

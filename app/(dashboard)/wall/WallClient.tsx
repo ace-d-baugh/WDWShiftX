@@ -13,7 +13,7 @@ import { deactivateShift, deactivateRequest } from '@/app/actions/posts'
 import { PushPromptBanner } from '@/components/features/PushPromptBanner'
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { ShiftCard, type ShiftData } from '@/components/features/ShiftCard'
-import type { MyClaim, PendingClaim, TradeStats } from '@/components/features/ClaimSection'
+import type { MyClaim, PendingClaim } from '@/components/features/ClaimSection'
 import { RequestCard, type RequestData } from '@/components/features/RequestCard'
 import { WallSkeleton } from '@/components/ui/WallSkeleton'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -146,7 +146,6 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   // Trade Loop (Task 21): claim state for the visible shifts
   const [myClaims, setMyClaims] = useState<Map<string, MyClaim>>(new Map())
   const [pendingByShift, setPendingByShift] = useState<Map<string, PendingClaim[]>>(new Map())
-  const [statsByUser, setStatsByUser] = useState<Map<string, TradeStats>>(new Map())
   const [awaitingFinalize, setAwaitingFinalize] = useState(0)
   // Bare pending-claim counts for every visible shift, not just the ones the
   // current user owns — shift_claims RLS only lets a claimant/owner see
@@ -352,22 +351,14 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       }
     }
 
-    // Reliability stats for everyone we'll display: posters + pending claimants
+    // No reliability stats are fetched here any more. They used to be pulled
+    // for every poster and every pending claimant and shown to other members;
+    // a person's trade record is now theirs alone (Profile -> Trade Record),
+    // plus Overlord.
     const pendingRows = (pendingRes.data ?? []) as unknown as {
       id: string; shift_id: string; bundle_id: string | null; claimant_id: string
       claimant: { display_name: string | null } | null
     }[]
-    const statUserIds = [...new Set([
-      ...shiftList.map(s => s.user_id).filter((id): id is string => !!id),
-      ...pendingRows.map(c => c.claimant_id),
-    ])]
-    const stats = new Map<string, TradeStats>()
-    if (statUserIds.length) {
-      const { data } = await supabase.rpc('get_trade_stats_for_users', { p_user_ids: statUserIds })
-      for (const row of data ?? []) {
-        stats.set(row.user_id, { picked_up: row.picked_up, covered: row.covered, fell_through: row.fell_through })
-      }
-    }
 
     const pending = new Map<string, PendingClaim[]>()
     for (const c of pendingRows) {
@@ -377,7 +368,6 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
         id: c.id,
         claimant_id: c.claimant_id,
         claimant_name: c.claimant?.display_name ?? 'A board member',
-        stats: stats.get(c.claimant_id),
         bundleSize: size || undefined,
       })
       pending.set(c.shift_id, list)
@@ -400,7 +390,6 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 
     setMyClaims(mine)
     setPendingByShift(pending)
-    setStatsByUser(stats)
     setAwaitingFinalize(awaiting)
     setClaimCounts(counts)
     setBundleClaimCounts(bundleCounts)
@@ -916,7 +905,6 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                         claimCount={shift.bundle_id
                           ? bundleClaimCounts.get(shift.bundle_id) ?? 0
                           : claimCounts.get(shift.id) ?? 0}
-                        posterStats={shift.user_id ? statsByUser.get(shift.user_id) : undefined}
                         onClaimChanged={handleClaimChanged}
                         bundleSize={shift.bundle_id ? bundlesById.get(shift.bundle_id)?.length : undefined}
                         bundleSiblings={shift.bundle_id

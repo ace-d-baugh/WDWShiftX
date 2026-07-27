@@ -10,12 +10,6 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import type { ClaimStatus } from '@/lib/database.types'
 
-export interface TradeStats {
-  picked_up: number
-  covered: number
-  fell_through: number
-}
-
 export interface MyClaim {
   id: string
   status: ClaimStatus
@@ -25,20 +19,15 @@ export interface PendingClaim {
   id: string
   claimant_id: string
   claimant_name: string
-  stats?: TradeStats
   /** Set when the claim covers a whole bundle — accepting archives them all. */
   bundleSize?: number
 }
 
-/** One-line reliability summary shown next to a claimant's name. */
-function statsLabel(stats?: TradeStats): string {
-  if (!stats) return 'No trades yet'
-  const done = stats.picked_up + stats.covered
-  if (done === 0 && stats.fell_through === 0) return 'No trades yet'
-  const parts = [`${done} completed`]
-  if (stats.fell_through > 0) parts.push(`${stats.fell_through} fell through`)
-  return parts.join(' · ')
-}
+// A claimant's trade record used to be summarised here so the owner could
+// weigh reliability. It was removed deliberately: a "3 fell through" line is
+// effectively a disciplinary note, and showing it to other members is not
+// something the app should do. Trade stats are now visible only to the person
+// they describe (Profile -> Trade Record) and to Overlord.
 
 interface InterestedPillProps {
   count: number
@@ -148,7 +137,6 @@ export function ClaimSection({ pendingClaims, shiftSummary, onChanged }: ClaimSe
                   all {claim.bundleSize}
                 </span>
               )}
-              <span className="block text-[11px] text-text/50">{statsLabel(claim.stats)}</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
