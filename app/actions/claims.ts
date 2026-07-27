@@ -45,13 +45,16 @@ export async function respondToClaim(claimId: string, accept: boolean): Promise<
   try {
     const { supabase } = await getActionSession()
 
-    const { data: rivalIds, error } = await supabase.rpc('respond_to_claim', {
+    // The RPC still returns the auto-declined claimant ids, but the notifier
+    // re-reads them from the claims table rather than trusting a passed-in
+    // recipient list, so we don't thread them through here.
+    const { error } = await supabase.rpc('respond_to_claim', {
       p_claim_id: claimId,
       p_accept: accept,
     })
     if (error) return { error: error.message }
 
-    void notifyClaimResolved(claimId, accept, rivalIds ?? [])
+    void notifyClaimResolved(claimId, accept)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }
@@ -88,7 +91,7 @@ export async function finalizeClaim(claimId: string, completed: boolean): Promis
     if (error) return { error: error.message }
     if (!data) return { error: 'Claim not found or not awaiting confirmation.' }
 
-    void notifyClaimFinalized(claimId, completed)
+    void notifyClaimFinalized(claimId)
     if (!completed) revalidatePath('/calendar')
     return {}
   } catch (e) {

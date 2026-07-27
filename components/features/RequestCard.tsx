@@ -50,14 +50,13 @@ export interface RequestData {
 interface RequestCardProps {
   request: RequestData
   currentUserId?: string
-  currentUserName?: string
   onDeactivate?: (id: string) => void
   /** Called after this card marks itself fulfilled (the server write already
    *  happened here) so the parent can prune it from the list. */
   onFulfilled?: (id: string) => void
 }
 
-export function RequestCard({ request, currentUserId, currentUserName, onDeactivate, onFulfilled }: RequestCardProps) {
+export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled }: RequestCardProps) {
   const router = useRouter()
   const [flagOpen, setFlagOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -177,7 +176,6 @@ export function RequestCard({ request, currentUserId, currentUserName, onDeactiv
           postId={request.id}
           isOwner={!!isOwner}
           currentUserId={currentUserId}
-          currentUserName={currentUserName}
           commentCount={request.comment_count ?? 0}
           interestedCount={request.interested_count ?? 0}
           boardId={request.board_id ?? undefined}

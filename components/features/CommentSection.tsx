@@ -31,7 +31,6 @@ interface CommentSectionProps {
   postId: string
   isOwner: boolean
   currentUserId?: string
-  currentUserName?: string
   commentCount: number
   interestedCount: number
   boardId?: string
@@ -58,7 +57,6 @@ export function CommentSection({
   postId,
   isOwner,
   currentUserId,
-  currentUserName,
   commentCount,
   interestedCount,
   boardId,
@@ -195,7 +193,8 @@ export function CommentSection({
       }
       await fetchComments()
       // Fire-and-forget — notify the post owner without blocking the UI
-      notifyInterest({ postId, postType, commenterName: currentUserName ?? 'Someone' })
+      notifyInterest({ postId, postType })
+        .catch(err => console.error('[interest] notify failed:', err))
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to mark interested.')
     } finally {
@@ -257,8 +256,9 @@ export function CommentSection({
       setReplyToName(null)
       await fetchComments()
       // Fire-and-forget — notify the post owner if this comment marked interest
-      if (wasInterested && currentUserName) {
-        notifyInterest({ postId, postType, commenterName: currentUserName })
+      if (wasInterested) {
+        notifyInterest({ postId, postType })
+          .catch(err => console.error('[interest] notify failed:', err))
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to post comment.')

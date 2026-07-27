@@ -165,11 +165,8 @@ export function PostRequestForm({ userId, displayName, onSuccess, requestId, ini
             details: f.details || null, is_active: true,
           }).select('id').single()
           if (error) throw error
-          notifyRequestPosted({
-            boardId: f.board_id, requestId: inserted.id, requestedDate: f.requested_date,
-            preferredTimes: f.preferred_times, requestTitle: f.request_title,
-            requesterName: displayName, requesterUserId: userId,
-          }).catch(() => {})
+          notifyRequestPosted({ requestId: inserted.id })
+            .catch(err => console.error('[post-request] match notify failed:', err))
         }
       }
       onSuccess?.()

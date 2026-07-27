@@ -46,7 +46,6 @@ export interface ShiftData {
 interface ShiftCardProps {
   shift: ShiftData
   currentUserId?: string
-  currentUserName?: string
   onDeactivate?: (id: string) => void
   /** Called after this card un-posts itself (the server write already
    *  happened here) so the parent can prune it from the list — unlike
@@ -69,7 +68,7 @@ interface ShiftCardProps {
 }
 
 export function ShiftCard({
-  shift, currentUserId, currentUserName, onDeactivate, onRemoved,
+  shift, currentUserId, onDeactivate, onRemoved,
   myClaim, pendingClaims, claimCount, posterStats, onClaimChanged,
   bundleSize, bundleSiblings, onFilterBundle,
 }: ShiftCardProps) {
@@ -267,7 +266,6 @@ export function ShiftCard({
           postId={shift.id}
           isOwner={!!isOwner}
           currentUserId={currentUserId}
-          currentUserName={currentUserName}
           commentCount={shift.comment_count ?? 0}
           interestedCount={shift.interested_count ?? 0}
           boardId={shift.board_id ?? undefined}

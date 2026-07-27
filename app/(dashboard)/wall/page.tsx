@@ -45,7 +45,6 @@ export default async function WallPage({ searchParams }: { searchParams: { tab?:
   return (
     <WallClient
       userId={user.id}
-      displayName={userProfile?.display_name ?? 'User'}
       boards={boards}
       hasBoards={boards.length > 0}
       initialTab={searchParams.tab === 'requests' ? 'requests' : 'offers'}

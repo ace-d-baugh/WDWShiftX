@@ -117,7 +117,6 @@ FilterDateInput.displayName = 'FilterDateInput'
 
 interface WallClientProps {
   userId: string
-  displayName: string
   boards: Board[]
   hasBoards: boolean
   initialTab?: Tab
@@ -126,7 +125,7 @@ interface WallClientProps {
 
 type Tab = 'offers' | 'requests'
 
-export function WallClient({ userId, displayName, boards, hasBoards, initialTab = 'offers', initialDate = '' }: WallClientProps) {
+export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', initialDate = '' }: WallClientProps) {
   const supabase = useMemo(() => createClient(), [])
   const settings = getSettings()
   const [tab, setTab] = useState<Tab>(initialTab)
@@ -910,7 +909,6 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
                       <ShiftCard
                         shift={shift}
                         currentUserId={userId}
-                        currentUserName={displayName}
                         onDeactivate={handleDeactivateShift}
                         onRemoved={handleShiftRemoved}
                         myClaim={myClaims.get(shift.id)}
@@ -972,7 +970,6 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
                       <RequestCard
                         request={request}
                         currentUserId={userId}
-                        currentUserName={displayName}
                         onDeactivate={handleDeactivateRequest}
                         onFulfilled={handleRequestFulfilled}
                       />

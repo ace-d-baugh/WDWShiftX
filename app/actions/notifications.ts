@@ -2,6 +2,7 @@
 
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getActionSession } from '@/lib/auth/session'
 import { EMAIL_FROM } from '@/lib/email-constants'
 import { sendPushNotification } from '@/lib/push-server'
 import { boardApprovedHtml, claimReceivedHtml, claimResultHtml, interestedHtml, shiftMatchHtml } from '@/components/email-template'
@@ -15,6 +16,28 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
 const resend = new Resend(optionalServerEnv.RESEND_API_KEY ?? '')
 
 /**
+ * SECURITY: every export in this file is a `'use server'` action, which means
+ * it is a publicly routable POST endpoint, not an internal function however it
+ * happens to be called. Each one runs on the service-role client and can send
+ * mail and push, so each MUST establish who is calling before doing any of
+ * that, and MUST derive anything appearing in the message body from the
+ * database rather than from the caller's payload. Otherwise anyone with an
+ * account can send arbitrary mail from our own verified sending domain.
+ *
+ * Returns null rather than throwing: these are fire-and-forget, so an
+ * unauthenticated call should quietly do nothing instead of surfacing an error.
+ */
+async function callerId(tag: string): Promise<string | null> {
+  try {
+    const { userId } = await getActionSession()
+    return userId
+  } catch {
+    console.error(`[${tag}] rejected: unauthenticated caller`)
+    return null
+  }
+}
+
+/**
  * Fire-and-forget: email the post owner when someone marks interest.
  * Called from the client after a successful interest insert.
  * Never throws — errors are logged but never reach the user.
@@ -22,9 +45,11 @@ const resend = new Resend(optionalServerEnv.RESEND_API_KEY ?? '')
 export async function notifyInterest(opts: {
   postId: string
   postType: 'shift' | 'request'
-  commenterName: string
 }): Promise<void> {
   try {
+    const uid = await callerId('notifyInterest')
+    if (!uid) return
+
     // Guard: fail fast with a clear message if env vars are missing
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[notifyInterest] SUPABASE_SERVICE_ROLE_KEY is not set — cannot send interest notification')
@@ -32,6 +57,13 @@ export async function notifyInterest(opts: {
     }
 
     const db = createAdminClient()
+
+    // The name shown in the email is the caller's own, read from the database.
+    // Never a string they handed us, or it could claim to be anyone.
+    const { data: commenter } = await db
+      .from('users').select('display_name').eq('id', uid).single()
+    const commenterName = commenter?.display_name ?? 'Someone'
+
     let ownerId: string | null = null
     let ownerEmail: string | null = null
     let ownerWantsEmail = false
@@ -80,8 +112,8 @@ export async function notifyInterest(opts: {
     if (ownerId) {
       await sendPushNotification(
         ownerId,
-        `${opts.commenterName} is interested`,
-        `${opts.commenterName} marked interest in "${postTitle}"`,
+        `${commenterName} is interested`,
+        `${commenterName} marked interest in "${postTitle}"`,
         '/wall'
       )
     }
@@ -96,9 +128,9 @@ export async function notifyInterest(opts: {
     const { error: sendError } = await resend.emails.send({
       from: EMAIL_FROM,
       to: ownerEmail,
-      subject: `${opts.commenterName} is interested in your ${opts.postType === 'shift' ? 'shift' : 'request'}`,
+      subject: `${commenterName} is interested in your ${opts.postType === 'shift' ? 'shift' : 'request'}`,
       html: interestedHtml({
-        commenterName: opts.commenterName,
+        commenterName,
         postTitle,
         postType: opts.postType,
         wallUrl: `${BASE_URL}/wall`,
@@ -246,68 +278,90 @@ async function sendMatchNotifications(opts: {
  * Finds any active requests on the same board for the same date whose
  * preferred_times overlap the shift's start time, then emails both parties.
  */
-export async function notifyShiftPosted(opts: {
-  boardId: string
-  shiftId: string
-  startTimeIso: string
-  shiftTitle: string
-  posterName: string
-  posterUserId: string
-}): Promise<void> {
+export async function notifyShiftPosted(opts: { shiftId: string }): Promise<void> {
   try {
+    const uid = await callerId('notifyShiftPosted')
+    if (!uid) return
+
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[notifyShiftPosted] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
       return
     }
 
     const db = createAdminClient()
-    const shiftDate = getETDate(opts.startTimeIso)
+
+    // Everything that reaches a recipient — which board is scanned, the title
+    // in the email, who it claims to be from — comes from the shift row, and
+    // the caller must own that row. A caller-supplied board id would let
+    // anyone blast any board; a caller-supplied title and name would let them
+    // write the message.
+    const { data: shift } = await db
+      .from('shifts')
+      .select('board_id, shift_title, start_time, user_id, users!user_id(display_name)')
+      .eq('id', opts.shiftId)
+      .single()
+
+    if (!shift) { console.error('[notifyShiftPosted] shift not found:', opts.shiftId); return }
+    if (shift.user_id !== uid) {
+      console.error(`[notifyShiftPosted] rejected: ${uid} does not own shift ${opts.shiftId}`)
+      return
+    }
+    if (!shift.board_id) return // personal-calendar-only shift, never on a Wall
+
+    const boardId = shift.board_id as string
+    const startTimeIso = shift.start_time as string
+    const shiftTitle = shift.shift_title as string
+    const posterUserId = uid
+    const posterName =
+      (shift.users as unknown as { display_name: string | null } | null)?.display_name ?? 'Someone'
+
+    const shiftDate = getETDate(startTimeIso)
 
     // Fetch poster's own email + notify pref
     const { data: posterData } = await db
       .from('users')
       .select('email, notify_via_email')
-      .eq('id', opts.posterUserId)
+      .eq('id', posterUserId)
       .single()
 
     // Fetch active requests on the same board for the same date
     const { data: requests, error } = await db
       .from('requests')
       .select('id, request_title, preferred_times, user_id, users!user_id(email, display_name, notify_via_email), boards!board_id(name)')
-      .eq('board_id', opts.boardId)
+      .eq('board_id', boardId)
       .eq('requested_date', shiftDate)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
-      .neq('user_id', opts.posterUserId) // don't match your own posts
+      .neq('user_id', posterUserId) // don't match your own posts
 
     if (error) { console.error('[notifyShiftPosted] query error:', error.message); return }
 
     // Deduplicate by requester user_id — same person may have multiple matching requests
     const seenRequesters = new Set<string>()
     for (const req of (requests ?? [])) {
-      const uid = req.user_id as string | null
-      if (!uid || seenRequesters.has(uid)) continue
+      const requesterId = req.user_id as string | null
+      if (!requesterId || seenRequesters.has(requesterId)) continue
 
       const prefs = req.preferred_times as PreferredTime[]
-      if (!shiftMatchesPreferences(opts.startTimeIso, prefs)) continue
+      if (!shiftMatchesPreferences(startTimeIso, prefs)) continue
 
-      seenRequesters.add(uid)
+      seenRequesters.add(requesterId)
       const requester = (req.users as unknown) as { email: string; display_name: string | null; notify_via_email: boolean } | null
       const board     = (req.boards as unknown) as { name: string } | null
 
       await sendMatchNotifications({
-        boardId:           opts.boardId,
+        boardId,
         shiftId:           opts.shiftId,
         requestId:         req.id as string,
-        shiftTitle:        opts.shiftTitle,
+        shiftTitle,
         requestTitle:      req.request_title as string,
         boardName:         board?.name ?? 'your board',
         shiftDate,
-        shiftPosterUserId: opts.posterUserId,
+        shiftPosterUserId: posterUserId,
         shiftPosterEmail:  posterData?.email ?? null,
-        shiftPosterName:   opts.posterName,
+        shiftPosterName:   posterName,
         shiftPosterNotify: posterData?.notify_via_email ?? false,
-        requesterUserId:   uid,
+        requesterUserId:   requesterId,
         requesterEmail:    requester?.email ?? null,
         requesterName:     requester?.display_name ?? 'Someone',
         requesterNotify:   requester?.notify_via_email ?? false,
@@ -323,16 +377,11 @@ export async function notifyShiftPosted(opts: {
  * Finds any active shifts on the same board for the same date whose
  * start time falls within the request's preferred_times, then emails both parties.
  */
-export async function notifyRequestPosted(opts: {
-  boardId: string
-  requestId: string
-  requestedDate: string
-  preferredTimes: PreferredTime[]
-  requestTitle: string
-  requesterName: string
-  requesterUserId: string
-}): Promise<void> {
+export async function notifyRequestPosted(opts: { requestId: string }): Promise<void> {
   try {
+    const uid = await callerId('notifyRequestPosted')
+    if (!uid) return
+
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[notifyRequestPosted] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
       return
@@ -340,11 +389,34 @@ export async function notifyRequestPosted(opts: {
 
     const db = createAdminClient()
 
+    // Same rule as notifyShiftPosted: board, date, preferences and title all
+    // come from the request row, and the caller must own it.
+    const { data: request } = await db
+      .from('requests')
+      .select('board_id, request_title, requested_date, preferred_times, user_id, users!user_id(display_name)')
+      .eq('id', opts.requestId)
+      .single()
+
+    if (!request) { console.error('[notifyRequestPosted] request not found:', opts.requestId); return }
+    if (request.user_id !== uid) {
+      console.error(`[notifyRequestPosted] rejected: ${uid} does not own request ${opts.requestId}`)
+      return
+    }
+    if (!request.board_id) return
+
+    const boardId = request.board_id as string
+    const requestedDate = request.requested_date as string
+    const preferredTimes = request.preferred_times as PreferredTime[]
+    const requestTitle = request.request_title as string
+    const requesterUserId = uid
+    const requesterName =
+      (request.users as unknown as { display_name: string | null } | null)?.display_name ?? 'Someone'
+
     // Fetch requester's own email + notify pref
     const { data: requesterData } = await db
       .from('users')
       .select('email, notify_via_email')
-      .eq('id', opts.requesterUserId)
+      .eq('id', requesterUserId)
       .single()
 
     // Fetch all active shifts on the same board — filter by ET date + time preference in JS
@@ -353,42 +425,42 @@ export async function notifyRequestPosted(opts: {
     const { data: shifts, error } = await db
       .from('shifts')
       .select('id, shift_title, start_time, user_id, users!user_id(email, display_name, notify_via_email), boards!board_id(name)')
-      .eq('board_id', opts.boardId)
+      .eq('board_id', boardId)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
-      .neq('user_id', opts.requesterUserId)
+      .neq('user_id', requesterUserId)
 
     if (error) { console.error('[notifyRequestPosted] query error:', error.message); return }
 
     // Deduplicate by shift poster user_id — same person may have multiple matching shifts
     const seenPosters = new Set<string>()
     for (const shift of (shifts ?? [])) {
-      const uid = shift.user_id as string | null
-      if (!uid || seenPosters.has(uid)) continue
+      const posterId = shift.user_id as string | null
+      if (!posterId || seenPosters.has(posterId)) continue
 
       const startIso = shift.start_time as string
-      if (getETDate(startIso) !== opts.requestedDate) continue
-      if (!shiftMatchesPreferences(startIso, opts.preferredTimes)) continue
+      if (getETDate(startIso) !== requestedDate) continue
+      if (!shiftMatchesPreferences(startIso, preferredTimes)) continue
 
-      seenPosters.add(uid)
+      seenPosters.add(posterId)
       const poster = (shift.users as unknown) as { email: string; display_name: string | null; notify_via_email: boolean } | null
       const board  = (shift.boards as unknown) as { name: string } | null
 
       await sendMatchNotifications({
-        boardId:           opts.boardId,
+        boardId,
         shiftId:           shift.id as string,
         requestId:         opts.requestId,
         shiftTitle:        shift.shift_title as string,
-        requestTitle:      opts.requestTitle,
+        requestTitle,
         boardName:         board?.name ?? 'your board',
-        shiftDate:         opts.requestedDate,
-        shiftPosterUserId: uid,
+        shiftDate:         requestedDate,
+        shiftPosterUserId: posterId,
         shiftPosterEmail:  poster?.email ?? null,
         shiftPosterName:   poster?.display_name ?? 'Someone',
         shiftPosterNotify: poster?.notify_via_email ?? false,
-        requesterUserId:   opts.requesterUserId,
+        requesterUserId:   requesterUserId,
         requesterEmail:    requesterData?.email ?? null,
-        requesterName:     opts.requesterName,
+        requesterName,
         requesterNotify:   requesterData?.notify_via_email ?? false,
       })
     }
@@ -405,6 +477,9 @@ export async function notifyRequestPosted(opts: {
  */
 export async function notifyClaimCreated(claimId: string): Promise<void> {
   try {
+    const uid = await callerId('notifyClaimCreated')
+    if (!uid) return
+
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[notifyClaimCreated] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
       return
@@ -413,11 +488,17 @@ export async function notifyClaimCreated(claimId: string): Promise<void> {
     const db = createAdminClient()
     const { data: claim, error } = await db
       .from('shift_claims')
-      .select('owner_id, bundle_id, shifts!shift_id(shift_title), claimant:users!claimant_id(display_name)')
+      .select('owner_id, claimant_id, bundle_id, shifts!shift_id(shift_title), claimant:users!claimant_id(display_name)')
       .eq('id', claimId)
       .single()
 
     if (error || !claim) { console.error('[notifyClaimCreated] claim lookup failed:', error?.message); return }
+
+    // Only the two parties to a claim may trigger its notifications.
+    if (claim.claimant_id !== uid && claim.owner_id !== uid) {
+      console.error(`[notifyClaimCreated] rejected: ${uid} is not a party to claim ${claimId}`)
+      return
+    }
 
     const anchorTitle  = (claim.shifts as unknown as { shift_title: string } | null)?.shift_title ?? 'your shift'
     const claimantName = (claim.claimant as unknown as { display_name: string | null } | null)?.display_name ?? 'Someone'
@@ -475,10 +556,12 @@ export async function notifyClaimCreated(claimId: string): Promise<void> {
  */
 export async function notifyClaimResolved(
   claimId: string,
-  accepted: boolean,
-  rivalClaimantIds: string[]
+  accepted: boolean
 ): Promise<void> {
   try {
+    const uid = await callerId('notifyClaimResolved')
+    if (!uid) return
+
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[notifyClaimResolved] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
       return
@@ -487,15 +570,40 @@ export async function notifyClaimResolved(
     const db = createAdminClient()
     const { data: claim, error } = await db
       .from('shift_claims')
-      .select('claimant_id, shifts!shift_id(shift_title), owner:users!owner_id(display_name)')
+      .select('claimant_id, owner_id, shift_id, bundle_id, shifts!shift_id(shift_title), owner:users!owner_id(display_name)')
       .eq('id', claimId)
       .single()
 
     if (error || !claim) { console.error('[notifyClaimResolved] claim lookup failed:', error?.message); return }
 
+    // Accepting or declining is the owner's act, so only the owner may
+    // announce it.
+    if (claim.owner_id !== uid) {
+      console.error(`[notifyClaimResolved] rejected: ${uid} does not own claim ${claimId}`)
+      return
+    }
+
     const shiftTitle = (claim.shifts as unknown as { shift_title: string } | null)?.shift_title ?? 'the shift'
     const ownerName  = (claim.owner as unknown as { display_name: string | null } | null)?.display_name ?? 'The owner'
     const claimantId = claim.claimant_id as string
+
+    // Who else was auto-declined is read from the claims table, not handed to
+    // us — otherwise the recipient list is caller-controlled, which is how you
+    // turn "tell the losers" into "push anything to anyone".
+    let rivalClaimantIds: string[] = []
+    if (accepted) {
+      const rivalQuery = db
+        .from('shift_claims')
+        .select('claimant_id')
+        .eq('status', 'declined')
+        .neq('id', claimId)
+      const { data: rivals } = claim.bundle_id
+        ? await rivalQuery.eq('bundle_id', claim.bundle_id as string)
+        : await rivalQuery.eq('shift_id', claim.shift_id as string)
+      rivalClaimantIds = (rivals ?? [])
+        .map(r => r.claimant_id as string)
+        .filter((id): id is string => !!id && id !== claimantId)
+    }
 
     const sends: Promise<unknown>[] = [
       sendPushNotification(
@@ -544,18 +652,31 @@ export async function notifyClaimResolved(
  * Fire-and-forget: tell the claimant the owner recorded the final outcome.
  * Push only — this is a record-keeping event, not an action request.
  */
-export async function notifyClaimFinalized(claimId: string, completed: boolean): Promise<void> {
+export async function notifyClaimFinalized(claimId: string): Promise<void> {
   try {
+    const uid = await callerId('notifyClaimFinalized')
+    if (!uid) return
+
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) return
 
     const db = createAdminClient()
     const { data: claim } = await db
       .from('shift_claims')
-      .select('claimant_id, shifts!shift_id(shift_title)')
+      .select('claimant_id, owner_id, status, shifts!shift_id(shift_title)')
       .eq('id', claimId)
       .single()
 
     if (!claim) return
+
+    // Recording the outcome is the owner's act.
+    if (claim.owner_id !== uid) {
+      console.error(`[notifyClaimFinalized] rejected: ${uid} does not own claim ${claimId}`)
+      return
+    }
+
+    // Read the outcome from the row rather than trusting a caller-supplied
+    // flag, so the message can't contradict what actually happened.
+    const completed = claim.status === 'completed'
     const shiftTitle = (claim.shifts as unknown as { shift_title: string } | null)?.shift_title ?? 'the shift'
 
     await sendPushNotification(
@@ -578,6 +699,9 @@ export async function notifyClaimFinalized(claimId: string, completed: boolean):
  */
 export async function notifyBoardApproved(userBoardId: string): Promise<void> {
   try {
+    const uid = await callerId('notifyBoardApproved')
+    if (!uid) return
+
     if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[notifyBoardApproved] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
       return
@@ -587,11 +711,25 @@ export async function notifyBoardApproved(userBoardId: string): Promise<void> {
 
     const { data: ub } = await db
       .from('user_boards')
-      .select('user_id, boards(name), users!user_id(email, display_name)')
+      .select('user_id, board_id, boards(name), users!user_id(email, display_name)')
       .eq('id', userBoardId)
       .single()
 
     if (!ub) return
+
+    // Approving is a moderator action, so only a Mod/Leader of that board (or
+    // a global Admin) may announce it.
+    const [{ data: approver }, { data: approverRole }] = await Promise.all([
+      db.from('user_boards').select('role')
+        .eq('board_id', ub.board_id as string).eq('user_id', uid)
+        .eq('is_approved', true).maybeSingle(),
+      db.from('users').select('role').eq('id', uid).single(),
+    ])
+    const isMod = approver?.role === 'Mod' || approver?.role === 'Leader'
+    if (!isMod && approverRole?.role !== 'Admin') {
+      console.error(`[notifyBoardApproved] rejected: ${uid} cannot approve on board ${ub.board_id}`)
+      return
+    }
     const boardName = (ub.boards as unknown as { name: string } | null)?.name
     if (!boardName) return
 
