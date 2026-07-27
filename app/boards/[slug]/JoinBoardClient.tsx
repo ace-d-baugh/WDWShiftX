@@ -23,7 +23,11 @@ export function JoinBoardClient({ boardName, initialCode }: JoinBoardClientProps
   const [success, setSuccess] = useState(false)
 
   const handleLookup = async () => {
-    if (code.length !== 7) { setError('Invite code must be exactly 7 characters.'); return }
+    // 7 = legacy codes, 10 = current. Both remain valid.
+    if (code.length < 7 || code.length > 10) {
+      setError('That invite code looks wrong — check it and try again.')
+      return
+    }
     setError(null)
     setLoading(true)
     const result = await lookupBoardByCode(code)
@@ -80,7 +84,7 @@ export function JoinBoardClient({ boardName, initialCode }: JoinBoardClientProps
                 type="text"
                 className="input text-center text-lg font-mono tracking-[0.3em] uppercase"
                 placeholder="XXXXXXX"
-                maxLength={7}
+                maxLength={10}
                 value={code}
                 onChange={e => { setCode(e.target.value.toUpperCase()); setError(null) }}
                 onKeyDown={e => { if (e.key === 'Enter') handleLookup() }}

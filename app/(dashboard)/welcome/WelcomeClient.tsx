@@ -146,7 +146,7 @@ export function WelcomeClient({ userId, displayName, importEnabled, initialShift
               )}
               <p className="text-sm text-text/60 mt-1 mb-3">
                 Boards are private groups where your coworkers trade shifts. Enter your
-                team&apos;s 7-character invite code below to join.
+                team&apos;s invite code below to join.
               </p>
               <MyBoardsSection
                 key={inviteNotice ? 'invite-joined' : 'initial'}

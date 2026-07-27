@@ -110,8 +110,9 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
   // ── Join ──────────────────────────────────────────────────────────────────
 
   const handleLookup = async () => {
-    if (joinCode.length !== 7) {
-      setJoinError('Invite code must be exactly 7 characters.')
+    // 7 = legacy codes, 10 = current. Both remain valid.
+    if (joinCode.length < 7 || joinCode.length > 10) {
+      setJoinError('That invite code looks wrong — check it and try again.')
       return
     }
     setJoinError(null)
@@ -342,7 +343,7 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
                 type="text"
                 className="input placeholder-text/50 text-sm uppercase tracking-widest flex-1 h-9"
                 placeholder="XXXXXXX"
-                maxLength={7}
+                maxLength={10}
                 value={joinCode}
                 onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(null) }}
                 onKeyDown={e => { if (e.key === 'Enter') handleLookup() }}

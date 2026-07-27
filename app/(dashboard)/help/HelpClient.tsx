@@ -24,7 +24,7 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
   },
   {
     q: 'How do I join a board?',
-    a: "You need an invite link or a 7-character invite code from someone already on the board. You can enter the code on your Profile page under My Boards → Join a Board. If someone sends you an invite link, just click it — if you're not logged in yet you'll be guided to create an account first, then land directly on the board's join page. A board moderator will review and approve your request, and you'll get an email confirmation when you're in.",
+    a: "You need an invite link or an invite code from someone already on the board. You can enter the code on your Profile page under My Boards → Join a Board. If someone sends you an invite link, just click it — if you're not logged in yet you'll be guided to create an account first, then land directly on the board's join page. A board moderator will review and approve your request, and you'll get an email confirmation when you're in.",
   },
   {
     q: "Why can't I see any posts on the Wall?",
@@ -52,7 +52,7 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
   },
   {
     q: 'Can WDWShiftX read my work schedule from a photo?',
-    a: "Yes — that's Photo Schedule Import. On the Calendar page, tap Import Schedule, then attach a photo of the posted schedule (paper or a screenshot from your scheduling app). Your shifts are read in seconds and shown below to your photo for review — you can edit, uncheck, or add rows before anything is saved, and shifts that overlap something already on your calendar are flagged. You get 4 imports per month. See the Photo Schedule Import section below for details.",
+    a: "Yes — that's Photo Schedule Import. On the Calendar page, tap Import Schedule, then attach a photo of the posted schedule (paper or a screenshot from your scheduling app). Your shifts are read in seconds and shown below your photo for review — you can edit, uncheck, or add rows before anything is saved, and shifts that overlap something already on your calendar are flagged. You get 4 imports per month. See the Photo Schedule Import section below for details.",
     importOnly: true,
   },
   {
@@ -208,7 +208,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
         <h2 className="font-accent text-lg font-bold text-text mb-4">Getting Started</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: UserPlus, step: '1', title: 'Get Invited', desc: 'Ask a board manager for an invite link or 7-character code to join your first board.' },
+            { icon: UserPlus, step: '1', title: 'Get Invited', desc: 'Ask a board manager for an invite link or invite code to join your first board.' },
             { icon: LayoutGrid, step: '2', title: 'Browse the Wall', desc: 'See shift offers and requests from everyone on your boards, filtered by date or board.' },
             { icon: Handshake, step: '3', title: 'Post or Claim', desc: 'Post your own shifts, or tap "I’ll take this" on someone else’s — the owner reviews requests and picks who to accept.' },
           ].map(({ icon: Icon, step, title, desc }) => (

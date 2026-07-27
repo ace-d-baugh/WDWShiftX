@@ -40,7 +40,7 @@ export default async function AboutPage() {
           <section className="card shadow-sm">
             <h2 className="font-accent text-xl font-bold text-text mb-3">How it works</h2>
             <p>
-              Teams join a private, invite-only board using a 7-character code shared by their
+              Teams join a private, invite-only board using a code shared by their
               organization. Once you&apos;re in, you can post an offer, claim a shift, or coordinate
               directly on the Wall. Built-in moderation tools keep board admins in control of who
               joins and what gets posted, so the board stays as trustworthy as the people on it.

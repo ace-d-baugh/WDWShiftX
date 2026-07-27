@@ -1,5 +1,6 @@
 'use server'
 
+import { randomBytes } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
 import { getActionSession } from '@/lib/auth/session'
@@ -8,11 +9,22 @@ import { slugify } from '@/lib/slug'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// The invite code is the only credential guarding a private board, so it must
+// come from the CSPRNG rather than Math.random() (xorshift128+, whose state is
+// recoverable from a run of outputs). Board creation is disabled in this fork,
+// so there is no way to harvest samples here — but regenerateInviteCode() still
+// mints codes, and this keeps both apps on one implementation.
+//
+// The alphabet is exactly 32 characters = 5 bits each, so masking a random
+// byte with 0x1f is uniform (no modulo bias). 10 chars = 50 bits.
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no O/0, I/1 ambiguity
+const CODE_LENGTH = 10
+
 function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no O/0, I/1 ambiguity
+  const bytes = randomBytes(CODE_LENGTH)
   let code = ''
-  for (let i = 0; i < 7; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += CODE_ALPHABET[bytes[i] & 0x1f]
   }
   return code
 }
