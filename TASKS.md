@@ -842,6 +842,51 @@ Board role **"Leader" now displays as "Admin"**; global role **"Admin" now displ
 
 ---
 
+## 🔒 Security & Stability Fixes — Audit of 2026-07-27
+
+**The full checklist lives in `MyShiftX/TASKS.md`** under this same heading. It is kept in one place on purpose — 15 of the 17 issues exist in both apps, and maintaining two copies would guarantee they drift apart. Work items are numbered **S1–S15** there.
+
+### 🗄️ ACTION REQUIRED — run two SQL files on this project's database
+
+Claude can reach MyShiftX's Supabase directly but not this one, so these are run by hand. Both sit in the repo root:
+
+1. **`APPLY_TO_DATABASE_STEP1.sql`** — ✅ **safe to run right now**, even with the site live. Nothing is dropped, no data changes, no page breaks. Open Supabase → SQL Editor → paste → Run. The last query prints PASS/FAIL per fix.
+2. **`APPLY_TO_DATABASE_STEP2_AFTER_DEPLOY.sql`** — ⛔ **do NOT run yet.** It removes the app's direct access to invite codes and **will break every board page** until the new app code is deployed. That code is still to be written. The file's header has a three-item checklist and a one-line undo.
+
+Both files record themselves so a later `supabase db push` won't re-run them. Both verification blocks were dry-run against MyShiftX first to confirm they're real checks, not ones that always pass.
+
+### Progress on this repo
+
+| # | Status | Commit |
+|---|---|---|
+| S1 — fake emails/alerts 🔴 | ✅ **DONE 2026-07-27 02:14** (fixed here first) | `0b73827` |
+| S15 — silent notification failures | ✅ **DONE 2026-07-27 02:14** (shipped with S1) | `0b73827` |
+| S2 — import quota bypass 🟠 | ✅ code **DONE 2026-07-27 02:41** · ⏳ needs STEP1 SQL | `8e5d008` |
+| S11 — memory/timeout | ✅ **DONE 2026-07-27 02:41** (shipped with S2) | `8e5d008` |
+| S3 — guessable invite codes 🟠 | ✅ **DONE 2026-07-27 02:52** · existing codes left alone per your call | `a361be7` |
+| S4 — trade stats exposure 🟠 | ✅ code **DONE 2026-07-27 03:01** · ⏳ needs STEP1 SQL | `3234c39` |
+| S5 — inert REVOKE 🟡 | ✅ **DONE 2026-07-27 03:05** · ⏳ needs STEP1 SQL · *originated in this repo* | `440e3b7` |
+| S7 — claim-count scoping 🟡 | ✅ **DONE 2026-07-27 03:05** · ⏳ needs STEP1 SQL | `440e3b7` |
+| S8 — invite code leak 🟠 | ⚠️ **half done** — DB function ready; app code + STEP2 SQL still to do | `440e3b7` |
+| SQL files for this database | ✅ **DONE 2026-07-27 03:22** | `6ae7247` |
+| S6 | ❌ **N/A here** — no billing in this fork | — |
+| S9, S10, S12, S13, S14 | ⏳ not started | — |
+| **S16** *(new — found while fixing S8)* | ⏳ not started — see below | — |
+
+**🟠 S16 — NEW. Anyone can join any board's approval queue without an invite code.**
+Found while fixing S8. The database rule for creating a membership only checks "is this row yours?" — never the invite code, never which board. So any verified account can insert itself as *pending* on any board it can name, and the board page hands non-members that board's id. It was step one of the invite-code leak (now blocked at step two), and on its own it lets someone flood a board's approval queue with junk. Fix is to route joining through a function that checks the code and drop the direct insert permission.
+
+**What's different for WDWShiftX specifically:**
+
+- **S1 (fake emails/alerts) is MORE serious here, and should be fixed here first.** MyShiftX's Pro tier limits how many people a forged match email can reach; that limit was removed with billing here, so a forged email reaches everyone. Combined with every user being a real coworker at one employer, a fake internal-looking message is considerably more convincing.
+- **S3 (guessable invite codes) is much less urgent here.** Board creation is disabled, so nobody can generate samples to study the pattern. But the two existing board codes were still made the old way and are worth rotating during a quiet period.
+- **S6 (Stripe event ordering) does NOT apply here** — billing was removed, the webhook doesn't exist.
+- **S5 (the database lock-down that never took effect) originated in this repo**, in `supabase/migrations/20260726120000_shift_bundles.sql`. It was copied into MyShiftX during the feature backport. Both need fixing.
+
+**⚠️ Blocker for the database-side fixes here (S4, S5, S7, S8):** Claude can read and modify MyShiftX's Supabase project directly, but this project (`knzbsitknjozjhramlju`) is on a different Supabase account it cannot reach. Either add it to the same account/token, or run the SQL manually from commands Claude provides. Code-side fixes are unaffected.
+
+---
+
 ## Ongoing / Maintenance
 
 | Task | Who | Notes |
