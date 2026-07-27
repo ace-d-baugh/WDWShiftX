@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
-import { Settings, LayoutGrid, Users, BarChart3, CheckCircle, Search, UserCog, ChevronDown, UserMinus } from 'lucide-react'
+import { Settings, LayoutGrid, Users, BarChart3, Trophy, CheckCircle, Search, UserCog, ChevronDown, UserMinus } from 'lucide-react'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
 import { removeUserFromBoard } from '@/app/actions/boards'
 import { createClient } from '@/lib/supabase/client'
@@ -12,9 +12,10 @@ import { Modal } from '@/components/ui/Modal'
 import { BOARD_ROLE_LABEL } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 import { AdminCharts, type PostStats } from './AdminCharts'
+import { AdminLeaderboard } from './AdminLeaderboard'
 import type { GlobalRole, BoardRole } from '@/lib/database.types'
 
-type AdminTab = 'boards' | 'users' | 'charts'
+type AdminTab = 'boards' | 'users' | 'charts' | 'leaderboard'
 
 interface Board {
   id: string
@@ -256,6 +257,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
     { key: 'boards', label: 'Boards', icon: <LayoutGrid className="w-4 h-4" />, count: boards.length },
     { key: 'users',  label: 'Users',  icon: <Users className="w-4 h-4" />,     count: users.length },
     { key: 'charts', label: 'Stats',  icon: <BarChart3 className="w-4 h-4" />, count: null },
+    { key: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="w-4 h-4" />, count: null },
   ]
 
   return (
@@ -478,7 +480,8 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
       )}
 
       {/* Stats Tab */}
-      {tab === 'charts' && <AdminCharts stats={postStats} />}
+      {tab === 'charts' && <AdminCharts stats={postStats} boards={boards} />}
+      {tab === 'leaderboard' && <AdminLeaderboard boards={boards} />}
 
       {/* ── Remove-from-board confirmation / last-Admin reassignment ────── */}
       {removeTarget && (

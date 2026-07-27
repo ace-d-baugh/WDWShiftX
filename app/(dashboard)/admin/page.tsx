@@ -27,7 +27,9 @@ export default async function AdminPage() {
       .eq('is_hidden', false)
       .limit(2000),
     // Also internally gated to Admins only — see get_post_stats_admin().
-    supabase.rpc('get_post_stats_admin').single(),
+    // All-boards view for the fast first paint; AdminCharts refetches
+    // client-side when the board filter changes.
+    supabase.rpc('get_post_stats_admin', { p_board_id: null }).single(),
   ])
 
   const memberCounts = new Map<string, number>()
