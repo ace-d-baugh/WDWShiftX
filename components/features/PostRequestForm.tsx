@@ -158,15 +158,15 @@ export function PostRequestForm({ userId, displayName, onSuccess, requestId, ini
       } else {
         for (const [i, f] of forms.entries()) {
           if (i > 0 && !isTouched(f)) continue
-          const { error } = await supabase.from('requests').insert({
+          const { data: inserted, error } = await supabase.from('requests').insert({
             created_by: displayName, user_id: userId,
             request_title: f.request_title, board_id: f.board_id,
             requested_date: f.requested_date, preferred_times: f.preferred_times,
             details: f.details || null, is_active: true,
-          })
+          }).select('id').single()
           if (error) throw error
           notifyRequestPosted({
-            boardId: f.board_id, requestedDate: f.requested_date,
+            boardId: f.board_id, requestId: inserted.id, requestedDate: f.requested_date,
             preferredTimes: f.preferred_times, requestTitle: f.request_title,
             requesterName: displayName, requesterUserId: userId,
           }).catch(() => {})

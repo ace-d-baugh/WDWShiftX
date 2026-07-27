@@ -513,6 +513,12 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
     }
   }
 
+  // Fulfilling already wrote to the server (RequestCard called fulfillRequest
+  // itself) — just prune it from the list here.
+  const handleRequestFulfilled = (id: string) => {
+    setRequests(prev => prev.filter(r => r.id !== id))
+  }
+
   const toggleBoard = (id: string) => {
     setBoardFilters(prev => {
       const next = new Set(prev)
@@ -968,6 +974,7 @@ export function WallClient({ userId, displayName, boards, hasBoards, initialTab 
                         currentUserId={userId}
                         currentUserName={displayName}
                         onDeactivate={handleDeactivateRequest}
+                        onFulfilled={handleRequestFulfilled}
                       />
                     </div>
                   ))}

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { formatInTimeZone } from 'date-fns-tz'
 import { parseISO } from 'date-fns'
-import { Archive, Clock, LayoutGrid, Timer, ShieldCheck, UserX, HeartHandshake as Handshake } from 'lucide-react'
+import { Archive, Clock, LayoutGrid, Timer, ShieldCheck, UserX, HeartHandshake as Handshake, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import type { RemovedReason } from '@/lib/database.types'
@@ -52,6 +52,7 @@ const REASON_LABEL: Record<RemovedReason, string> = {
   leader_removed: 'Removed by admin',
   user_removed: 'Removed by owner',
   covered: 'Covered',
+  fulfilled: 'Fulfilled',
 }
 
 const REASON_ICON: Record<RemovedReason, React.ComponentType<{ className?: string }>> = {
@@ -59,6 +60,7 @@ const REASON_ICON: Record<RemovedReason, React.ComponentType<{ className?: strin
   leader_removed: ShieldCheck,
   user_removed: UserX,
   covered: Handshake,
+  fulfilled: CheckCircle,
 }
 
 const REASON_CLASS: Record<RemovedReason, string> = {
@@ -66,6 +68,7 @@ const REASON_CLASS: Record<RemovedReason, string> = {
   leader_removed: 'bg-warning/20 text-warning',
   user_removed: 'bg-info/20 text-info',
   covered: 'bg-success/20 text-success',
+  fulfilled: 'bg-success/20 text-success',
 }
 
 function RemovalBadge({ reason, remover, ownerName }: { reason: RemovedReason | null; remover: { display_name: string | null } | null; ownerName: string }) {

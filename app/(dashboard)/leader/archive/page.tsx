@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = { title: 'Archive – WDWShiftX' }
 
-const REASONS: RemovedReason[] = ['expired', 'leader_removed', 'user_removed', 'covered']
+const REASONS: RemovedReason[] = ['expired', 'leader_removed', 'user_removed', 'covered', 'fulfilled']
 
 export default async function ArchivePage() {
   const { supabase } = await requireModeratorOrAdmin()

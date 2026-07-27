@@ -5,13 +5,14 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  LayoutGrid, User, Flag, Pencil, Trash2,
+  LayoutGrid, User, Flag, Pencil, Trash2, CheckCircle,
   MoreVertical, MessageSquare, Star, Send, Clock, ChevronDown,
 } from 'lucide-react'
 import { FlagModal } from '@/components/features/FlagModal'
 import { slugify } from '@/lib/slug'
 import { CommentSection } from '@/components/features/CommentSection'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { fulfillRequest } from '@/app/actions/posts'
 import { cn } from '@/lib/utils'
 import type { PreferredTime } from '@/lib/database.types'
 
@@ -51,14 +52,20 @@ interface RequestCardProps {
   currentUserId?: string
   currentUserName?: string
   onDeactivate?: (id: string) => void
+  /** Called after this card marks itself fulfilled (the server write already
+   *  happened here) so the parent can prune it from the list. */
+  onFulfilled?: (id: string) => void
 }
 
-export function RequestCard({ request, currentUserId, currentUserName, onDeactivate }: RequestCardProps) {
+export function RequestCard({ request, currentUserId, currentUserName, onDeactivate, onFulfilled }: RequestCardProps) {
   const router = useRouter()
   const [flagOpen, setFlagOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [confirmFulfill, setConfirmFulfill] = useState(false)
+  const [fulfilling, setFulfilling] = useState(false)
+  const [fulfillError, setFulfillError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const [openCommentsTick, setOpenCommentsTick] = useState(0)
@@ -77,6 +84,16 @@ export function RequestCard({ request, currentUserId, currentUserName, onDeactiv
     const W = 192 // w-48
     const left = Math.max(8, Math.min(rect.right - W, window.innerWidth - W - 8))
     setMenuPos({ top: rect.bottom + 4, left })
+  }
+
+  const handleFulfill = async () => {
+    setFulfilling(true)
+    setFulfillError(null)
+    const res = await fulfillRequest(request.id)
+    setFulfilling(false)
+    if (res.error) { setFulfillError(res.error); return }
+    setConfirmFulfill(false)
+    onFulfilled?.(request.id)
   }
 
   const menuItemCls = 'flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm transition-colors text-text/80 hover:bg-primary-light/50 hover:text-text'
@@ -211,6 +228,9 @@ export function RequestCard({ request, currentUserId, currentUserName, onDeactiv
                 <button className={menuItemCls} onClick={() => { router.push(`/wall/edit-request/${request.id}`); setMenuPos(null) }}>
                   <Pencil className="w-3.5 h-3.5 shrink-0" /> Edit
                 </button>
+                <button className={menuItemCls} onClick={() => { setConfirmFulfill(true); setMenuPos(null) }}>
+                  <CheckCircle className="w-3.5 h-3.5 shrink-0 text-success" /> Mark Fulfilled
+                </button>
                 <button className={menuDangerCls} onClick={() => { setConfirmRemove(true); setMenuPos(null) }}>
                   <Trash2 className="w-3.5 h-3.5 shrink-0" /> Remove
                 </button>
@@ -236,6 +256,17 @@ export function RequestCard({ request, currentUserId, currentUserName, onDeactiv
         confirmLabel="Remove"
         onConfirm={() => { onDeactivate?.(request.id); setConfirmRemove(false) }}
         onCancel={() => setConfirmRemove(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmFulfill}
+        title="Mark as Fulfilled"
+        message={`Mark this request as fulfilled? It comes off the Wall as covered — use this once someone's actually taken care of it.${fulfillError ? ` ${fulfillError}` : ''}`}
+        confirmLabel="Mark Fulfilled"
+        loadingLabel="Saving…"
+        loading={fulfilling}
+        onConfirm={handleFulfill}
+        onCancel={() => { setConfirmFulfill(false); setFulfillError(null) }}
       />
     </>
   )

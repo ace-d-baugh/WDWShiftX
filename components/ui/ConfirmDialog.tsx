@@ -8,6 +8,9 @@ interface ConfirmDialogProps {
   title: string
   message: string
   confirmLabel?: string
+  /** Shown on the confirm button while `loading` — defaults to "Removing…"
+   *  since most callers are a destructive Remove/Delete. */
+  loadingLabel?: string
   cancelLabel?: string
   onConfirm: () => void
   onCancel: () => void
@@ -19,6 +22,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel = 'Confirm',
+  loadingLabel = 'Removing…',
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
@@ -32,7 +36,7 @@ export function ConfirmDialog({
           {cancelLabel}
         </Button>
         <Button variant="danger" size="sm" onClick={onConfirm} disabled={loading}>
-          {loading ? 'Removing…' : confirmLabel}
+          {loading ? loadingLabel : confirmLabel}
         </Button>
       </div>
     </Modal>

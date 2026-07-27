@@ -9,7 +9,7 @@ export type PreferredTime   = 'morning' | 'afternoon' | 'evening' | 'late'
 export type CommentPostType = 'shift' | 'request'
 export type JoinOutcome     = 'invalid_code' | 'user_declined' | 'success'
 export type RoadmapColumn   = 'done' | 'in_progress' | 'next' | 'backlog' | 'deferred'
-export type RemovedReason   = 'expired' | 'leader_removed' | 'user_removed' | 'covered'
+export type RemovedReason   = 'expired' | 'leader_removed' | 'user_removed' | 'covered' | 'fulfilled'
 export type ClaimStatus     = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'completed' | 'fell_through'
 export type MessageReaction = 'thumbs_up' | 'laugh' | 'surprise' | 'sad' | 'mad' | 'star'
 
@@ -640,6 +640,36 @@ export interface Database {
         }
         Relationships: []
       }
+      match_events: {
+        Row: {
+          id: string
+          board_id: string | null
+          shift_id: string | null
+          request_id: string | null
+          shift_poster_id: string | null
+          requester_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          board_id?: string | null
+          shift_id?: string | null
+          request_id?: string | null
+          shift_poster_id?: string | null
+          requester_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          board_id?: string | null
+          shift_id?: string | null
+          request_id?: string | null
+          shift_poster_id?: string | null
+          requester_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           id: string
@@ -839,13 +869,18 @@ export interface Database {
         Returns: { bundle_id: string; pending_count: number }[]
       }
       get_post_stats_admin: {
-        Args: Record<string, never>
+        Args: { p_board_id?: string | null }
         Returns: {
           shifts_added: number; shifts_active: number; shifts_user_removed: number; shifts_expired: number
           shifts_covered: number; shifts_leader_removed: number; shifts_trade_only: number; shifts_giveaway_only: number
           shifts_both: number; requests_total: number; requests_active: number; requests_user_removed: number
-          requests_expired: number; requests_leader_removed: number
+          requests_expired: number; requests_leader_removed: number; requests_fulfilled: number; matches_total: number
         }[]
+      }
+      fulfill_own_request: { Args: { p_request_id: string }; Returns: boolean }
+      get_leaderboard_admin: {
+        Args: { p_board_id?: string | null }
+        Returns: { category: string; user_id: string; display_name: string | null; cnt: number; rank: number }[]
       }
     }
     Enums: Record<string, never>

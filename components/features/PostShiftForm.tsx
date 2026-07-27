@@ -575,7 +575,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
           await applyBundle(inserted.id, f, bundleAt(i), isTrade, isGiveaway)
           // Match alerts only make sense for posts others can actually see
           if (isTrade || isGiveaway) {
-            notifyShiftPosted({ boardId: f.board_id, startTimeIso: startUTC, shiftTitle: f.shift_title, posterName: displayName, posterUserId: userId }).catch(() => {})
+            notifyShiftPosted({ boardId: f.board_id, shiftId: inserted.id, startTimeIso: startUTC, shiftTitle: f.shift_title, posterName: displayName, posterUserId: userId }).catch(() => {})
           }
         }
       }

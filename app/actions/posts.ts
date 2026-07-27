@@ -82,3 +82,24 @@ export async function deactivateRequest(id: string): Promise<{ error?: string }>
     return { error: e instanceof Error ? e.message : 'Unknown error' }
   }
 }
+
+/**
+ * Mark a request as fulfilled — someone covered it outside the claim system
+ * (requests have no claim/accept flow of their own). Distinct from
+ * deactivateRequest: this records a real outcome instead of "removed reason
+ * unknown," which is what the admin stats' request-outcomes chart reads.
+ */
+export async function fulfillRequest(id: string): Promise<{ error?: string }> {
+  try {
+    const { supabase } = await getActionSession()
+
+    const { data, error } = await supabase
+      .rpc('fulfill_own_request', { p_request_id: id })
+
+    if (error) return { error: error.message }
+    if (!data) return { error: 'Post not found or you do not own it.' }
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Unknown error' }
+  }
+}
