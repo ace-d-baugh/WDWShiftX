@@ -17,6 +17,7 @@ import type { MyClaim, PendingClaim } from '@/components/features/ClaimSection'
 import { RequestCard, type RequestData } from '@/components/features/RequestCard'
 import { WallSkeleton } from '@/components/ui/WallSkeleton'
 import { Checkbox } from '@/components/ui/Checkbox'
+import { sampleWallShifts, useSampleMode } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
 
 const ET = 'America/New_York'
@@ -129,6 +130,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   const supabase = useMemo(() => createClient(), [])
   const settings = getSettings()
   const [tab, setTab] = useState<Tab>(initialTab)
+  const sampleMode = useSampleMode()
   const [shifts, setShifts] = useState<ShiftData[]>([])
   const [requests, setRequests] = useState<RequestData[]>([])
   const [loading, setLoading] = useState(true)
@@ -531,8 +533,20 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     else loadRequests()
   }
 
+  // While the tour is running, three demo shifts (one per posting type) are
+  // folded into the list so the walkthrough always has one clean example of
+  // each to point at — on a busy Wall as well as an empty one. They live only
+  // in memory and vanish the moment the tour ends. Sorted back into start-time
+  // order so the day grouping below still comes out chronological.
+  const displayShifts = useMemo(() => {
+    if (!sampleMode) return shifts
+    return [...sampleWallShifts(), ...shifts].sort((a, b) =>
+      a.start_time.localeCompare(b.start_time)
+    )
+  }, [shifts, sampleMode])
+
   const filteredShifts = useMemo(() => {
-    let list = shifts
+    let list = displayShifts
     if (bundleFilter)       list = list.filter(s => s.bundle_id === bundleFilter)
     if (myPostsOnly)        list = list.filter(s => s.user_id === userId)
     if (boardFilters.size)  list = list.filter(s => s.board_id != null && boardFilters.has(s.board_id))
@@ -547,7 +561,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       )
     }
     return list
-  }, [shifts, search, dateFilter, boardFilters, myPostsOnly, bundleFilter, userId])
+  }, [displayShifts, search, dateFilter, boardFilters, myPostsOnly, bundleFilter, userId])
 
   const filteredRequests = useMemo(() => {
     let list = requests
@@ -618,7 +632,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     setSearch('')
   }
 
-  const currentPostCount = tab === 'offers' ? shifts.length : requests.length
+  const currentPostCount = tab === 'offers' ? displayShifts.length : requests.length
 
   const tabLabel = (t: Tab) => {
     const count = t === 'offers' ? filteredShifts.length : filteredRequests.length
@@ -654,6 +668,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
           {hasBoards && (
             <Link
               href={tab === 'offers' ? '/wall/new-shift' : '/wall/new-request'}
+              data-tour="wall-post"
               className="btn btn-primary gap-1.5 text-sm px-4 py-2 min-h-0 h-10"
             >
               <Plus className="w-4 h-4" />
@@ -691,7 +706,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-border mb-5">
+      <div data-tour="wall-tabs" className="flex border-b border-border mb-5">
         {(['offers', 'requests'] as Tab[]).map(t => (
           <button
             key={t}
@@ -708,11 +723,14 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Filters — trigger and panel share a wrapper so the tour can expand the
+          panel and highlight the whole control as one region. */}
       {(currentPostCount > 1 || hasActiveFilters) && (
-        <>
+        <div data-tour="wall-filters-area">
           <button
             onClick={() => setFiltersOpen(o => !o)}
+            data-tour="wall-filters"
+            data-tour-open={String(filtersOpen)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary mb-4 min-h-0 min-w-0"
           >
             <SlidersHorizontal className="w-4 h-4" />
@@ -855,14 +873,14 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Content */}
       {loading ? (
         <WallSkeleton tab={tab} />
       ) : tab === 'offers' ? (
-        shifts.length === 0 ? (
+        displayShifts.length === 0 ? (
           <EmptyState
             message={hasBoards ? 'No shift offers found' : 'No shifts to see here yet'}
             subtext={!hasBoards
@@ -990,6 +1008,7 @@ function DayGroup({
       <button
         type="button"
         onClick={onToggle}
+        data-tour="wall-days"
         className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-card hover:bg-primary-light/30 active:bg-primary-light/50 transition-colors duration-150 min-h-0"
         aria-expanded={!isCollapsed}
       >

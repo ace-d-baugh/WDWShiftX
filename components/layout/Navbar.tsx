@@ -161,6 +161,7 @@ export function Navbar({
               {/* My Calendar */}
               <Link
                 href="/calendar"
+                data-tour="nav-calendar"
                 className={cn(
                   'flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors min-h-0 min-w-0',
                   isActive('/calendar')
@@ -287,6 +288,7 @@ export function Navbar({
           {/* My Calendar */}
           <Link
             href="/calendar"
+            data-tour="nav-calendar"
             className={cn(
               'flex flex-1 flex-col items-center justify-center py-2 gap-1 text-xs font-medium transition-colors min-h-[56px]',
               isActive('/calendar') ? 'text-primary bg-primary-light/50' : 'text-text/50 hover:text-text'

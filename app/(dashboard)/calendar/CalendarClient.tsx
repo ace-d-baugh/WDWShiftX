@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import {
@@ -16,11 +16,27 @@ import { ScheduleImportModal } from '@/components/features/ScheduleImportModal'
 import { reactivateShift } from '@/app/actions/claims'
 import { deactivateShift, dissolveBundle } from '@/app/actions/posts'
 import { bundleBreakupWarning } from '@/lib/bundles'
+import {
+  isSampleId, sampleBoardRequests, sampleBoardShifts, sampleCalendarShifts, useSampleMode,
+} from '@/lib/tour/sample-data'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const ET = 'America/New_York'
+
+/**
+ * Title colour for a shift, matching the Wall's cards: purple when the owner
+ * will trade *or* give it away, blue for trade only, green for giveaway only.
+ * A shift that isn't on the Wall has no type, so it stays the theme's ordinary
+ * text colour — same as its left bar.
+ */
+function shiftTypeColor(s: { is_trade: boolean; is_giveaway: boolean }): string {
+  if (s.is_trade && s.is_giveaway) return 'text-primary'
+  if (s.is_trade) return 'text-info'
+  if (s.is_giveaway) return 'text-success'
+  return 'text-text'
+}
 
 // ── Prop types ──────────────────────────────────────────────────────────────
 
@@ -105,12 +121,27 @@ function hasAnyDots(data?: DayData): boolean {
 // Big tappable circles: the three wall dots (offers) overlap like an avatar
 // stack (giveaway in front, trade behind it, both at the back), the request
 // dot sits alone on the other side since it opens the Requests tab instead.
+//
+// `spread` pushes the two groups to opposite ends of a full-width row — offers
+// left, requests hard right — which is what the month grid wants inside a day
+// cell. A day with only one kind still lands on its own side: the offers group
+// is always rendered, so an offers-only day leaves it at flex-start and a
+// requests-only day has an empty box holding the left slot. The list view
+// leaves it off and keeps both groups together at the end of the row.
 
-function ActivityDots({ data, dateStr, router }: { data?: DayData; dateStr: string; router: ReturnType<typeof useRouter> }) {
+function ActivityDots({ data, dateStr, router, spread = false }: {
+  data?: DayData
+  dateStr: string
+  router: ReturnType<typeof useRouter>
+  spread?: boolean
+}) {
   if (!hasAnyDots(data)) return null
   const d = data!
   return (
-    <div className="flex items-center shrink-0">
+    <div
+      data-tour="cal-dots"
+      className={cn('flex items-center', spread ? 'w-full justify-between gap-1' : 'shrink-0')}
+    >
       <div className="flex items-center">
         {d.hasBoth && (
           <button
@@ -144,7 +175,9 @@ function ActivityDots({ data, dateStr, router }: { data?: DayData; dateStr: stri
         <button
           onClick={e => { e.stopPropagation(); router.push(`/wall?tab=requests&date=${dateStr}`) }}
           title="Shift request on this day"
-          className="ml-1 relative z-30 min-h-0 min-w-0"
+          /* justify-between already separates the groups when spread, so the
+             nudge would only push it off the cell's right edge. */
+          className={cn('relative z-30 min-h-0 min-w-0', !spread && 'ml-1')}
         >
           <span className="block w-2.5 h-2.5 min-[505px]:w-4 min-[505px]:h-4 sm:w-5 sm:h-5 rounded-full bg-accent hover:opacity-70 transition-opacity" />
         </button>
@@ -157,8 +190,32 @@ type ViewMode = 'grid' | 'list'
 
 // ── Calendar client ───────────────────────────────────────────────────────────
 
-export function CalendarClient({ userId, displayName, importEnabled, today, myShifts, boardShifts, boardRequests, boards, isPro }: CalendarClientProps) {
+export function CalendarClient({
+  userId, displayName, importEnabled, today,
+  myShifts: myShiftsProp,
+  boardShifts: boardShiftsProp,
+  boardRequests: boardRequestsProp,
+  boards, isPro,
+}: CalendarClientProps) {
   const router = useRouter()
+
+  // While the tour runs, the same three demo shifts the Wall shows are folded
+  // onto the calendar (plus one open request, so the Request dot has a day to
+  // sit on). Memory only — they disappear when the tour ends.
+  const sampleMode = useSampleMode()
+  const myShifts = useMemo(
+    () => (sampleMode ? [...sampleCalendarShifts(), ...myShiftsProp] : myShiftsProp),
+    [sampleMode, myShiftsProp]
+  )
+  const boardShifts = useMemo(
+    () => (sampleMode ? [...sampleBoardShifts(), ...boardShiftsProp] : boardShiftsProp),
+    [sampleMode, boardShiftsProp]
+  )
+  const boardRequests = useMemo(
+    () => (sampleMode ? [...sampleBoardRequests(), ...boardRequestsProp] : boardRequestsProp),
+    [sampleMode, boardRequestsProp]
+  )
+
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [importOpen, setImportOpen] = useState(false)
 
@@ -293,6 +350,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
           {importEnabled && (
             <button
               onClick={() => setImportOpen(true)}
+              data-tour="cal-import"
               className="btn btn-outline gap-1.5 text-sm px-4 py-2 min-h-0 h-10"
             >
               <Camera className="w-4 h-4" />
@@ -305,6 +363,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
               doesn't exist for them). */}
           <Link
             href={isPro ? '/profile#calendar-sync' : '/upgrade'}
+            data-tour="cal-sync"
             className="btn btn-outline gap-1.5 text-sm px-4 py-2 min-h-0 h-10 no-underline"
           >
             <RefreshCw className="w-4 h-4" />
@@ -312,7 +371,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
             <span className="hidden min-[505px]:inline sm:hidden">Sync</span>
             {!isPro && <Crown className="w-3.5 h-3.5 text-secondary-accent" fill="#ffea80" strokeWidth={0} aria-label="Pro feature" />}
           </Link>
-          <Link href="/wall/new-shift?from=calendar" className="btn btn-primary gap-1.5 text-sm px-4 py-2 min-h-0 h-10 no-underline">
+          <Link href="/wall/new-shift?from=calendar" data-tour="cal-add" className="btn btn-primary gap-1.5 text-sm px-4 py-2 min-h-0 h-10 no-underline">
             <Plus className="w-4 h-4" />
             <span className="hidden min-[505px]:inline">
               <span className="hidden sm:inline">Add </span>Shift
@@ -352,13 +411,13 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
 
       {/* Dot legend + view toggle */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-        <div className="flex items-center gap-5 flex-wrap text-xs text-text/60">
+        <div data-tour="cal-legend" className="flex items-center gap-5 flex-wrap text-xs text-text/60">
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary inline-block" />Trade + Giveaway</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-info inline-block" />Trade</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-success inline-block" />Giveaway</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />Request</span>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 shrink-0">
+        <div data-tour="cal-view" className="flex items-center gap-1 rounded-lg border border-border p-0.5 shrink-0">
           <button
             onClick={() => changeView('grid')}
             aria-label="Grid view" title="Grid view"
@@ -414,6 +473,11 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                     <div
                       key={dateStr}
                       onClick={() => { if (!isPast) goCreate(dateStr) }}
+                      /* Scopes the tour's calendar steps to a day it supplied,
+                         so they don't land on a real shift from last week. */
+                      data-tour-sample={
+                        (data?.myShifts ?? []).some(s => isSampleId(s.id)) ? 'true' : undefined
+                      }
                       className={cn(
                         'relative bg-card p-1.5 min-h-[90px] flex flex-col',
                         isPast && 'opacity-50',
@@ -456,6 +520,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                             <button
                               key={s.id}
                               onClick={e => { e.stopPropagation(); router.push(`/wall/edit-shift/${s.id}?from=calendar`) }}
+                              data-tour="cal-shift"
                               className={cn(
                                 'w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight transition-colors border-l-2',
                                 s.is_trade && s.is_giveaway ? 'border-l-primary bg-primary/5 hover:bg-primary/10' :
@@ -468,7 +533,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                                 {s.bundle_id && (
                                   <Layers className="w-2.5 h-2.5 shrink-0 text-primary" aria-label="Part of a bundle" />
                                 )}
-                                <span className="font-medium text-text truncate">{s.shift_title}</span>
+                                <span className={cn('font-medium truncate', shiftTypeColor(s))}>{s.shift_title}</span>
                               </div>
                               <div className="text-text/50 tabular-nums">
                                 {fmtTime(s.start_time, settings?.timeFormat ?? '12h')}–{fmtTime(s.end_time, settings?.timeFormat ?? '12h')}
@@ -480,7 +545,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
 
                       {hasAnyDots(data) && (
                         <div className="mt-auto pt-1" onClick={e => e.stopPropagation()}>
-                          <ActivityDots data={data} dateStr={dateStr} router={router} />
+                          <ActivityDots data={data} dateStr={dateStr} router={router} spread />
                         </div>
                       )}
                     </div>
@@ -556,7 +621,7 @@ export function CalendarClient({ userId, displayName, importEnabled, today, mySh
                               className="flex items-center gap-1 min-w-0 text-left hover:underline min-h-0"
                             >
                               {s.bundle_id && <Layers className="w-3 h-3 shrink-0 text-primary" aria-label="Part of a bundle" />}
-                              <span className="text-sm font-medium text-text truncate">{s.shift_title}</span>
+                              <span className={cn('text-sm font-medium truncate', shiftTypeColor(s))}>{s.shift_title}</span>
                             </button>
                             <button
                               onClick={e => {

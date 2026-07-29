@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { createClient } from '@/lib/supabase/client'
 import { startConversation, deleteConversation } from '@/app/actions/messages'
+import { isSampleId, sampleConversations, useSampleMode } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
 
 export interface ConversationSummary {
@@ -67,6 +68,15 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [conversations, setConversations] = useState(initialConversations)
+
+  // Two demo threads while the tour runs — one unread, one you answered last —
+  // so the walkthrough has an unread badge and a "You:" preview to point at
+  // even on an account with no correspondence yet. Memory only.
+  const sampleMode = useSampleMode()
+  const displayConversations = useMemo(
+    () => (sampleMode ? [...sampleConversations(currentUserId), ...conversations] : conversations),
+    [sampleMode, conversations, currentUserId]
+  )
 
   // "Start a chat" directory
   const [directoryOpen, setDirectoryOpen] = useState(false)
@@ -213,6 +223,7 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
         <button
           type="button"
           onClick={openDirectory}
+          data-tour="msg-start"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-primary bg-primary-light hover:bg-primary-light/70 transition-colors min-h-0 min-w-0"
         >
           <SquarePen className="w-4 h-4" />
@@ -222,7 +233,7 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
 
       {deleteError && <p className="text-xs text-warning mb-2">{deleteError}</p>}
 
-      {conversations.length === 0 ? (
+      {displayConversations.length === 0 ? (
         <div className="card text-center py-10">
           <MessageSquare className="w-8 h-8 mx-auto text-text/20 mb-3" />
           <p className="text-sm font-medium text-text/70">No conversations yet</p>
@@ -232,8 +243,8 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
           </p>
         </div>
       ) : (
-        <ul className="card divide-y divide-border p-0 overflow-hidden">
-          {conversations.map(c => {
+        <ul data-tour="msg-list" className="card divide-y divide-border p-0 overflow-hidden">
+          {displayConversations.map(c => {
             const name = c.other_display_name ?? 'Former User'
             const isMine = c.last_message_sender_id === currentUserId
             const preview = c.last_message_body
@@ -241,7 +252,12 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
               : 'No messages yet'
             const unread = c.unread_count > 0
             return (
-              <li key={c.conversation_id} className="relative">
+              <li
+                key={c.conversation_id}
+                data-tour="msg-row"
+                data-tour-sample={isSampleId(c.conversation_id) ? 'true' : undefined}
+                className="relative"
+              >
                 <Link
                   href={`/messages/${c.conversation_id}`}
                   className="flex items-center gap-3 pl-4 pr-12 py-3.5 hover:bg-primary-light/40 transition-colors"
@@ -265,7 +281,7 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
                         {preview}
                       </span>
                       {unread && (
-                        <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-warning text-white text-xs font-bold leading-none shrink-0">
+                        <span data-tour="msg-unread" className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-warning text-white text-xs font-bold leading-none shrink-0">
                           {c.unread_count > 99 ? '99+' : c.unread_count}
                         </span>
                       )}
@@ -274,7 +290,8 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setConfirmDeleteId(c.conversation_id)}
+                  onClick={() => { if (!isSampleId(c.conversation_id)) setConfirmDeleteId(c.conversation_id) }}
+                  data-tour="msg-delete"
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-text/30 hover:text-warning hover:bg-warning/10 transition-colors min-h-0 min-w-0"
                   aria-label={`Delete chat with ${name}`}
                   title="Delete chat"

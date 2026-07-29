@@ -694,7 +694,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
             <div className="space-y-4">
               {/* Board — hidden when user belongs to only one board (auto-selected) */}
               {boards.length > 1 && (
-                <div>
+                <div data-tour="post-board">
                   <label className="block text-sm font-medium text-text mb-1">Board <span className="text-warning">*</span></label>
                   <select name="board_id" value={f.board_id} onChange={onChange(i)}
                     className={`input ${errs.board_id ? 'border-warning' : ''}`}>
@@ -706,7 +706,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
               )}
 
               {/* Title */}
-              <div>
+              <div data-tour="post-title">
                 <label className="block text-sm font-medium text-text mb-1">Shift Title <span className="text-warning">*</span></label>
                 <input name="shift_title" type="text" value={f.shift_title} onChange={onChange(i)}
                   className={`input placeholder:text-text/30 ${errs.shift_title ? 'border-warning' : ''}`}
@@ -720,7 +720,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
                 const endBeforeStart = !!(f.start_time && f.end_time &&
                   new Date(f.end_time) <= new Date(f.start_time))
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div data-tour="post-times" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-text mb-1">Start Time <span className="text-warning">*</span></label>
                       <DatePicker
@@ -781,6 +781,13 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
                   <button
                     type="button"
                     onClick={() => toggleWall(i)}
+                    data-tour="post-wall-toggle"
+                    /* The product tour opens this accordion before it runs, so
+                       its steps can point at the fields inside. Kept as a data
+                       attribute rather than aria-expanded because driver.js
+                       writes (and then strips) aria-expanded on whatever it
+                       highlights. */
+                    data-tour-open={String(wallOpen[i] ?? wallExpanded)}
                     className="w-full flex items-center justify-between px-3 py-2.5 bg-primary-light/20 hover:bg-primary-light/40 transition-colors min-h-0 text-left"
                   >
                     <span className="text-sm font-medium text-text">
@@ -796,7 +803,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
 
                   {(wallOpen[i] ?? wallExpanded) && (
                     <div className="px-3 pt-3 pb-3 space-y-4 border-t border-border">
-                      <div>
+                      <div data-tour="post-types">
                         <p className="text-xs text-text/50 mb-2">Leave unchecked to add to your calendar only.</p>
                         <div className="flex flex-wrap gap-4">
                           <label className="flex items-center gap-2 cursor-pointer min-h-0">
@@ -815,7 +822,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
                         {errs.is_trade && <p className="mt-1 text-xs text-warning">{errs.is_trade}</p>}
                       </div>
 
-                      <div>
+                      <div data-tour="post-details">
                         <label className="block text-xs font-medium text-text/70 mb-1">Details (optional)</label>
                         <textarea name="details" value={f.details} onChange={onChange(i)}
                           className="input h-20 resize-none text-sm" placeholder="Any additional details..." maxLength={500} />
@@ -827,7 +834,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
                         const candidates = bundleCandidates(i)
                         const total = bundleCount(i)
                         return (
-                          <div className="pt-3 border-t border-border">
+                          <div data-tour="post-bundle" className="pt-3 border-t border-border">
                             <label className="flex items-center gap-2 cursor-pointer min-h-0">
                               <Checkbox
                                 checked={b.enabled}
@@ -1024,7 +1031,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
 
       {/* Add another (create mode only) */}
       {!isEdit && (
-        <button type="button" onClick={addForm}
+        <button type="button" onClick={addForm} data-tour="post-add"
           className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/70 transition-colors min-h-0">
           <Plus className="w-4 h-4" /> Add Another Shift
         </button>
@@ -1035,7 +1042,7 @@ export function PostShiftForm({ userId, displayName, onSuccess, shiftId, initial
         <Button type="button" variant="danger-outline" onClick={() => router.back()} className="gap-1.5 shrink-0">
           <ArrowLeft className="w-4 h-4" /> Cancel
         </Button>
-        <Button type="submit" loading={loading} disabled={!canSubmit} className="flex-1 gap-1.5">
+        <Button type="submit" loading={loading} disabled={!canSubmit} data-tour="post-submit" className="flex-1 gap-1.5">
           {isEdit
             ? <><Save className="w-4 h-4" /> Update Shift</>
             : submitCount > 1

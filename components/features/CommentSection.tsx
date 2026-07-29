@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
 import { FlagModal } from '@/components/features/FlagModal'
 import { createClient } from '@/lib/supabase/client'
+import { isSampleId, sampleComments } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
 import type { CommentPostType } from '@/lib/database.types'
 import { notifyInterest } from '@/app/actions/notifications'
@@ -89,6 +90,13 @@ export function CommentSection({
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
 
   const fetchComments = useCallback(async (): Promise<CommentData[]> => {
+    // Tour demo posts exist only in memory — there is nothing to query for,
+    // and asking would just return an empty thread.
+    if (isSampleId(postId)) {
+      const canned = sampleComments(postId)
+      setComments(canned)
+      return canned
+    }
     setLoading(true)
     setError(null)
     try {
@@ -161,6 +169,7 @@ export function CommentSection({
       toggleInterestedList()
       return
     }
+    if (isSampleId(postId)) return
     if (!currentUserId || posting) return
     setPosting(true)
     setError(null)
@@ -206,6 +215,7 @@ export function CommentSection({
   // Errors (e.g. no longer sharing a board) show in the card's error area.
   const [messaging, setMessaging] = useState(false)
   const handleMessage = async () => {
+    if (isSampleId(postId)) return
     if (!ownerUserId || !currentUserId || messaging) return
     setMessaging(true)
     setError(null)
@@ -237,6 +247,8 @@ export function CommentSection({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Nothing on a tour demo post is writable — it has no row to attach to.
+    if (isSampleId(postId)) return
     if (!currentUserId || !body.trim()) return
     setPosting(true)
     setError(null)
@@ -315,11 +327,13 @@ export function CommentSection({
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 pt-3 mt-3 border-t border-border">
-        <div className="flex items-center gap-2">
+        <div data-tour="card-actions" className="flex items-center gap-2">
           {leadingAction}
           <button
             type="button"
             onClick={toggleComments}
+            data-tour="card-comments"
+            data-tour-open={String(commentsOpen)}
             className="badge bg-text/10 text-text/70 hover:bg-primary-light cursor-pointer inline-flex items-center gap-1 transition-colors shrink-0"
           >
             <MessageSquare className="w-3.5 h-3.5" />
@@ -393,159 +407,164 @@ export function CommentSection({
         </div>
       )}
 
-      {commentsOpen && (
-        <div className="mt-3 space-y-3">
-          {currentUserId && (
-            <form onSubmit={handleSubmit} className="space-y-2">
-              {replyToName && (
-                <div className="flex items-center gap-2 text-xs text-text/50">
-                  Replying to <span className="font-medium text-text">{replyToName}</span>
-                  <button
-                    type="button"
-                    onClick={() => { setReplyToName(null); setBody('') }}
-                    className="text-text/40 hover:text-warning"
-                    aria-label="Cancel reply"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-              <textarea
-                ref={textareaRef}
-                className="input text-sm resize-none h-16"
-                placeholder="Write a comment..."
-                value={body}
-                onChange={e => setBody(e.target.value)}
-                maxLength={500}
-              />
-              <div className="flex items-center justify-between gap-2">
-                {!isOwner && showInterest ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsInterested(v => !v)}
-                    className={cn(
-                      'badge inline-flex items-center gap-1 cursor-pointer transition-colors',
-                      isInterested ? 'bg-secondary-accent/30 text-text' : 'bg-text/10 text-text/60'
-                    )}
-                  >
-                    {isInterested
-                      ? <Star className="w-3 h-3 text-secondary-accent" fill="#ffea80" strokeWidth={0} />
-                      : <Star className="w-3 h-3" />} Interested?
-                  </button>
-                ) : <span />}
-                <Button
-                  type="submit"
-                  size="sm"
-                  loading={posting}
-                  disabled={!body.trim()}
-                  className="text-xs px-3 py-1 min-h-0 h-8"
-                >
-                  Submit
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {loading && comments === null ? (
-            <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
-          ) : (comments ?? []).length === 0 ? (
-            <p className="text-xs text-text/40 text-center py-2">No comments yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {(comments ?? []).map(c => (
-                <li key={c.id} className="text-sm border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs text-text/50 flex-wrap">
-                      <User className="w-3 h-3" />
-                      <span className="font-medium text-text">{c.display_name}</span>
-                      {c.is_interested && (
-                        <span className="inline-flex items-center gap-0.5 text-primary">
-                          <Star className="w-3 h-3 text-secondary-accent" fill="#ffea80" strokeWidth={0} /> Interested
-                        </span>
-                      )}
-                      <span>&bull; {formatDistanceToNow(parseISO(c.created_at), { addSuffix: true })}</span>
-                      {c.updated_at !== c.created_at && <span>(edited)</span>}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {currentUserId && c.user_id !== currentUserId && (
-                        <button
-                          type="button"
-                          onClick={() => setFlagCommentId(c.id)}
-                          className="text-text/30 hover:text-warning"
-                          aria-label="Flag comment"
-                        >
-                          <Flag className="w-3 h-3" />
-                        </button>
-                      )}
-                      {c.user_id === currentUserId && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => startEdit(c)}
-                            className="text-text/30 hover:text-primary"
-                            aria-label="Edit comment"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(c.id)}
-                            className="text-text/30 hover:text-warning"
-                            aria-label="Delete comment"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {editingId === c.id ? (
-                    <div className="mt-1 space-y-1.5">
-                      <textarea
-                        className="input text-sm resize-none h-14"
-                        value={editBody}
-                        onChange={e => setEditBody(e.target.value)}
-                        maxLength={500}
-                      />
-                      <div className="flex gap-1.5">
-                        <Button
-                          size="sm"
-                          loading={posting}
-                          onClick={() => handleSaveEdit(c.id)}
-                          className="text-xs px-2 py-1 min-h-0 h-7"
-                        >
-                          Save
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingId(null)}
-                          className="text-xs px-2 py-1 min-h-0 h-7"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-text/80 mt-1">{c.body}</p>
-                  )}
-
-                  {currentUserId && editingId !== c.id && (
+      {/* Mounted even while closed: driver.js resolves a step's target before
+          running that step's hooks, so the tour can only expand this section if
+          it is already in the DOM. Renders nothing until it is opened. */}
+      <div data-tour="card-comments-panel">
+        {commentsOpen && (
+          <div className="mt-3 space-y-3">
+            {currentUserId && (
+              <form onSubmit={handleSubmit} className="space-y-2">
+                {replyToName && (
+                  <div className="flex items-center gap-2 text-xs text-text/50">
+                    Replying to <span className="font-medium text-text">{replyToName}</span>
                     <button
                       type="button"
-                      onClick={() => startReply(c)}
-                      className="text-xs text-primary hover:underline mt-1"
+                      onClick={() => { setReplyToName(null); setBody('') }}
+                      className="text-text/40 hover:text-warning"
+                      aria-label="Cancel reply"
                     >
-                      Reply
+                      <X className="w-3 h-3" />
                     </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+                  </div>
+                )}
+                <textarea
+                  ref={textareaRef}
+                  className="input text-sm resize-none h-16"
+                  placeholder="Write a comment..."
+                  value={body}
+                  onChange={e => setBody(e.target.value)}
+                  maxLength={500}
+                />
+                <div className="flex items-center justify-between gap-2">
+                  {!isOwner && showInterest ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsInterested(v => !v)}
+                      className={cn(
+                        'badge inline-flex items-center gap-1 cursor-pointer transition-colors',
+                        isInterested ? 'bg-secondary-accent/30 text-text' : 'bg-text/10 text-text/60'
+                      )}
+                    >
+                      {isInterested
+                        ? <Star className="w-3 h-3 text-secondary-accent" fill="#ffea80" strokeWidth={0} />
+                        : <Star className="w-3 h-3" />} Interested?
+                    </button>
+                  ) : <span />}
+                  <Button
+                    type="submit"
+                    size="sm"
+                    loading={posting}
+                    disabled={!body.trim()}
+                    className="text-xs px-3 py-1 min-h-0 h-8"
+                  >
+                    Submit
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {loading && comments === null ? (
+              <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
+            ) : (comments ?? []).length === 0 ? (
+              <p className="text-xs text-text/40 text-center py-2">No comments yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {(comments ?? []).map(c => (
+                  <li key={c.id} className="text-sm border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs text-text/50 flex-wrap">
+                        <User className="w-3 h-3" />
+                        <span className="font-medium text-text">{c.display_name}</span>
+                        {c.is_interested && (
+                          <span className="inline-flex items-center gap-0.5 text-primary">
+                            <Star className="w-3 h-3 text-secondary-accent" fill="#ffea80" strokeWidth={0} /> Interested
+                          </span>
+                        )}
+                        <span>&bull; {formatDistanceToNow(parseISO(c.created_at), { addSuffix: true })}</span>
+                        {c.updated_at !== c.created_at && <span>(edited)</span>}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {currentUserId && c.user_id !== currentUserId && (
+                          <button
+                            type="button"
+                            onClick={() => setFlagCommentId(c.id)}
+                            className="text-text/30 hover:text-warning"
+                            aria-label="Flag comment"
+                          >
+                            <Flag className="w-3 h-3" />
+                          </button>
+                        )}
+                        {c.user_id === currentUserId && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => startEdit(c)}
+                              className="text-text/30 hover:text-primary"
+                              aria-label="Edit comment"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(c.id)}
+                              className="text-text/30 hover:text-warning"
+                              aria-label="Delete comment"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {editingId === c.id ? (
+                      <div className="mt-1 space-y-1.5">
+                        <textarea
+                          className="input text-sm resize-none h-14"
+                          value={editBody}
+                          onChange={e => setEditBody(e.target.value)}
+                          maxLength={500}
+                        />
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            loading={posting}
+                            onClick={() => handleSaveEdit(c.id)}
+                            className="text-xs px-2 py-1 min-h-0 h-7"
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingId(null)}
+                            className="text-xs px-2 py-1 min-h-0 h-7"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-text/80 mt-1">{c.body}</p>
+                    )}
+
+                    {currentUserId && editingId !== c.id && (
+                      <button
+                        type="button"
+                        onClick={() => startReply(c)}
+                        className="text-xs text-primary hover:underline mt-1"
+                      >
+                        Reply
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
 
       <FlagModal
         open={flagCommentId !== null}
