@@ -19,6 +19,7 @@ import { FlagModal } from '@/components/features/FlagModal'
 import { CommentSection } from '@/components/features/CommentSection'
 import { ClaimSection, ClaimPill, InterestedPill, type MyClaim, type PendingClaim } from '@/components/features/ClaimSection'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { isSampleId } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
 
 export interface ShiftData {
@@ -167,7 +168,12 @@ export function ShiftCard({
 
   return (
     <>
-      <div className={cn(
+      <div
+        data-tour="shift-card"
+        /* Lets the tour aim its card steps at its own demo shift rather than
+           whichever real post happens to sort first. */
+        data-tour-sample={isSampleId(shift.id) ? 'true' : undefined}
+        className={cn(
         'card border-l-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5',
         borderColor,
         isOwner && 'bg-primary-light/30'
@@ -201,6 +207,7 @@ export function ShiftCard({
                 )}
               </span>
               <button onClick={openMenu}
+                data-tour="card-menu"
                 className="p-1 rounded text-text/40 hover:text-text hover:bg-primary-light/50 transition-colors min-h-0 min-w-0 ml-0.5"
                 aria-label="More options">
                 <MoreVertical className="w-4 h-4" />
@@ -217,35 +224,44 @@ export function ShiftCard({
           </div>
         </div>
 
-        {/* Row 2: Times + chevron toggle */}
-        <div className="flex items-center gap-1.5 text-base font-medium text-text/80 mb-3">
-          <Clock className={cn('w-3.5 h-3.5 shrink-0', typeColor)} />
-          {startTime}
-          <span className="text-text/40 mx-0.5">→</span>
-          {endTime}
-          <span className="text-text/40 font-normal text-xs ml-1">({duration()})</span>
-          <button
-            onClick={() => setDetailsOpen(o => !o)}
-            className="ml-auto p-0.5 text-text/40 hover:text-primary min-h-0 min-w-0"
-            aria-label="Toggle details"
-          >
-            <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', detailsOpen && 'rotate-180')} />
-          </button>
-        </div>
+        {/* Times + the collapsible notes, wrapped together so the tour can
+            highlight the chevron and what it reveals as one region. */}
+        <div data-tour="card-details-area">
+          {/* Row 2: Times + chevron toggle */}
+          <div className="flex items-center gap-1.5 text-base font-medium text-text/80 mb-3">
+            <Clock className={cn('w-3.5 h-3.5 shrink-0', typeColor)} />
+            {startTime}
+            <span className="text-text/40 mx-0.5">→</span>
+            {endTime}
+            <span className="text-text/40 font-normal text-xs ml-1">({duration()})</span>
+            <button
+              onClick={() => setDetailsOpen(o => !o)}
+              data-tour="card-details"
+              /* The tour opens this itself so the step showing "there's more
+                 underneath" actually reveals it. Not aria-expanded, because
+                 driver.js writes and then strips that on whatever it highlights. */
+              data-tour-open={String(detailsOpen)}
+              className="ml-auto p-0.5 text-text/40 hover:text-primary min-h-0 min-w-0"
+              aria-label="Toggle details"
+            >
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', detailsOpen && 'rotate-180')} />
+            </button>
+          </div>
 
-        {/* Collapsible: notes + board */}
-        <div className={detailsOpen ? 'block' : 'hidden'}>
-          {shift.details && (
-            <p className="text-sm text-text/60 bg-primary-light/50 rounded-md px-3 py-2 mb-3 italic">
-              &ldquo;{shift.details}&rdquo;
-            </p>
-          )}
-          <div className="flex items-center gap-1.5 text-xs text-text/50 mb-3 min-w-0">
-            <LayoutGrid className={cn('w-3.5 h-3.5 shrink-0 opacity-70', typeColor)} />
-            {shift.board_id
-              ? <Link href={`/boards/${slugify(shift.board_name)}`} className="truncate hover:text-primary hover:underline transition-colors">{shift.board_name}</Link>
-              : <span className="truncate">{shift.board_name}</span>
-            }
+          {/* Collapsible: notes + board */}
+          <div className={detailsOpen ? 'block' : 'hidden'}>
+            {shift.details && (
+              <p className="text-sm text-text/60 bg-primary-light/50 rounded-md px-3 py-2 mb-3 italic">
+                &ldquo;{shift.details}&rdquo;
+              </p>
+            )}
+            <div className="flex items-center gap-1.5 text-xs text-text/50 mb-3 min-w-0">
+              <LayoutGrid className={cn('w-3.5 h-3.5 shrink-0 opacity-70', typeColor)} />
+              {shift.board_id
+                ? <Link href={`/boards/${slugify(shift.board_name)}`} className="truncate hover:text-primary hover:underline transition-colors">{shift.board_name}</Link>
+                : <span className="truncate">{shift.board_name}</span>
+              }
+            </div>
           </div>
         </div>
 
@@ -290,7 +306,7 @@ export function ShiftCard({
             ) : undefined
           }
           actions={
-            <div className="flex items-center gap-1">
+            <div data-tour="card-badges" className="flex items-center gap-1">
               {isBoth ? (
                 <Badge variant="give-trade">
                   <span className="sm:hidden">G/T</span>
