@@ -1,9 +1,12 @@
 import { z } from 'zod'
 
-export const displayNameRegex = /^[A-Z][a-zA-Z]*(?:[-\s][A-Z][a-zA-Z]*)* [A-Z]\.$/
+// Full name: a capitalised first name plus at least one more capitalised word
+// (the last name), space- or hyphen-separated. e.g. "Thomas Morrow",
+// "Mary Ann Morrow", "Jean-Pierre Leblanc". No trailing initial.
+export const displayNameRegex = /^[A-Z][a-zA-Z]*(?:[-\s][A-Z][a-zA-Z]*)+$/
 
 // Letters, spaces, and hyphens only — keeps the derived site display name
-// ("First L.") valid under displayNameRegex above.
+// ("First Last") valid under displayNameRegex above.
 const nameRegex = /^[A-Za-z]+(?:[-\s][A-Za-z]+)*$/
 
 // Mirrors what's enforced in Supabase Dashboard → Authentication → Policies

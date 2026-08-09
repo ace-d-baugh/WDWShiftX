@@ -7,35 +7,37 @@ function formatOAuthDisplayName(meta: Record<string, unknown>): string | null {
   const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
   let firstPart = ''
-  let lastInitial = ''
+  let lastPart  = ''
 
   const given  = str(meta.given_name)
   const family = str(meta.family_name)
 
   if (given && family) {
-    firstPart   = given
-    lastInitial = family.charAt(0).toUpperCase()
+    firstPart = given
+    lastPart  = family
   } else {
-    // Fall back to full_name or name ("Tyrell Erfunden" → "Tyrell" + "E")
+    // Fall back to full_name or name ("Tyrell Erfunden" → "Tyrell" + "Erfunden")
     const full = str(meta.full_name) || str(meta.name)
     if (!full) return null
     const lastSpace = full.lastIndexOf(' ')
     if (lastSpace === -1) return null
-    firstPart   = full.slice(0, lastSpace)
-    lastInitial = full.charAt(lastSpace + 1).toUpperCase()
+    firstPart = full.slice(0, lastSpace)
+    lastPart  = full.slice(lastSpace + 1)
   }
 
-  if (!firstPart || !lastInitial) return null
+  if (!firstPart || !lastPart) return null
 
   // Capitalise each word, preserving hyphens (e.g. "Mary Ann", "Jean-Pierre")
-  const formattedFirst = firstPart
-    .split(' ')
-    .map(part =>
-      part.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('-')
-    )
-    .join(' ')
+  const formatName = (name: string) =>
+    name
+      .split(' ')
+      .filter(Boolean)
+      .map(part =>
+        part.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('-')
+      )
+      .join(' ')
 
-  return `${formattedFirst} ${lastInitial}.`
+  return `${formatName(firstPart)} ${formatName(lastPart)}`
 }
 
 export async function GET(request: Request) {

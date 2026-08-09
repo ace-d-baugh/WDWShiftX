@@ -91,7 +91,7 @@ function RegisterForm() {
 
       // given_name/family_name use the same metadata keys Google OAuth sends,
       // so the handle_new_user trigger derives the site display name
-      // ("First L.") identically for both paths. full_name fills the Supabase
+      // ("First Last") identically for both paths. full_name fills the Supabase
       // auth Display Name; users can still edit theirs later (same convention).
       const first = parseResult.data.first_name
       const last = parseResult.data.last_name
@@ -206,8 +206,8 @@ function RegisterForm() {
         </div>
         <p className="text-xs text-text/50 -mt-2">
           Boards will see you as &ldquo;{form.first_name.trim() && form.last_name.trim()
-            ? `${form.first_name.trim()} ${form.last_name.trim()[0].toUpperCase()}.`
-            : 'First L.'}&rdquo; — you can adjust this in your profile.
+            ? `${form.first_name.trim()} ${form.last_name.trim()}`
+            : 'First Last'}&rdquo; — you can adjust this in your profile.
         </p>
 
         {/* Email */}
