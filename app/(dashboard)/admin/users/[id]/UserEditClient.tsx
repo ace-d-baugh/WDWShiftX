@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
+import { UserBoardsSection, type Membership, type AvailableBoard } from './UserBoardsSection'
 import type { GlobalRole } from '@/lib/database.types'
 
 interface EditUser {
@@ -28,9 +29,11 @@ const roleVariant: Record<GlobalRole, 'guest' | 'user' | 'admin'> = {
 interface UserEditClientProps {
   user: EditUser
   adminId: string
+  memberships: Membership[]
+  availableBoards: AvailableBoard[]
 }
 
-export function UserEditClient({ user, adminId }: UserEditClientProps) {
+export function UserEditClient({ user, adminId, memberships, availableBoards }: UserEditClientProps) {
   const supabase = createClient()
   const router = useRouter()
   const [displayName, setDisplayName] = useState(user.display_name ?? '')
@@ -129,6 +132,13 @@ export function UserEditClient({ user, adminId }: UserEditClientProps) {
             <p className="text-xs text-text/40 mt-1 italic">Cannot change your own role.</p>
           )}
         </div>
+
+        {/* User Boards — assign boards and manage per-board membership */}
+        <UserBoardsSection
+          targetUserId={user.id}
+          initialMemberships={memberships}
+          initialAvailableBoards={availableBoards}
+        />
 
         {/* Active status */}
         <div>
