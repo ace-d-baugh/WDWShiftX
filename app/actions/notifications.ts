@@ -145,6 +145,95 @@ export async function notifyInterest(opts: {
   }
 }
 
+/**
+ * Fire-and-forget: push the post owner and everyone else in the comment thread
+ * when a new (non-interest) comment lands. Push only — comments never send
+ * email, so a chatty thread can't touch the Resend quota. Recipients and the
+ * message body are read from the database, and the caller must have their own
+ * comment on the post, so this can't be used to blast pushes at a post the
+ * caller never engaged with.
+ */
+export async function notifyComment(opts: {
+  postId: string
+  postType: 'shift' | 'request'
+}): Promise<void> {
+  try {
+    const uid = await callerId('notifyComment')
+    if (!uid) return
+
+    if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[notifyComment] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
+      return
+    }
+
+    const db = createAdminClient()
+
+    // The name in the push is the caller's own, read from the DB — never a
+    // string they handed us, or it could claim to be anyone.
+    const { data: commenter } = await db
+      .from('users').select('display_name').eq('id', uid).single()
+    const commenterName = commenter?.display_name ?? 'Someone'
+
+    // Every commenter on this post: this builds the thread recipient list AND
+    // proves the caller actually commented here — no comment of their own, no
+    // notification (anti-abuse, since this is a public server action).
+    const { data: threadRows } = await db
+      .from('comments')
+      .select('user_id')
+      .eq('post_type', opts.postType)
+      .eq('post_id', opts.postId)
+      .eq('is_active', true)
+
+    const commenterIds = new Set(
+      (threadRows ?? [])
+        .map(r => r.user_id as string | null)
+        .filter((id): id is string => !!id)
+    )
+    if (!commenterIds.has(uid)) {
+      console.error(`[notifyComment] rejected: ${uid} has no comment on ${opts.postType} ${opts.postId}`)
+      return
+    }
+
+    // Post owner + title, read from the post row.
+    let ownerId: string | null = null
+    let postTitle = ''
+    if (opts.postType === 'shift') {
+      const { data } = await db
+        .from('shifts').select('shift_title, user_id').eq('id', opts.postId).eq('is_active', true).single()
+      if (!data) return
+      ownerId = data.user_id as string | null
+      postTitle = data.shift_title as string
+    } else {
+      const { data } = await db
+        .from('requests').select('requested_date, user_id').eq('id', opts.postId).eq('is_active', true).single()
+      if (!data) return
+      ownerId = data.user_id as string | null
+      postTitle = `Shift Request — ${data.requested_date as string}`
+    }
+
+    // The owner plus everyone else in the thread, minus the person who just
+    // commented (they don't notify themselves).
+    const recipients = new Set<string>(commenterIds)
+    if (ownerId) recipients.add(ownerId)
+    recipients.delete(uid)
+    if (recipients.size === 0) return
+
+    const results = await Promise.allSettled(
+      [...recipients].map(rid => sendPushNotification(
+        rid,
+        `${commenterName} commented`,
+        `${commenterName} commented on "${postTitle}"`,
+        '/wall'
+      ))
+    )
+    for (const r of results) {
+      if (r.status === 'rejected') console.error('[notifyComment] push failed:', r.reason)
+    }
+  } catch (err) {
+    console.error('[notifyComment] unexpected error:', err)
+  }
+}
+
 // Web push lives in lib/push-server.ts (shared with the messaging actions).
 // It's imported rather than exported here so it never becomes a
 // client-callable action.
