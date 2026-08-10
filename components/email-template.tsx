@@ -221,42 +221,6 @@ export const paymentFailedHtml = (opts: {
     ${muted('If the payment ultimately fails, your account returns to Basic. Your boards, shifts, and messages are never deleted.')}
   `)
 
-/** Weekly digest: new activity on the user's boards this week (Task 22) */
-export const weeklyDigestHtml = (opts: {
-  displayName?: string
-  shiftCount: number
-  requestCount: number
-  items: { title: string; when: string; board: string }[]
-  wallUrl: string
-  unsubscribeUrl: string
-}) => {
-  const summary = [
-    opts.shiftCount > 0 ? `${opts.shiftCount} new shift${opts.shiftCount === 1 ? '' : 's'} up for grabs` : '',
-    opts.requestCount > 0 ? `${opts.requestCount} new request${opts.requestCount === 1 ? '' : 's'}` : '',
-  ].filter(Boolean).join(' and ')
-
-  const itemRows = opts.items.map(i => `
-    <tr>
-      <td style="padding:10px 14px;border-bottom:1px solid #E0D8F7;">
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#2f2040;">${esc(i.title)}</p>
-        <p style="margin:2px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9b8ab4;">${i.when} · ${esc(i.board)}</p>
-      </td>
-    </tr>
-  `).join('')
-
-  return shell(`
-    ${h1('This week on your boards 📋')}
-    ${p(`Hi${opts.displayName ? ` ${esc(opts.displayName)}` : ''},`)}
-    ${p(`There ${opts.shiftCount + opts.requestCount === 1 ? 'is' : 'are'} <strong>${summary}</strong> on your boards.`)}
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-           style="border:1px solid #E0D8F7;border-radius:8px;margin:0 0 8px;border-collapse:separate;overflow:hidden;">
-      ${itemRows}
-    </table>
-    ${btn(opts.wallUrl, 'See Them on The Wall')}
-    ${muted(`You get this digest once a week when there's new activity. <a href="${opts.unsubscribeUrl}" style="color:#9b8ab4;">Unsubscribe from the digest</a> — other notifications are unaffected.`)}
-  `)
-}
-
 /** Sent to both parties when a shift and request on the same board may match */
 export const shiftMatchHtml = (opts: {
   recipientRole: 'shift-poster' | 'requester'
