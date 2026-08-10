@@ -107,7 +107,7 @@ export function UserEditClient({ user, adminId }: UserEditClientProps) {
             className="input text-sm"
             value={displayName}
             onChange={e => setDisplayName(e.target.value)}
-            placeholder="Display name..."
+            placeholder="Full name, e.g. Thomas Morrow"
           />
         </div>
 

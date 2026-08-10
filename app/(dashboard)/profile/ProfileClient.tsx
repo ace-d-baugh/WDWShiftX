@@ -236,7 +236,7 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
 
       {isNewOAuthUser && (
         <div className="p-3 rounded-md bg-info/10 border border-info/20 text-info text-sm">
-          Welcome! Set a display name below before posting or joining boards.
+          Welcome! Set your display name &mdash; your full first and last name &mdash; below before posting or joining boards.
         </div>
       )}
 
@@ -273,7 +273,7 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
               onChange={e => { setDisplayName(e.target.value); setNameError(null) }}
               placeholder="Thomas Morrow"
             />
-            <p className="mt-1 text-xs text-text/40">FirstName [MiddleName] LastName &mdash; e.g., &ldquo;Thomas Morrow&rdquo; or &ldquo;Mary Ann Morrow&rdquo;</p>
+            <p className="mt-1 text-xs text-text/40">Your full first and last name &mdash; this is what board members see. e.g., &ldquo;Thomas Morrow&rdquo; or &ldquo;Mary Ann Morrow&rdquo;</p>
             {nameError && <p className="mt-1 text-xs text-warning">{nameError}</p>}
           </div>
 

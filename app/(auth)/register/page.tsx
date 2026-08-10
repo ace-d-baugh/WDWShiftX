@@ -165,7 +165,7 @@ function RegisterForm() {
 
       <form onSubmit={onSubmit} className="space-y-4 mt-4" noValidate>
         {/* Name — becomes the Supabase display name; the site name shown to
-            boards is derived as "First L." (editable later, same convention) */}
+            boards is the full "First Last" (editable later, same convention) */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="first_name" className="block text-sm font-medium text-text mb-1">
