@@ -6,7 +6,7 @@ import { parseISO, format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { Plus, RefreshCw, Inbox, Search, SlidersHorizontal, ChevronDown, X, Check, Layers, Calendar } from 'lucide-react'
+import { Plus, RefreshCw, Inbox, Search, SlidersHorizontal, ChevronDown, X, Check, Layers, Calendar, LayoutGrid, ListChecks } from 'lucide-react'
 import { getSettings } from '@/lib/settings'
 import { createClient } from '@/lib/supabase/client'
 import { deactivateShift, deactivateRequest } from '@/app/actions/posts'
@@ -152,6 +152,8 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   const [dayFilters, setDayFilters] = useState<Set<number>>(new Set())
   const [dayDropdownOpen, setDayDropdownOpen] = useState(false)
   const dayDropdownRef = useRef<HTMLDivElement>(null)
+  // Controlled so a second click on the field closes the calendar (toggle).
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [myPostsOnly, setMyPostsOnly] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [deactivateError, setDeactivateError] = useState<string | null>(null)
@@ -865,12 +867,15 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     aria-label="Filter by board"
                     className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
                   >
-                    <span className="truncate text-left">
-                      {boardFilters.size === 0
-                        ? 'All Boards'
-                        : boardFilters.size === 1
-                          ? (boards.find(b => boardFilters.has(b.id))?.name ?? '1 Board')
-                          : `${boardFilters.size} Boards`}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <LayoutGrid className="w-4 h-4 shrink-0 text-text/40" />
+                      <span className="truncate text-left">
+                        {boardFilters.size === 0
+                          ? 'All Boards'
+                          : boardFilters.size === 1
+                            ? (boards.find(b => boardFilters.has(b.id))?.name ?? '1 Board')
+                            : `${boardFilters.size} Boards`}
+                      </span>
                     </span>
                     <ChevronDown className={cn('w-4 h-4 shrink-0 text-text/40 transition-transform', boardDropdownOpen && 'rotate-180')} />
                   </button>
@@ -925,8 +930,12 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     input[type=date] renders as a bare text field in some). */}
                 <div>
                   <DatePicker
+                    open={datePickerOpen}
+                    onInputClick={() => setDatePickerOpen(o => !o)}
+                    onClickOutside={() => setDatePickerOpen(false)}
+                    preventOpenOnFocus
                     selected={dateFilter ? parseISO(`${dateFilter}T12:00:00`) : null}
-                    onChange={(d: Date | null) => setDateFilter(d ? format(d, 'yyyy-MM-dd') : '')}
+                    onChange={(d: Date | null) => { setDateFilter(d ? format(d, 'yyyy-MM-dd') : ''); setDatePickerOpen(false) }}
                     dateFormat={settings.dateFormat === 'dmy' ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
                     calendarStartDay={settings.weekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6}
                     minDate={new Date(new Date().setHours(0, 0, 0, 0))}
@@ -946,12 +955,15 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     aria-label="Filter by day of week"
                     className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
                   >
-                    <span className="truncate text-left">
-                      {dayFilters.size === 0
-                        ? 'All Days'
-                        : dayFilters.size === 1
-                          ? DAY_NAMES[[...dayFilters][0]]
-                          : `${dayFilters.size} Days`}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <ListChecks className="w-4 h-4 shrink-0 text-text/40" />
+                      <span className="truncate text-left">
+                        {dayFilters.size === 0
+                          ? 'All Days'
+                          : dayFilters.size === 1
+                            ? DAY_NAMES[[...dayFilters][0]]
+                            : `${dayFilters.size} Days`}
+                      </span>
                     </span>
                     <ChevronDown className={cn('w-4 h-4 shrink-0 text-text/40 transition-transform', dayDropdownOpen && 'rotate-180')} />
                   </button>
