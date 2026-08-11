@@ -857,10 +857,10 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 
               {/* Board — its own full-width row */}
               <div ref={boardDropdownRef} className="relative">
-                  <label className="block text-xs font-medium text-text/60 mb-1">Board</label>
                   <button
                     type="button"
                     onClick={() => setBoardDropdownOpen(o => !o)}
+                    aria-label="Filter by board"
                     className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
                   >
                     <span className="truncate text-left">
@@ -922,7 +922,6 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     every browser, matching the post/edit forms (the native
                     input[type=date] renders as a bare text field in some). */}
                 <div>
-                  <label className="block text-xs font-medium text-text/60 mb-1">Date</label>
                   <DatePicker
                     selected={dateFilter ? parseISO(`${dateFilter}T12:00:00`) : null}
                     onChange={(d: Date | null) => setDateFilter(d ? format(d, 'yyyy-MM-dd') : '')}
@@ -939,10 +938,10 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 
                 {/* Days multi-select dropdown — same pattern as Board */}
                 <div ref={dayDropdownRef} className="relative">
-                  <label className="block text-xs font-medium text-text/60 mb-1">Days</label>
                   <button
                     type="button"
                     onClick={() => setDayDropdownOpen(o => !o)}
+                    aria-label="Filter by day of week"
                     className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
                   >
                     <span className="truncate text-left">
