@@ -781,41 +781,43 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
           panel and highlight the whole control as one region. */}
       {(currentPostCount > 1 || hasActiveFilters) && (
         <div data-tour="wall-filters-area">
-          <button
-            onClick={() => setFiltersOpen(o => !o)}
-            data-tour="wall-filters"
-            data-tour-open={String(filtersOpen)}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary mb-4 min-h-0 min-w-0"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
+          {/* Header row: the Filters toggle, with Clear Filters pinned to the
+              end so it appears/disappears without shifting the panel below. */}
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <button
+              onClick={() => setFiltersOpen(o => !o)}
+              data-tour="wall-filters"
+              data-tour-open={String(filtersOpen)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary min-h-0 min-w-0"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+              {hasActiveFilters && (
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-label="filters active" />
+              )}
+              <ChevronDown className={cn('w-4 h-4 transition-transform', filtersOpen && 'rotate-180')} />
+            </button>
+
             {hasActiveFilters && (
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-label="filters active" />
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
+              >
+                <X className="w-3.5 h-3.5" /> Clear Filters
+              </button>
             )}
-            <ChevronDown className={cn('w-4 h-4 transition-transform', filtersOpen && 'rotate-180')} />
-          </button>
+          </div>
 
           {filtersOpen && (
             <div className="mb-6 p-4 bg-primary-light/40 rounded-lg space-y-3">
-              {/* Bundle chip + reset sit above so the dots can own the end of
-                  the scope row below. */}
-              {(bundleFilter || hasActiveFilters) && (
+              {/* Bundle chip (Clear Filters now lives on the Filters header) */}
+              {bundleFilter && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {bundleFilter && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/15 text-primary px-2 py-1 rounded-full">
-                      <Layers className="w-3 h-3" />
-                      Showing 1 bundle ({bundlesById.get(bundleFilter)?.length ?? 0})
-                    </span>
-                  )}
-                  {hasActiveFilters && (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
-                    >
-                      <X className="w-3.5 h-3.5" /> Clear Filters
-                    </button>
-                  )}
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/15 text-primary px-2 py-1 rounded-full">
+                    <Layers className="w-3 h-3" />
+                    Showing 1 bundle ({bundlesById.get(bundleFilter)?.length ?? 0})
+                  </span>
                 </div>
               )}
 
