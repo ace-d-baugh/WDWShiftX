@@ -6,7 +6,7 @@ import { parseISO, format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { Plus, RefreshCw, Inbox, Search, SlidersHorizontal, ChevronDown, X, Check, Layers, Calendar, LayoutGrid, ListChecks } from 'lucide-react'
+import { Plus, RefreshCw, Inbox, Search, SlidersHorizontal, ChevronDown, X, Check, Layers, CalendarDays, LayoutGrid } from 'lucide-react'
 import { getSettings } from '@/lib/settings'
 import { createClient } from '@/lib/supabase/client'
 import { deactivateShift, deactivateRequest } from '@/app/actions/posts'
@@ -26,6 +26,24 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 // date-fns 'i' → 1=Mon..7=Sun; %7 maps to 0=Sun..6=Sat (JS getDay / settings.weekStart)
 const shiftWeekday = (iso: string) => Number(formatInTimeZone(parseISO(iso), ET, 'i')) % 7
 const requestWeekday = (dateStr: string) => Number(formatInTimeZone(`${dateStr}T12:00:00Z`, ET, 'i')) % 7
+
+// lucide's `calendar-1` isn't in our lucide-react (0.310.0), so inline it with
+// the same 24×24 stroke geometry rather than upgrading the whole icon set.
+function Calendar1({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true"
+    >
+      <path d="M11 14h1v4" />
+      <path d="M16 2v4" />
+      <path d="M3 10h18" />
+      <path d="M8 2v4" />
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+    </svg>
+  )
+}
 
 interface Board { id: string; name: string }
 
@@ -98,7 +116,7 @@ const FilterDateInput = forwardRef<HTMLInputElement, {
   value?: string; onClick?: () => void; placeholder?: string; onClear?: () => void
 }>(({ value, onClick, placeholder, onClear }, ref) => (
   <div className="relative">
-    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 dark:text-primary pointer-events-none z-10" />
+    <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 dark:text-primary pointer-events-none z-10" />
     <input
       ref={ref}
       readOnly
@@ -956,7 +974,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
                   >
                     <span className="flex items-center gap-2 min-w-0">
-                      <ListChecks className="w-4 h-4 shrink-0 text-text/40" />
+                      <Calendar1 className="w-4 h-4 shrink-0 text-text/40" />
                       <span className="truncate text-left">
                         {dayFilters.size === 0
                           ? 'All Days'
