@@ -103,6 +103,14 @@ export function ProductTour() {
         stageRadius: 12,
         popoverOffset: 12,
         smoothScroll: true,
+        // The corner close control reads as "Skip" rather than a bare ×, so it's
+        // clear it ends (and finishes) the tour. Closing already marks the tour
+        // dismissed via onDestroyed below, so it never nags again. Re-applied on
+        // every step since driver re-renders the popover each time.
+        onPopoverRender: (popover) => {
+          popover.closeButton.textContent = 'Skip'
+          popover.closeButton.setAttribute('aria-label', 'Skip the tour')
+        },
         // Read-only: clicking the highlighted button mid-tour would navigate
         // away and strand the overlay. The popover's own buttons drive it.
         disableActiveInteraction: true,

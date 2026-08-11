@@ -298,7 +298,7 @@ const wallChapter: TourChapterDef = {
       popover: {
         title: 'Too much to scroll?',
         description:
-          'Opened up here: narrow the Wall down by board, by date, or by keyword — and flip on <strong>My posts only</strong> to see just your own.',
+          'Opened up here: narrow the Wall by <strong>board</strong>, by <strong>type</strong> (Trade or Giveaway), by <strong>day of the week</strong>, or by a specific <strong>date</strong> — search by <strong>keyword</strong>, and flip on <strong>My Posts</strong> to see only your own.',
         side: 'bottom',
         align: 'start',
       },
