@@ -104,7 +104,7 @@ const FilterDateInput = forwardRef<HTMLInputElement, {
       readOnly
       value={value ?? ''}
       onClick={onClick}
-      placeholder={placeholder ?? 'Any date'}
+      placeholder={placeholder ?? 'Any Date'}
       className={`input text-sm h-9 pl-9 ${value ? 'pr-8' : ''} cursor-pointer`}
     />
     {value && onClear && (
@@ -939,7 +939,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     dateFormat={settings.dateFormat === 'dmy' ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
                     calendarStartDay={settings.weekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6}
                     minDate={new Date(new Date().setHours(0, 0, 0, 0))}
-                    placeholderText="Any date"
+                    placeholderText="Any Date"
                     isClearable
                     customInput={<FilterDateInput />}
                     popperPlacement="bottom-start"
@@ -1015,7 +1015,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 pointer-events-none" />
                 <input
                   className="input pl-9 pr-8 text-sm"
-                  placeholder={tab === 'offers' ? 'Search shifts...' : 'Search requests...'}
+                  placeholder={tab === 'offers' ? 'Search Shifts...' : 'Search Requests...'}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
