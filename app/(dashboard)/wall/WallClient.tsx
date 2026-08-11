@@ -22,6 +22,11 @@ import { cn } from '@/lib/utils'
 
 const ET = 'America/New_York'
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+// date-fns 'i' → 1=Mon..7=Sun; %7 maps to 0=Sun..6=Sat (JS getDay / settings.weekStart)
+const shiftWeekday = (iso: string) => Number(formatInTimeZone(parseISO(iso), ET, 'i')) % 7
+const requestWeekday = (dateStr: string) => Number(formatInTimeZone(`${dateStr}T12:00:00Z`, ET, 'i')) % 7
+
 interface Board { id: string; name: string }
 
 // Shared between the full wall load and the single-row realtime upsert
@@ -139,6 +144,13 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   const [boardFilters, setBoardFilters] = useState<Set<string>>(new Set())
   const [boardDropdownOpen, setBoardDropdownOpen] = useState(false)
   const boardDropdownRef = useRef<HTMLDivElement>(null)
+  // Type filter (offers only): independent trade/giveaway toggles over the raw
+  // flags — a Give/Trade post (both flags) matches either one.
+  const [typeFilters, setTypeFilters] = useState<{ trade: boolean; giveaway: boolean }>({ trade: false, giveaway: false })
+  // Days filter: weekday indices (0=Sun..6=Sat); empty = all days.
+  const [dayFilters, setDayFilters] = useState<Set<number>>(new Set())
+  const [dayDropdownOpen, setDayDropdownOpen] = useState(false)
+  const dayDropdownRef = useRef<HTMLDivElement>(null)
   const [myPostsOnly, setMyPostsOnly] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [deactivateError, setDeactivateError] = useState<string | null>(null)
@@ -518,6 +530,15 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     })
   }
 
+  const toggleDay = (day: number) => {
+    setDayFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(day)) next.delete(day)
+      else next.add(day)
+      return next
+    })
+  }
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (boardDropdownRef.current && !boardDropdownRef.current.contains(e.target as Node)) {
@@ -527,6 +548,22 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     if (boardDropdownOpen) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [boardDropdownOpen])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dayDropdownRef.current && !dayDropdownRef.current.contains(e.target as Node)) {
+        setDayDropdownOpen(false)
+      }
+    }
+    if (dayDropdownOpen) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [dayDropdownOpen])
+
+  // Weekday order for the Days dropdown, rotated to the user's week-start pref.
+  const orderedDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => (settings.weekStart + i) % 7),
+    [settings.weekStart]
+  )
 
   const refresh = () => {
     if (tab === 'offers') loadShifts()
@@ -550,6 +587,12 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     if (bundleFilter)       list = list.filter(s => s.bundle_id === bundleFilter)
     if (myPostsOnly)        list = list.filter(s => s.user_id === userId)
     if (boardFilters.size)  list = list.filter(s => s.board_id != null && boardFilters.has(s.board_id))
+    if (typeFilters.trade || typeFilters.giveaway) {
+      list = list.filter(s =>
+        (typeFilters.trade && s.is_trade) || (typeFilters.giveaway && s.is_giveaway)
+      )
+    }
+    if (dayFilters.size)    list = list.filter(s => dayFilters.has(shiftWeekday(s.start_time)))
     if (dateFilter)         list = list.filter(s => formatInTimeZone(parseISO(s.start_time), ET, 'yyyy-MM-dd') === dateFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -561,12 +604,13 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       )
     }
     return list
-  }, [displayShifts, search, dateFilter, boardFilters, myPostsOnly, bundleFilter, userId])
+  }, [displayShifts, search, dateFilter, boardFilters, typeFilters, dayFilters, myPostsOnly, bundleFilter, userId])
 
   const filteredRequests = useMemo(() => {
     let list = requests
     if (myPostsOnly)        list = list.filter(r => r.user_id === userId)
     if (boardFilters.size)  list = list.filter(r => r.board_id != null && boardFilters.has(r.board_id))
+    if (dayFilters.size)    list = list.filter(r => dayFilters.has(requestWeekday(r.requested_date)))
     if (dateFilter)         list = list.filter(r => r.requested_date === dateFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -577,7 +621,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       )
     }
     return list
-  }, [requests, search, dateFilter, boardFilters, myPostsOnly, userId])
+  }, [requests, search, dateFilter, boardFilters, dayFilters, myPostsOnly, userId])
 
   // Group shifts by their start date in ET
   const shiftDayGroups = useMemo(() => {
@@ -622,15 +666,26 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   }, [])
 
   const hasActiveFilters = !!bundleFilter || myPostsOnly || boardFilters.size > 0 ||
+    typeFilters.trade || typeFilters.giveaway || dayFilters.size > 0 ||
     !!dateFilter || !!search.trim()
 
   const clearFilters = () => {
     setBundleFilter(null)
     setMyPostsOnly(false)
     setBoardFilters(new Set())
+    setTypeFilters({ trade: false, giveaway: false })
+    setDayFilters(new Set())
     setDateFilter('')
     setSearch('')
   }
+
+  // Live type dots (mirror the calendar): a lone blue for Trade, lone green for
+  // Giveaway, and the full overlapping trio when both — or neither — are set,
+  // since both of those show every type.
+  const showAllTypes = !typeFilters.trade && !typeFilters.giveaway
+  const dotBlue = typeFilters.trade || showAllTypes
+  const dotGreen = typeFilters.giveaway || showAllTypes
+  const dotPurple = (typeFilters.trade && typeFilters.giveaway) || showAllTypes
 
   const currentPostCount = tab === 'offers' ? displayShifts.length : requests.length
 
@@ -771,6 +826,33 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                 )}
               </div>
 
+              {/* Type — offers only: Trade/Giveaway star toggles, with live
+                  overlapping dots (calendar colours) reflecting what's shown. */}
+              {tab === 'offers' && (
+                <div className="flex items-center gap-x-5 gap-y-2 flex-wrap">
+                  <span className="text-xs font-medium text-text/60">Type</span>
+                  <label className="flex items-center gap-2 cursor-pointer min-h-0">
+                    <Checkbox
+                      checked={typeFilters.trade}
+                      onChange={e => setTypeFilters(t => ({ ...t, trade: e.target.checked }))}
+                    />
+                    <span className="text-sm font-bold text-info">Trade</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer min-h-0">
+                    <Checkbox
+                      checked={typeFilters.giveaway}
+                      onChange={e => setTypeFilters(t => ({ ...t, giveaway: e.target.checked }))}
+                    />
+                    <span className="text-sm font-bold text-success">Giveaway</span>
+                  </label>
+                  <span className="ml-auto flex items-center" title="Types shown">
+                    {dotPurple && <span className="block w-4 h-4 rounded-full bg-primary ring-2 ring-card" />}
+                    {dotBlue && <span className={cn('block w-4 h-4 rounded-full bg-info ring-2 ring-card', dotPurple && '-ml-2')} />}
+                    {dotGreen && <span className={cn('block w-4 h-4 rounded-full bg-success ring-2 ring-card', (dotPurple || dotBlue) && '-ml-2')} />}
+                  </span>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Board multi-select dropdown */}
                 <div ref={boardDropdownRef} className="relative">
@@ -826,6 +908,66 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                             {boardFilters.has(b.id) && <Check className="w-2.5 h-2.5 text-white" />}
                           </span>
                           <span className="truncate">{b.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Days multi-select dropdown — same pattern as Board */}
+                <div ref={dayDropdownRef} className="relative">
+                  <label className="block text-xs font-medium text-text/60 mb-1">Days</label>
+                  <button
+                    type="button"
+                    onClick={() => setDayDropdownOpen(o => !o)}
+                    className="input text-sm h-9 w-full flex items-center justify-between gap-2 cursor-pointer"
+                  >
+                    <span className="truncate text-left">
+                      {dayFilters.size === 0
+                        ? 'All Days'
+                        : dayFilters.size === 1
+                          ? DAY_NAMES[[...dayFilters][0]]
+                          : `${dayFilters.size} Days`}
+                    </span>
+                    <ChevronDown className={cn('w-4 h-4 shrink-0 text-text/40 transition-transform', dayDropdownOpen && 'rotate-180')} />
+                  </button>
+
+                  {dayDropdownOpen && (
+                    <div className="absolute z-50 top-full left-0 mt-1 w-full min-w-[180px] bg-card border border-border rounded-lg shadow-lg py-1 max-h-60 overflow-y-auto">
+                      <button
+                        type="button"
+                        onClick={() => setDayFilters(new Set())}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-primary-light/40 transition-colors min-h-0 min-w-0"
+                      >
+                        <span className={cn('w-4 h-4 rounded border shrink-0 flex items-center justify-center', dayFilters.size === 0 ? 'bg-primary border-primary' : 'border-border bg-background')}>
+                          {dayFilters.size === 0 && <Check className="w-2.5 h-2.5 text-white" />}
+                        </span>
+                        <span className="font-medium">All Days</span>
+                      </button>
+
+                      {dayFilters.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setDayFilters(new Set())}
+                          className="w-full flex items-center px-3 py-1 text-xs text-primary hover:text-primary/70 transition-colors min-h-0 min-w-0"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+
+                      <div className="h-px bg-border mx-2 my-1" />
+
+                      {orderedDays.map(d => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => toggleDay(d)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-primary-light/40 transition-colors min-h-0 min-w-0"
+                        >
+                          <span className={cn('w-4 h-4 rounded border shrink-0 flex items-center justify-center', dayFilters.has(d) ? 'bg-primary border-primary' : 'border-border bg-background')}>
+                            {dayFilters.has(d) && <Check className="w-2.5 h-2.5 text-white" />}
+                          </span>
+                          <span className="truncate">{DAY_NAMES[d]}</span>
                         </button>
                       ))}
                     </div>
