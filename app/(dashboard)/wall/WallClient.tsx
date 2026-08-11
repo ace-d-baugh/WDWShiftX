@@ -145,8 +145,9 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   const [boardDropdownOpen, setBoardDropdownOpen] = useState(false)
   const boardDropdownRef = useRef<HTMLDivElement>(null)
   // Type filter (offers only): independent trade/giveaway toggles over the raw
-  // flags — a Give/Trade post (both flags) matches either one.
-  const [typeFilters, setTypeFilters] = useState<{ trade: boolean; giveaway: boolean }>({ trade: false, giveaway: false })
+  // flags — a Give/Trade post (both flags) matches either one. Both on by
+  // default; unchecking both intentionally shows nothing.
+  const [typeFilters, setTypeFilters] = useState<{ trade: boolean; giveaway: boolean }>({ trade: true, giveaway: true })
   // Days filter: weekday indices (0=Sun..6=Sat); empty = all days.
   const [dayFilters, setDayFilters] = useState<Set<number>>(new Set())
   const [dayDropdownOpen, setDayDropdownOpen] = useState(false)
@@ -587,11 +588,10 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     if (bundleFilter)       list = list.filter(s => s.bundle_id === bundleFilter)
     if (myPostsOnly)        list = list.filter(s => s.user_id === userId)
     if (boardFilters.size)  list = list.filter(s => s.board_id != null && boardFilters.has(s.board_id))
-    if (typeFilters.trade || typeFilters.giveaway) {
-      list = list.filter(s =>
-        (typeFilters.trade && s.is_trade) || (typeFilters.giveaway && s.is_giveaway)
-      )
-    }
+    // Always applied: with both types off, this yields nothing (by design).
+    list = list.filter(s =>
+      (typeFilters.trade && s.is_trade) || (typeFilters.giveaway && s.is_giveaway)
+    )
     if (dayFilters.size)    list = list.filter(s => dayFilters.has(shiftWeekday(s.start_time)))
     if (dateFilter)         list = list.filter(s => formatInTimeZone(parseISO(s.start_time), ET, 'yyyy-MM-dd') === dateFilter)
     if (search.trim()) {
@@ -666,26 +666,25 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
   }, [])
 
   const hasActiveFilters = !!bundleFilter || myPostsOnly || boardFilters.size > 0 ||
-    typeFilters.trade || typeFilters.giveaway || dayFilters.size > 0 ||
+    !(typeFilters.trade && typeFilters.giveaway) || dayFilters.size > 0 ||
     !!dateFilter || !!search.trim()
 
   const clearFilters = () => {
     setBundleFilter(null)
     setMyPostsOnly(false)
     setBoardFilters(new Set())
-    setTypeFilters({ trade: false, giveaway: false })
+    setTypeFilters({ trade: true, giveaway: true })
     setDayFilters(new Set())
     setDateFilter('')
     setSearch('')
   }
 
-  // Live type dots (mirror the calendar): a lone blue for Trade, lone green for
-  // Giveaway, and the full overlapping trio when both — or neither — are set,
-  // since both of those show every type.
-  const showAllTypes = !typeFilters.trade && !typeFilters.giveaway
-  const dotBlue = typeFilters.trade || showAllTypes
-  const dotGreen = typeFilters.giveaway || showAllTypes
-  const dotPurple = (typeFilters.trade && typeFilters.giveaway) || showAllTypes
+  // Live type dots (mirror the calendar): lone blue for Trade, lone green for
+  // Giveaway, the overlapping trio when both are on, and nothing when both are
+  // off (which shows no posts).
+  const dotBlue = typeFilters.trade
+  const dotGreen = typeFilters.giveaway
+  const dotPurple = typeFilters.trade && typeFilters.giveaway
 
   const currentPostCount = tab === 'offers' ? displayShifts.length : requests.length
 
@@ -798,64 +797,66 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 
           {filtersOpen && (
             <div className="mb-6 p-4 bg-primary-light/40 rounded-lg space-y-3">
-              {/* Scope row: my posts + the bundle chip, with a single reset */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {/* Bundle chip + reset sit above so the dots can own the end of
+                  the scope row below. */}
+              {(bundleFilter || hasActiveFilters) && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {bundleFilter && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/15 text-primary px-2 py-1 rounded-full">
+                      <Layers className="w-3 h-3" />
+                      Showing 1 bundle ({bundlesById.get(bundleFilter)?.length ?? 0})
+                    </span>
+                  )}
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
+                    >
+                      <X className="w-3.5 h-3.5" /> Clear Filters
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* My Posts + (offers) Trade/Giveaway star toggles, with the live
+                  dot cluster pinned to the end of the row. */}
+              <div className="flex items-center gap-x-5 gap-y-2 flex-wrap">
                 <label className="flex items-center gap-2 cursor-pointer min-h-0">
                   <Checkbox
                     checked={myPostsOnly}
                     onChange={e => setMyPostsOnly(e.target.checked)}
                   />
-                  <span className="text-sm text-text whitespace-nowrap">My posts only</span>
+                  <span className="text-sm text-text whitespace-nowrap">My Posts</span>
                 </label>
 
-                {bundleFilter && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/15 text-primary px-2 py-1 rounded-full">
-                    <Layers className="w-3 h-3" />
-                    Showing 1 bundle ({bundlesById.get(bundleFilter)?.length ?? 0})
-                  </span>
-                )}
-
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
-                  >
-                    <X className="w-3.5 h-3.5" /> Clear Filters
-                  </button>
+                {tab === 'offers' && (
+                  <>
+                    <label className="flex items-center gap-2 cursor-pointer min-h-0">
+                      <Checkbox
+                        checked={typeFilters.trade}
+                        onChange={e => setTypeFilters(t => ({ ...t, trade: e.target.checked }))}
+                      />
+                      <span className="text-sm font-bold text-info">Trade</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer min-h-0">
+                      <Checkbox
+                        checked={typeFilters.giveaway}
+                        onChange={e => setTypeFilters(t => ({ ...t, giveaway: e.target.checked }))}
+                      />
+                      <span className="text-sm font-bold text-success">Giveaway</span>
+                    </label>
+                    <span className="ml-auto flex items-center" title="Types shown">
+                      {dotPurple && <span className="block w-4 h-4 rounded-full bg-primary ring-2 ring-card" />}
+                      {dotBlue && <span className={cn('block w-4 h-4 rounded-full bg-info ring-2 ring-card', dotPurple && '-ml-2')} />}
+                      {dotGreen && <span className={cn('block w-4 h-4 rounded-full bg-success ring-2 ring-card', (dotPurple || dotBlue) && '-ml-2')} />}
+                    </span>
+                  </>
                 )}
               </div>
 
-              {/* Type — offers only: Trade/Giveaway star toggles, with live
-                  overlapping dots (calendar colours) reflecting what's shown. */}
-              {tab === 'offers' && (
-                <div className="flex items-center gap-x-5 gap-y-2 flex-wrap">
-                  <span className="text-xs font-medium text-text/60">Type</span>
-                  <label className="flex items-center gap-2 cursor-pointer min-h-0">
-                    <Checkbox
-                      checked={typeFilters.trade}
-                      onChange={e => setTypeFilters(t => ({ ...t, trade: e.target.checked }))}
-                    />
-                    <span className="text-sm font-bold text-info">Trade</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer min-h-0">
-                    <Checkbox
-                      checked={typeFilters.giveaway}
-                      onChange={e => setTypeFilters(t => ({ ...t, giveaway: e.target.checked }))}
-                    />
-                    <span className="text-sm font-bold text-success">Giveaway</span>
-                  </label>
-                  <span className="ml-auto flex items-center" title="Types shown">
-                    {dotPurple && <span className="block w-4 h-4 rounded-full bg-primary ring-2 ring-card" />}
-                    {dotBlue && <span className={cn('block w-4 h-4 rounded-full bg-info ring-2 ring-card', dotPurple && '-ml-2')} />}
-                    {dotGreen && <span className={cn('block w-4 h-4 rounded-full bg-success ring-2 ring-card', (dotPurple || dotBlue) && '-ml-2')} />}
-                  </span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Board multi-select dropdown */}
-                <div ref={boardDropdownRef} className="relative">
+              {/* Board — its own full-width row */}
+              <div ref={boardDropdownRef} className="relative">
                   <label className="block text-xs font-medium text-text/60 mb-1">Board</label>
                   <button
                     type="button"
@@ -912,6 +913,28 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                       ))}
                     </div>
                   )}
+                </div>
+
+              {/* Date + Days share a row on wide screens; Date stacks above
+                  Days on mobile. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Date — react-datepicker so it's a real calendar popup on
+                    every browser, matching the post/edit forms (the native
+                    input[type=date] renders as a bare text field in some). */}
+                <div>
+                  <label className="block text-xs font-medium text-text/60 mb-1">Date</label>
+                  <DatePicker
+                    selected={dateFilter ? parseISO(`${dateFilter}T12:00:00`) : null}
+                    onChange={(d: Date | null) => setDateFilter(d ? format(d, 'yyyy-MM-dd') : '')}
+                    dateFormat={settings.dateFormat === 'dmy' ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
+                    calendarStartDay={settings.weekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6}
+                    minDate={new Date(new Date().setHours(0, 0, 0, 0))}
+                    placeholderText="Any date"
+                    isClearable
+                    customInput={<FilterDateInput />}
+                    popperPlacement="bottom-start"
+                    wrapperClassName="w-full"
+                  />
                 </div>
 
                 {/* Days multi-select dropdown — same pattern as Board */}
@@ -972,25 +995,6 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                       ))}
                     </div>
                   )}
-                </div>
-
-                {/* Date — react-datepicker so it's a real calendar popup on
-                    every browser, matching the post/edit forms (the native
-                    input[type=date] renders as a bare text field in some). */}
-                <div>
-                  <label className="block text-xs font-medium text-text/60 mb-1">Date</label>
-                  <DatePicker
-                    selected={dateFilter ? parseISO(`${dateFilter}T12:00:00`) : null}
-                    onChange={(d: Date | null) => setDateFilter(d ? format(d, 'yyyy-MM-dd') : '')}
-                    dateFormat={settings.dateFormat === 'dmy' ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
-                    calendarStartDay={settings.weekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6}
-                    minDate={new Date(new Date().setHours(0, 0, 0, 0))}
-                    placeholderText="Any date"
-                    isClearable
-                    customInput={<FilterDateInput />}
-                    popperPlacement="bottom-start"
-                    wrapperClassName="w-full"
-                  />
                 </div>
 
               </div>
