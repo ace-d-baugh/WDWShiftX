@@ -556,6 +556,13 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     return () => document.removeEventListener('mousedown', handler)
   }, [boardDropdownOpen])
 
+  // Day-pill order follows the user's week-start preference, same as the
+  // calendar and the date picker below.
+  const orderedDayIndices = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => (settings.weekStart + i) % 7),
+    [settings.weekStart]
+  )
+
   const refresh = () => {
     if (tab === 'offers') loadShifts()
     else loadRequests()
@@ -900,24 +907,25 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                   )}
                 </div>
 
-                {/* Days — always-visible pills, Sun→Sat. Colored (primary) when
-                    included, gray when clicked off. All colored by default. */}
+                {/* Days — always-visible pills, ordered from the user's
+                    week-start preference. Colored (primary) when included,
+                    gray when clicked off. All colored by default. */}
                 <div className="flex flex-wrap justify-between gap-y-1.5" role="group" aria-label="Filter by day of week">
-                  {DAY_ABBR.map((label, i) => (
+                  {orderedDayIndices.map(d => (
                     <button
-                      key={i}
+                      key={d}
                       type="button"
-                      onClick={() => toggleDay(i)}
-                      aria-pressed={dayFilters.has(i)}
-                      title={DAY_NAMES[i]}
+                      onClick={() => toggleDay(d)}
+                      aria-pressed={dayFilters.has(d)}
+                      title={DAY_NAMES[d]}
                       className={cn(
                         'text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors min-h-0 min-w-0',
-                        dayFilters.has(i)
+                        dayFilters.has(d)
                           ? 'bg-primary text-white hover:bg-primary/90'
                           : 'bg-text/10 text-text/40 hover:bg-text/15'
                       )}
                     >
-                      {label}
+                      {DAY_ABBR[d]}
                     </button>
                   ))}
                 </div>
