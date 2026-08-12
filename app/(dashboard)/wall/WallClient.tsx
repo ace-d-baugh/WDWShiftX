@@ -18,6 +18,7 @@ import { RequestCard, type RequestData } from '@/components/features/RequestCard
 import { WallSkeleton } from '@/components/ui/WallSkeleton'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { sampleWallShifts, useSampleMode } from '@/lib/tour/sample-data'
+import { getSpecialEventBadges } from '@/lib/special-events'
 import { cn } from '@/lib/utils'
 
 const ET = 'America/New_York'
@@ -1008,6 +1009,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
               >
                 <DayGroup
                   dayLabel={group.dayLabel}
+                  dateKey={group.dayKey}
                   count={group.items.length}
                   isCollapsed={collapsedKeys.has(`offers|${group.dayKey}`)}
                   onToggle={() => toggleCollapsed('offers', group.dayKey)}
@@ -1068,6 +1070,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
               >
                 <DayGroup
                   dayLabel={group.dayLabel}
+                  dateKey={group.dayKey}
                   count={group.items.length}
                   isCollapsed={collapsedKeys.has(`requests|${group.dayKey}`)}
                   onToggle={() => toggleCollapsed('requests', group.dayKey)}
@@ -1099,14 +1102,18 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 // ── Day-group accordion ────────────────────────────────────────────────────────
 
 function DayGroup({
-  dayLabel, count, isCollapsed, onToggle, children,
+  dayLabel, dateKey, count, isCollapsed, onToggle, children,
 }: {
   dayLabel: string
+  /** "yyyy-MM-dd" — looked up against the special-event calendar for the
+   *  MNSSHP/HHN/MVMCP badges next to the chevron. */
+  dateKey: string
   count: number
   isCollapsed: boolean
   onToggle: () => void
   children: React.ReactNode
 }) {
+  const eventBadges = getSpecialEventBadges(dateKey)
   return (
     <div className="rounded-xl border border-border overflow-hidden">
       {/* Header */}
@@ -1123,10 +1130,19 @@ function DayGroup({
             {count}
           </span>
         </span>
-        <ChevronDown className={cn(
-          'w-4 h-4 text-text/40 transition-transform duration-300 ease-spring shrink-0',
-          !isCollapsed && 'rotate-180'
-        )} />
+        <span className="flex items-center gap-2 shrink-0">
+          {eventBadges.length > 0 && (
+            <span className="flex items-center gap-1 text-sm leading-none">
+              {eventBadges.map((b, i) => (
+                <span key={i} role="img" aria-label={b.label} title={b.label}>{b.emoji}</span>
+              ))}
+            </span>
+          )}
+          <ChevronDown className={cn(
+            'w-4 h-4 text-text/40 transition-transform duration-300 ease-spring shrink-0',
+            !isCollapsed && 'rotate-180'
+          )} />
+        </span>
       </button>
 
       {/* Animated content — grid-rows trick avoids JS height measurement */}

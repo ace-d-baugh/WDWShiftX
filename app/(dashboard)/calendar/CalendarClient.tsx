@@ -19,6 +19,7 @@ import { bundleBreakupWarning } from '@/lib/bundles'
 import {
   isSampleId, sampleBoardRequests, sampleBoardShifts, sampleCalendarShifts, useSampleMode,
 } from '@/lib/tour/sample-data'
+import { getSpecialEventBadges } from '@/lib/special-events'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -468,6 +469,7 @@ export function CalendarClient({
                   const data    = dayMap.get(dateStr)
                   const isToday = dateStr === todayStr
                   const isPast  = dateStr < todayStr
+                  const eventBadges = getSpecialEventBadges(dateStr)
 
                   return (
                     <div
@@ -491,6 +493,26 @@ export function CalendarClient({
                       )}>
                         {day}
                       </span>
+
+                      {/* Special-event badges (MNSSHP/HHN/MVMCP) — top-right
+                          corner. Mobile: stacked column, 10px glyphs, centered
+                          in a 24px-tall box. Desktop (sm+): a right-aligned row
+                          of 24px glyphs. */}
+                      {eventBadges.length > 0 && (
+                        <div className="absolute top-1 right-1 flex flex-col items-center justify-center h-6 gap-0 sm:flex-row sm:h-auto sm:justify-end sm:gap-0.5">
+                          {eventBadges.map((b, i) => (
+                            <span
+                              key={i}
+                              role="img"
+                              aria-label={b.label}
+                              title={b.label}
+                              className="leading-none text-[10px] sm:text-2xl"
+                            >
+                              {b.emoji}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {/* User's personal shifts — given-away ones stay visible
                           (not filtered out) with a muted/struck marker and a
@@ -564,6 +586,7 @@ export function CalendarClient({
             const shifts = data?.myShifts ?? []
             const isToday = d.dateStr === todayStr
             const showMonthHeader = idx === 0 || listDays[idx - 1].monthLabel !== d.monthLabel
+            const eventBadges = getSpecialEventBadges(d.dateStr)
 
             return (
               <div key={d.dateStr}>
@@ -579,8 +602,17 @@ export function CalendarClient({
                       isToday ? 'bg-primary-light/40 text-primary' : 'text-text hover:bg-primary-light/20'
                     )}
                   >
-                    {d.label}
-                    <Plus className="w-3.5 h-3.5 text-text/30 shrink-0" />
+                    <span className="truncate">{d.label}</span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {eventBadges.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          {eventBadges.map((b, i) => (
+                            <span key={i} role="img" aria-label={b.label} title={b.label}>{b.emoji}</span>
+                          ))}
+                        </span>
+                      )}
+                      <Plus className="w-3.5 h-3.5 text-text/30" />
+                    </span>
                   </button>
 
                   {shifts.length === 0 ? (
