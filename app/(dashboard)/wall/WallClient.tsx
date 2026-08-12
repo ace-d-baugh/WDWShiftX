@@ -879,7 +879,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
               {/* My Posts + (offers) Trade/Giveaway share a row with the Days
                   pills on wide screens; stacks on mobile. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex items-center justify-between gap-y-2 flex-wrap">
+                <div className="flex items-center justify-around gap-y-2 flex-wrap">
                   <label className="flex items-center gap-2 cursor-pointer min-h-0">
                     <Checkbox
                       checked={myPostsOnly}
@@ -911,7 +911,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                 {/* Days — always-visible pills, ordered from the user's
                     week-start preference. Colored (primary) when included,
                     gray when clicked off. All colored by default. */}
-                <div className="flex flex-wrap justify-between gap-y-1.5" role="group" aria-label="Filter by day of week">
+                <div className="flex flex-wrap justify-around gap-y-1.5" role="group" aria-label="Filter by day of week">
                   {orderedDayIndices.map(d => (
                     <button
                       key={d}
