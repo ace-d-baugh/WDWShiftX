@@ -110,7 +110,7 @@ const FilterDateInput = forwardRef<HTMLInputElement, {
       value={value ?? ''}
       onClick={onClick}
       placeholder={placeholder ?? 'Any Date'}
-      className={`input text-sm h-9 pl-9 ${value ? 'pr-8' : ''} cursor-pointer`}
+      className={`input text-sm pl-9 ${value ? 'pr-8' : ''} cursor-pointer`}
     />
     {value && onClear && (
       <button
