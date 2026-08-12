@@ -8,6 +8,7 @@ import { removeUserFromBoard } from '@/app/actions/boards'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Modal } from '@/components/ui/Modal'
 import { BOARD_ROLE_LABEL } from '@/lib/roles'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,9 @@ export interface UserRow {
   role: string
   is_active: boolean
   created_at: string
+  /** Non-hidden memberships (approved + pending). 0 means a registered user
+   *  who never landed on any board — the "fell through the cracks" case. */
+  board_count: number
 }
 
 interface BoardMembership {
@@ -86,6 +90,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
   // Users tab filters
   const [userSearch, setUserSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
+  const [zeroBoardsOnly, setZeroBoardsOnly] = useState(false)
 
   // Per-user board membership accordion
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
@@ -117,13 +122,16 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
     }
   }, [tab])
 
+  const zeroBoardsCount = useMemo(() => users.filter(u => u.board_count === 0).length, [users])
+
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
       if (userSearch && !(u.display_name ?? '').toLowerCase().includes(userSearch.toLowerCase())) return false
       if (filterRole && u.role !== filterRole) return false
+      if (zeroBoardsOnly && u.board_count !== 0) return false
       return true
     })
-  }, [users, userSearch, filterRole])
+  }, [users, userSearch, filterRole, zeroBoardsOnly])
 
   const toggleBoardActive = async (id: string, current: boolean) => {
     setProcessing(id)
@@ -249,6 +257,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
       })
     }
     setBoards(prev => prev.map(b => b.id === removeTarget.boardId ? { ...b, member_count: Math.max(0, b.member_count - 1) } : b))
+    setUsers(prev => prev.map(u => u.id === removeTarget.userId ? { ...u, board_count: Math.max(0, u.board_count - 1) } : u))
     showSuccess(`Removed ${removeTarget.displayName} from ${removeTarget.boardName}.`)
     closeRemove()
   }
@@ -303,6 +312,13 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
               >
                 {t.count}
               </span>
+            )}
+            {t.key === 'users' && zeroBoardsCount > 0 && (
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-warning"
+                title={`${zeroBoardsCount} user${zeroBoardsCount === 1 ? '' : 's'} on 0 boards`}
+                aria-label={`${zeroBoardsCount} user${zeroBoardsCount === 1 ? '' : 's'} on 0 boards`}
+              />
             )}
           </button>
         ))}
@@ -379,6 +395,18 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                 />
               </div>
             </div>
+
+            {zeroBoardsCount > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer min-h-0 w-fit">
+                <Checkbox
+                  checked={zeroBoardsOnly}
+                  onChange={e => setZeroBoardsOnly(e.target.checked)}
+                />
+                <span className="text-sm text-warning font-medium">
+                  Show only users with 0 boards ({zeroBoardsCount})
+                </span>
+              </label>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -398,6 +426,17 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                             {u.display_name ?? <span className="italic text-text/40">No display name</span>}
                           </p>
                           <Badge variant={roleVariant[u.role as GlobalRole] ?? 'user'}>{u.role}</Badge>
+                          <span
+                            className={cn(
+                              'badge text-xs',
+                              u.board_count === 0
+                                ? 'bg-warning/20 text-warning'
+                                : 'bg-text/10 text-text/60'
+                            )}
+                            title={u.board_count === 0 ? 'Not on any board yet' : undefined}
+                          >
+                            Boards-{u.board_count}
+                          </span>
                           {!u.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
                         </div>
                       </div>
