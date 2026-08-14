@@ -152,7 +152,7 @@ export function TradeRecordSection({ userId }: { userId: string }) {
         <p className="text-sm text-text/40 py-2">Loading…</p>
       ) : claims.length === 0 ? (
         <p className="text-sm text-text/50 py-2">
-          No trades yet. Tap <strong>&ldquo;I&apos;ll take this shift&rdquo;</strong> on a post on{' '}
+          No trades yet. Tap <strong>&ldquo;I Can Help&rdquo;</strong> on a post on{' '}
           <Link href="/wall" className="text-primary hover:underline">The Wall</Link> to start your record.
         </p>
       ) : (

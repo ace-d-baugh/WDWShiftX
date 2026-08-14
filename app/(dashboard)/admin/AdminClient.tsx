@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Settings, LayoutGrid, Users, BarChart3, Trophy, CheckCircle, Search, UserCog,
   UserMinus, Crown, UserRound, Ghost, UserX, UserCheck, MoreVertical,
-  Pencil, Trash2, UserPlus, Power,
+  Pencil, Trash2, UserPlus, Pause, Play,
 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
@@ -209,11 +209,20 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
   }
 
   useEffect(() => {
-    const btn = tabRefs.current.get(tab)
-    if (btn) {
-      setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth })
-      setIndicatorReady(true)
+    const measure = () => {
+      const btn = tabRefs.current.get(tab)
+      if (btn) {
+        setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth })
+        setIndicatorReady(true)
+      }
     }
+    measure()
+    // On mobile the tab buttons themselves animate width (icon-only <->
+    // icon+label+count), so this first measurement can land mid-transition.
+    // Re-measure once that settles so the underline doesn't stay stranded at
+    // the pre-transition position.
+    const t = window.setTimeout(measure, 320)
+    return () => window.clearTimeout(t)
   }, [tab])
 
   const zeroBoardsCount = useMemo(() => users.filter(u => u.board_count === 0).length, [users])
@@ -232,7 +241,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
     const { error: e } = await setBoardActive(id, !current)
     if (e) { setError(e) } else {
       setBoards(prev => prev.map(b => b.id === id ? { ...b, is_active: !current } : b))
-      showSuccess(current ? 'Board deactivated.' : 'Board reactivated.')
+      showSuccess(current ? 'Board paused.' : 'Board resumed.')
     }
     setProcessing(null)
   }
@@ -384,38 +393,62 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="relative flex border-b border-border mb-6">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            ref={el => { tabRefs.current.set(t.key, el) }}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap min-h-0 min-w-0 transition-colors flex-1 justify-center',
-              tab === t.key ? 'text-primary' : 'text-text/50 hover:text-text'
-            )}
-          >
-            {t.icon}{t.label}
-            {t.count !== null && (
-              <span
-                className={cn(
-                  'text-xs font-bold rounded-full px-2 py-0.5 leading-none',
-                  tab === t.key ? 'bg-primary text-white' : 'bg-text/10 text-text/50'
+      {/* Tabs — on mobile, only the active tab shows its label + count; the
+          rest collapse to just their icon so all four fit comfortably. The
+          label+count sits in its own grid track that tweens between 0fr and
+          1fr (the same width-reveal trick used for grid-rows elsewhere in
+          this app), which is what makes the icon-only <-> full swap animate
+          instead of snapping. Unaffected at sm+, where every tab is full. */}
+      <div className="relative flex justify-between border-b border-border mb-6">
+        {tabs.map(t => {
+          const active = tab === t.key
+          return (
+            <button
+              key={t.key}
+              ref={el => { tabRefs.current.set(t.key, el) }}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-3 text-sm font-medium whitespace-nowrap min-h-0 transition-colors',
+                'sm:flex-1 sm:justify-center sm:px-4',
+                active ? 'text-primary' : 'text-text/50 hover:text-text'
+              )}
+            >
+              {/* Icon — always visible; the zero-boards dot lives here too so
+                  it stays visible even when the label collapses away. */}
+              <span className="relative shrink-0 flex items-center justify-center">
+                {t.icon}
+                {t.key === 'users' && zeroBoardsCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-warning"
+                    title={`${zeroBoardsCount} user${zeroBoardsCount === 1 ? '' : 's'} on 0 boards`}
+                    aria-label={`${zeroBoardsCount} user${zeroBoardsCount === 1 ? '' : 's'} on 0 boards`}
+                  />
                 )}
-              >
-                {t.count}
               </span>
-            )}
-            {t.key === 'users' && zeroBoardsCount > 0 && (
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-warning"
-                title={`${zeroBoardsCount} user${zeroBoardsCount === 1 ? '' : 's'} on 0 boards`}
-                aria-label={`${zeroBoardsCount} user${zeroBoardsCount === 1 ? '' : 's'} on 0 boards`}
-              />
-            )}
-          </button>
-        ))}
+
+              <span className={cn(
+                'grid transition-[grid-template-columns] duration-300 ease-spring',
+                active ? 'grid-cols-[1fr]' : 'grid-cols-[0fr] sm:grid-cols-[1fr]'
+              )}>
+                {/* min-w-0 is load-bearing: grid items default to min-width:auto,
+                    which would stop this from ever shrinking past its content. */}
+                <span className="min-w-0 overflow-hidden flex items-center gap-1.5">
+                  <span className="truncate">{t.label}</span>
+                  {t.count !== null && (
+                    <span
+                      className={cn(
+                        'text-xs font-bold rounded-full px-2 py-0.5 leading-none shrink-0',
+                        active ? 'bg-primary text-white' : 'bg-text/10 text-text/50'
+                      )}
+                    >
+                      {t.count}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </button>
+          )
+        })}
         <div
           className={cn('absolute bottom-0 h-0.5 bg-primary', indicatorReady && 'transition-all duration-200 ease-in-out')}
           style={{ left: indicator.left, width: indicator.width }}
@@ -448,12 +481,15 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                   {!b.invite_code_enabled && b.is_active && <span className="badge text-xs bg-text/10 text-text/50">Code Paused</span>}
                 </div>
 
-                {/* Mirrors the board header on /boards/[slug]: Invite, rename,
-                    delete — with activate/deactivate tucked into the ⋮ menu. */}
+                {/* Mirrors the board header on /boards/[slug]: Invite and
+                    rename inline from sm up, folded into the ⋮ on mobile —
+                    Delete joins them there too, alongside its own always-visible
+                    trash icon. Pause lives in the ⋮ only, at every size (see
+                    the menu below for why). */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => setInviteBoard(b)}
-                    className="flex items-center gap-1.5 text-[11px] font-bold bg-info text-text dark:text-[#2F2040] px-3.5 py-1.5 rounded-full leading-none hover:bg-info/80 transition-colors min-h-0 min-w-0"
+                    className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold bg-info text-text dark:text-[#2F2040] px-3.5 py-1.5 rounded-full leading-none hover:bg-info/80 transition-colors min-h-0 min-w-0"
                     title="Invite link & QR code"
                   >
                     <UserPlus className="w-3 h-3" /> Invite
@@ -467,7 +503,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                   </button>
                   <button
                     onClick={() => setDeleteBoardTarget({ id: b.id, name: b.name })}
-                    className="hidden sm:block p-1 text-text/40 hover:text-warning min-h-0 min-w-0"
+                    className="p-1 text-text/40 hover:text-warning min-h-0 min-w-0"
                     title="Delete board"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -770,7 +806,18 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
               if (!b) return null
               return (
                 <>
-                  {/* Rename and Delete are inline from sm up — here for mobile only */}
+                  {/* Invite, Rename and Delete are inline from sm up — here
+                      for mobile only (Delete keeps its always-visible trash
+                      icon too; this just gives it a second, menu-based path
+                      alongside Invite and Rename). Pause lives only here, at
+                      every size — it's the safety-net path, not the everyday
+                      one. */}
+                  <button
+                    onClick={() => { closeRowMenu(); setInviteBoard(b) }}
+                    className="sm:hidden flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
+                  >
+                    <UserPlus className="w-3.5 h-3.5 shrink-0" /> Invite
+                  </button>
                   <button
                     onClick={() => { closeRowMenu(); setRenameBoard({ id: b.id, name: b.name }) }}
                     className="sm:hidden flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
@@ -784,7 +831,9 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                       b.is_active ? 'text-warning hover:bg-warning/10' : 'text-success hover:bg-success/10'
                     )}
                   >
-                    <Power className="w-3.5 h-3.5 shrink-0" /> {b.is_active ? 'Deactivate' : 'Reactivate'}
+                    {b.is_active
+                      ? <><Pause className="w-3.5 h-3.5 shrink-0" /> Pause</>
+                      : <><Play className="w-3.5 h-3.5 shrink-0" /> Resume</>}
                   </button>
                   <button
                     onClick={() => { closeRowMenu(); setDeleteBoardTarget({ id: b.id, name: b.name }) }}
@@ -831,7 +880,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
               <p className="text-sm font-semibold text-warning">Every member loses access immediately.</p>
               <p className="text-xs text-text/70">
                 The board, all its posts, and all comments disappear for everyone. This cannot be undone.
-                To take a board out of circulation without destroying it, use Deactivate instead.
+                To take a board out of circulation without destroying it, use Pause instead.
               </p>
             </div>
             <div className="flex gap-2">

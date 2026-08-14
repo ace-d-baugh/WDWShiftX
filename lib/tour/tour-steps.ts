@@ -264,7 +264,7 @@ const wallChapter: TourChapterDef = {
       element: sampleFirst('[data-tour="claim-pill"]'),
       onHighlightStarted: demoAction(sendSampleClaim),
       popover: {
-        title: '“I’ll take this”',
+        title: '“I Can Help”',
         description:
           'Tapping this doesn’t take the shift — it tells the owner you want it and notifies them straight away, which is what’s just happened here. The post stays on the Wall, everyone interested stacks up in that count, and the owner chooses. Tap it again to withdraw.',
         side: 'top',

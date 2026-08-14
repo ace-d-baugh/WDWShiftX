@@ -174,7 +174,7 @@ export const claimReceivedHtml = (opts: {
 }) =>
   shell(`
     ${h1('Someone wants your shift! 🤝')}
-    ${p(`<strong>${esc(opts.claimantName)}</strong> tapped "I'll take this shift" on your post:`)}
+    ${p(`<strong>${esc(opts.claimantName)}</strong> tapped "I Can Help" on your post:`)}
     ${highlight(esc(opts.shiftTitle))}
     ${p('Head to The Wall to accept or decline their claim. Accepting marks your post as covered.')}
     ${btn(opts.wallUrl, 'Review the Claim')}

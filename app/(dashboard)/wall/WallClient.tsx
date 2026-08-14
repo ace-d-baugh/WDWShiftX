@@ -19,6 +19,7 @@ import { WallSkeleton } from '@/components/ui/WallSkeleton'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { sampleWallShifts, useSampleMode } from '@/lib/tour/sample-data'
 import { getSpecialEventBadges } from '@/lib/special-events'
+import { PartyLegendModal } from '@/components/features/PartyLegendModal'
 import { cn } from '@/lib/utils'
 
 const ET = 'America/New_York'
@@ -180,6 +181,9 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 
   // Collapsed state for day-group accordions, persisted per user
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set())
+
+  // Party Legend — one modal shared by every MNSSHP/HHN/MVMCP badge on the page
+  const [partyLegendOpen, setPartyLegendOpen] = useState(false)
 
   useEffect(() => {
     try {
@@ -1013,6 +1017,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                   count={group.items.length}
                   isCollapsed={collapsedKeys.has(`offers|${group.dayKey}`)}
                   onToggle={() => toggleCollapsed('offers', group.dayKey)}
+                  onOpenPartyLegend={() => setPartyLegendOpen(true)}
                 >
                   {group.items.map((shift, ci) => (
                     <div
@@ -1074,6 +1079,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                   count={group.items.length}
                   isCollapsed={collapsedKeys.has(`requests|${group.dayKey}`)}
                   onToggle={() => toggleCollapsed('requests', group.dayKey)}
+                  onOpenPartyLegend={() => setPartyLegendOpen(true)}
                 >
                   {group.items.map((request, ci) => (
                     <div
@@ -1095,6 +1101,8 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
           </div>
         )
       )}
+
+      <PartyLegendModal open={partyLegendOpen} onClose={() => setPartyLegendOpen(false)} />
     </div>
   )
 }
@@ -1102,7 +1110,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 // ── Day-group accordion ────────────────────────────────────────────────────────
 
 function DayGroup({
-  dayLabel, dateKey, count, isCollapsed, onToggle, children,
+  dayLabel, dateKey, count, isCollapsed, onToggle, onOpenPartyLegend, children,
 }: {
   dayLabel: string
   /** "yyyy-MM-dd" — looked up against the special-event calendar for the
@@ -1111,17 +1119,23 @@ function DayGroup({
   count: number
   isCollapsed: boolean
   onToggle: () => void
+  /** Tapping a badge opens the Party Legend instead of toggling the day. */
+  onOpenPartyLegend: () => void
   children: React.ReactNode
 }) {
   const eventBadges = getSpecialEventBadges(dateKey)
   return (
     <div className="rounded-xl border border-border overflow-hidden">
-      {/* Header */}
-      <button
-        type="button"
+      {/* Header — a div playing button (not a real <button>) because the
+          badges below need to be a genuine nested <button> of their own, and
+          a <button> can't contain one. Space/Enter replicate native activation. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
         data-tour="wall-days"
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-card hover:bg-primary-light/30 active:bg-primary-light/50 transition-colors duration-150 min-h-0"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-card hover:bg-primary-light/30 active:bg-primary-light/50 transition-colors duration-150 min-h-0 cursor-pointer"
         aria-expanded={!isCollapsed}
       >
         <span className="flex items-center gap-2.5 min-w-0">
@@ -1132,18 +1146,24 @@ function DayGroup({
         </span>
         <span className="flex items-center gap-2 shrink-0">
           {eventBadges.length > 0 && (
-            <span className="flex items-center gap-1 text-sm leading-none">
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onOpenPartyLegend() }}
+              className="flex items-center gap-1 text-sm leading-none min-h-0 min-w-0 p-0.5 -m-0.5 rounded hover:bg-primary-light/60 transition-colors"
+              aria-label="Party Legend — what these badges mean"
+              title="What do these mean? Tap for the Party Legend"
+            >
               {eventBadges.map((b, i) => (
-                <span key={i} role="img" aria-label={b.label} title={b.label}>{b.emoji}</span>
+                <span key={i} role="img" aria-label={b.label}>{b.emoji}</span>
               ))}
-            </span>
+            </button>
           )}
           <ChevronDown className={cn(
             'w-4 h-4 text-text/40 transition-transform duration-300 ease-spring shrink-0',
             !isCollapsed && 'rotate-180'
           )} />
         </span>
-      </button>
+      </div>
 
       {/* Animated content — grid-rows trick avoids JS height measurement */}
       <div className={cn(

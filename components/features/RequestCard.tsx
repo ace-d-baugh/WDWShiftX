@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   LayoutGrid, User, Flag, Pencil, Trash2, CheckCircle,
-  MoreVertical, MessageSquare, Star, Send, Clock, ChevronDown,
+  MoreVertical, MessageSquare, Send, Clock, ChevronDown,
+  HeartHandshake as Handshake,
 } from 'lucide-react'
 import { FlagModal } from '@/components/features/FlagModal'
 import { slugify } from '@/lib/slug'
@@ -213,7 +214,7 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
                   <Send className="w-3.5 h-3.5 shrink-0" /> Message
                 </button>
                 <button className={menuItemCls} onClick={() => { setInterestTick(t => t + 1); setMenuPos(null) }}>
-                  <Star className="w-3.5 h-3.5 shrink-0" /> Show Interest
+                  <Handshake className="w-3.5 h-3.5 shrink-0" /> I Can Help
                 </button>
                 <button className={menuItemCls} onClick={() => { setFlagOpen(true); setMenuPos(null) }}>
                   <Flag className="w-3.5 h-3.5 shrink-0" /> Flag

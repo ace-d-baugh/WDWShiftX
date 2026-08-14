@@ -10,6 +10,7 @@ import {
   Bell, Monitor, Laptop, Smartphone, CalendarDays, Camera,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ALL_SPECIAL_EVENT_BADGES } from '@/lib/special-events'
 import { setPendingChapter, type TourChapter } from '@/lib/tour/tour-state'
 import { TOUR_CHAPTERS, TOUR_CHAPTER_ORDER } from '@/lib/tour/tour-steps'
 import { Button } from '@/components/ui/Button'
@@ -48,7 +49,7 @@ const FAQS: { q: string; a: string; importOnly?: boolean }[] = [
   },
   {
     q: 'How do I ask for a shift someone posted?',
-    a: "Tap \"I'll take this\" on any shift card. This doesn't hand the shift over — it sends the owner a request and notifies them by email and push right away, and the post stays right where it is on the Wall. The pill shows how many people have asked (its count) and turns solid once you've sent yours; tap it again to withdraw before the owner responds. The owner reviews everyone who asked — including each person's trade history — and chooses who to accept. See Claiming a Shift below for what happens next.",
+    a: "Tap \"I Can Help\" on any shift card. This doesn't hand the shift over — it sends the owner a request and notifies them by email and push right away, and the post stays right where it is on the Wall. The pill shows how many people have asked (its count) and turns solid once you've sent yours; tap it again to withdraw before the owner responds. The owner reviews everyone who asked — including each person's trade history — and chooses who to accept. See Claiming a Shift below for what happens next.",
   },
   {
     q: 'How do I contact someone about a shift?',
@@ -223,7 +224,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
           {[
             { icon: UserPlus, step: '1', title: 'Get Invited', desc: 'Ask a board manager for an invite link or invite code to join your first board.' },
             { icon: LayoutGrid, step: '2', title: 'Browse the Wall', desc: 'See shift offers and requests from everyone on your boards, filtered by date or board.' },
-            { icon: Handshake, step: '3', title: 'Post or Claim', desc: 'Post your own shifts, or tap "I’ll take this" on someone else’s — the owner reviews requests and picks who to accept.' },
+            { icon: Handshake, step: '3', title: 'Post or Claim', desc: 'Post your own shifts, or tap "I Can Help" on someone else’s — the owner reviews requests and picks who to accept.' },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div key={step} className="flex gap-3">
               <div className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -286,6 +287,83 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
         </div>
       </section>
 
+      {/* ── Legend ──────────────────────────────────────────────────────────── */}
+      <section className="mb-10 scroll-mt-20" id="legend">
+        <h2 className="font-accent text-xl font-bold text-text mb-1">Legend</h2>
+        <p className="text-sm text-text/60 mb-4">
+          Quick reference for the colors, icons, and badges used across the Wall and Calendar.
+        </p>
+
+        <div className="border border-border rounded-xl px-5 py-4 space-y-5">
+          {/* Colors */}
+          <div>
+            <p className="text-xs font-semibold text-text/50 uppercase tracking-wide mb-2.5">Shift colors</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                // Trade/Giveaway reuse the exact classes the real badges use
+                // (not just bg-info/bg-success) — several themes, Cyberpunk
+                // included, override .badge-trade/.badge-giveaway with a
+                // darker text color for contrast against a bright background,
+                // and that override only fires on these literal class names.
+                { swatch: 'badge-trade',    label: 'T',   desc: 'Trade' },
+                { swatch: 'badge-giveaway', label: 'G',   desc: 'Giveaway' },
+                { swatch: 'bg-primary/20 text-primary', label: 'G/T', desc: 'Give or Trade' },
+                { swatch: 'bg-accent/20 text-text',     label: 'R',   desc: 'Request' },
+              ].map(c => (
+                <div key={c.label} className="flex items-center gap-2 min-w-0">
+                  <span className={cn(
+                    'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold',
+                    c.swatch
+                  )}>
+                    {c.label}
+                  </span>
+                  <span className="text-sm text-text/70 truncate">{c.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Icons */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs font-semibold text-text/50 uppercase tracking-wide mb-2.5">Icons</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { Icon: Layers,    desc: 'Bundled shifts' },
+                { Icon: Handshake, desc: 'I Can Help' },
+                { Icon: MessageSquare, desc: 'Comments' },
+                { Icon: Send,      desc: 'Message' },
+              ].map(({ Icon, desc }) => (
+                <div key={desc} className="flex items-center gap-2 min-w-0">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon className="w-3.5 h-3.5 text-primary" />
+                  </span>
+                  <span className="text-sm text-text/70 truncate">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Party badges */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs font-semibold text-text/50 uppercase tracking-wide mb-2.5">
+              Party badges <span className="normal-case font-normal">(Wall &amp; Calendar date labels)</span>
+            </p>
+            <div className="space-y-2">
+              {ALL_SPECIAL_EVENT_BADGES.map(badge => (
+                <div key={badge.shortLabel} className="flex items-center gap-2.5">
+                  <span role="img" aria-label={badge.label} className="text-xl leading-none shrink-0">
+                    {badge.emoji}
+                  </span>
+                  <span className="text-sm text-text/70">
+                    {badge.label} <span className="text-text/40">({badge.shortLabel})</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
       <section className="mb-10">
         <h2 className="font-accent text-xl font-bold text-text mb-4">Frequently Asked Questions</h2>
@@ -318,7 +396,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
           <h2 className="font-accent text-xl font-bold text-text">Claiming a Shift</h2>
         </div>
         <p className="text-sm text-text/60 mb-4">
-          Tapping <strong>&ldquo;I&rsquo;ll take this&rdquo;</strong> raises your hand — it never removes the post or
+          Tapping <strong>&ldquo;I Can Help&rdquo;</strong> raises your hand — it never removes the post or
           hands the shift over automatically. That matters because more than one person can ask for the
           same shift (some workplaces have seniority or union rules the owner has to honor), so the owner
           always gets to choose.
@@ -350,7 +428,7 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
             <li><strong>Creating one:</strong> when posting or editing a shift, check &ldquo;Bundle with other shifts?&rdquo; Add shifts three ways — pick from your own upcoming schedule, add a brand-new one inline (it defaults to the next day, so a multi-day run fills in fast), or join one of your other existing bundles on the same board.</li>
             <li><strong>No double-booking:</strong> a shift you add through the bundle section can&rsquo;t overlap anything else already on your schedule — you&rsquo;ll get an error naming the exact conflict if it does.</li>
             <li><strong>Spotting one:</strong> a small stacked-layers icon appears before a bundled shift&rsquo;s title on the Wall and on your Calendar. Tap it to filter the Wall down to just that bundle&rsquo;s shifts; use Clear Filters to go back to everything.</li>
-            <li><strong>Claiming one:</strong> &ldquo;I&rsquo;ll take this&rdquo; becomes &ldquo;I&rsquo;ll take all&rdquo; — tapping it lists every shift in the set and confirms you understand it&rsquo;s all-or-nothing before sending the request. Accepting archives every shift in the bundle at once.</li>
+            <li><strong>Claiming one:</strong> tap <strong>&ldquo;I Can Help&rdquo;</strong> on a bundled shift and it lists every shift in the set, confirming you understand it&rsquo;s all-or-nothing before sending the request. Accepting archives every shift in the bundle at once.</li>
             <li><strong>Breaking one up:</strong> editing a bundled shift shows its current partners so you can untick one to drop it from the set. Removing or deleting any single shift in a bundle warns you first, then breaks up the whole bundle — the rest stay on the Wall as ordinary single shifts, nothing else is deleted.</li>
           </ul>
         </div>
