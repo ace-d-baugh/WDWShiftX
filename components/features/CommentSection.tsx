@@ -7,6 +7,7 @@ import { MessageSquare, Star, ChevronDown, User, Edit, Trash2, Flag, X, Send } f
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
+import { CountPill } from '@/components/ui/CountPill'
 import { FlagModal } from '@/components/features/FlagModal'
 import { createClient } from '@/lib/supabase/client'
 import { isSampleId, sampleComments } from '@/lib/tour/sample-data'
@@ -342,7 +343,8 @@ export function CommentSection({
             className="badge bg-text/10 text-text/70 hover:bg-primary-light cursor-pointer inline-flex items-center gap-1 transition-colors shrink-0"
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Comments </span>({displayCommentCount})
+            <span className="hidden sm:inline">Comments</span>
+            <CountPill count={displayCommentCount} />
             <ChevronDown className={cn('w-3 h-3 transition-transform', commentsOpen && 'rotate-180')} />
           </button>
           {showInterest && (
@@ -364,7 +366,8 @@ export function CommentSection({
               {(displayInterestedCount > 0 || myInterest)
                 ? <Star className="w-3.5 h-3.5 text-secondary-accent" fill="#ffea80" strokeWidth={0} />
                 : <Star className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">Interested </span>({displayInterestedCount})
+              <span className="hidden sm:inline">Interested</span>
+              <CountPill count={displayInterestedCount} />
               {isOwner && <ChevronDown className={cn('w-3 h-3 transition-transform', interestedOpen && 'rotate-180')} />}
             </button>
           )}

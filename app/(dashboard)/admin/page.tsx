@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/lib/auth/session'
-import { AdminClient } from './AdminClient'
+import { AdminClient, type Board } from './AdminClient'
 import type { PostStats } from './AdminCharts'
 import type { GlobalRole } from '@/lib/database.types'
 
@@ -43,7 +43,23 @@ export default async function AdminPage() {
     }
   }
 
-  const boards = (boardsRes.data ?? []).map(b => ({ ...b, member_count: memberCounts.get(b.id) ?? 0 }))
+  // invite_code is column-locked (S8) — `authenticated` has no SELECT on it, so
+  // it comes from the membership-gated RPC the /boards page uses, which admits
+  // approved members and Admins. Feeds the Boards tab's Invite modal.
+  const boardRows = boardsRes.data ?? []
+  const inviteCodes = new Map<string, string>()
+  if (boardRows.length > 0) {
+    const { data: codes } = await supabase.rpc('get_board_invite_codes', {
+      p_board_ids: boardRows.map(b => b.id),
+    })
+    for (const row of codes ?? []) inviteCodes.set(row.board_id, row.invite_code)
+  }
+
+  const boards = boardRows.map(b => ({
+    ...b,
+    member_count: memberCounts.get(b.id) ?? 0,
+    invite_code: inviteCodes.get(b.id) ?? '',
+  }))
   const users = (usersRes.data ?? []).map((u: { id: string }) => ({
     ...u,
     board_count: userBoardCounts.get(u.id) ?? 0,
@@ -51,7 +67,7 @@ export default async function AdminPage() {
 
   return (
     <AdminClient
-      boards={boards as { id: string; name: string; slug: string; invite_code_enabled: boolean; is_active: boolean; created_at: string; member_count: number }[]}
+      boards={boards as Board[]}
       users={users as unknown as { id: string; display_name: string | null; role: GlobalRole; is_active: boolean; created_at: string; board_count: number }[]}
       adminId={user.id}
       postStats={postStatsRes.data as PostStats | null}

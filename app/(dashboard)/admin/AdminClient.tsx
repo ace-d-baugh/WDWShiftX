@@ -2,15 +2,25 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
-import { Settings, LayoutGrid, Users, BarChart3, Trophy, CheckCircle, Search, UserCog, ChevronDown, UserMinus } from 'lucide-react'
+import {
+  Settings, LayoutGrid, Users, BarChart3, Trophy, CheckCircle, Search, UserCog,
+  UserMinus, Crown, UserRound, Ghost, UserX, UserCheck, MoreVertical,
+  Pencil, Trash2, UserPlus, Power,
+} from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
-import { removeUserFromBoard } from '@/app/actions/boards'
+import {
+  removeUserFromBoard, updateBoardName, deleteBoard, regenerateInviteCode, toggleInviteCode,
+} from '@/app/actions/boards'
+import { InviteModal } from '@/components/features/InviteModal'
+import { Input } from '@/components/ui/Input'
+import { slugify } from '@/lib/slug'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Modal } from '@/components/ui/Modal'
-import { BOARD_ROLE_LABEL } from '@/lib/roles'
+import { BOARD_ROLE_LABEL, GLOBAL_ROLE_LABEL } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 import { AdminCharts, type PostStats } from './AdminCharts'
 import { AdminLeaderboard } from './AdminLeaderboard'
@@ -18,10 +28,11 @@ import type { GlobalRole, BoardRole } from '@/lib/database.types'
 
 type AdminTab = 'boards' | 'users' | 'charts' | 'leaderboard'
 
-interface Board {
+export interface Board {
   id: string
   name: string
   slug: string
+  invite_code: string
   invite_code_enabled: boolean
   is_active: boolean
   created_at: string
@@ -68,8 +79,11 @@ interface AdminClientProps {
   postStats: PostStats | null
 }
 
-const roleVariant: Record<GlobalRole, 'guest' | 'user' | 'admin'> = {
-  Guest: 'guest', User: 'user', Admin: 'admin',
+/** Site role at a glance, replacing the old text badge so the row reads name-first. */
+const roleIcon: Record<GlobalRole, { Icon: typeof Crown; className: string }> = {
+  Admin: { Icon: Crown,     className: 'text-warning' },
+  User:  { Icon: UserRound, className: 'text-primary' },
+  Guest: { Icon: Ghost,     className: 'text-text/40' },
 }
 
 const boardRoleVariant: Record<BoardRole, 'user' | 'mod' | 'leader'> = {
@@ -103,6 +117,86 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
   const [needsReassignment, setNeedsReassignment] = useState(false)
   const [reassignCandidates, setReassignCandidates] = useState<ReassignCandidate[] | 'loading' | null>(null)
   const [reassignToUserId, setReassignToUserId] = useState('')
+
+  // Boards tab: the same invite / rename / delete controls the board header on
+  // /boards/[slug] offers, so the Overlord panel isn't a second, weaker UI.
+  const [inviteBoard, setInviteBoard] = useState<Board | null>(null)
+  const [renameBoard, setRenameBoard] = useState<{ id: string; name: string } | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [deleteBoardTarget, setDeleteBoardTarget] = useState<{ id: string; name: string } | null>(null)
+  const [boardActionLoading, setBoardActionLoading] = useState(false)
+
+  useEffect(() => { setRenameValue(renameBoard?.name ?? '') }, [renameBoard])
+
+  const handleRenameBoard = async () => {
+    if (!renameBoard) return
+    setBoardActionLoading(true)
+    const res = await updateBoardName(renameBoard.id, renameValue)
+    setBoardActionLoading(false)
+    if (res.error) { setError(res.error); return }
+    const trimmed = renameValue.trim()
+    setBoards(prev => prev.map(b => b.id === renameBoard.id ? { ...b, name: trimmed, slug: slugify(trimmed) } : b))
+    setRenameBoard(null)
+    showSuccess('Board renamed.')
+  }
+
+  const handleDeleteBoard = async () => {
+    if (!deleteBoardTarget) return
+    setBoardActionLoading(true)
+    const res = await deleteBoard(deleteBoardTarget.id)
+    setBoardActionLoading(false)
+    if (res.error) { setError(res.error); return }
+    setBoards(prev => prev.filter(b => b.id !== deleteBoardTarget.id))
+    setDeleteBoardTarget(null)
+    showSuccess('Board deleted.')
+  }
+
+  const handleToggleInviteCode = async (): Promise<{ error?: string }> => {
+    if (!inviteBoard) return { error: 'No board selected.' }
+    const next = !inviteBoard.invite_code_enabled
+    const res = await toggleInviteCode(inviteBoard.id, next)
+    if (res.error) return res
+    setInviteBoard(prev => prev ? { ...prev, invite_code_enabled: next } : null)
+    setBoards(prev => prev.map(b => b.id === inviteBoard.id ? { ...b, invite_code_enabled: next } : b))
+    return {}
+  }
+
+  const handleRegenerateInvite = async (): Promise<{ code?: string; error?: string }> => {
+    if (!inviteBoard) return { error: 'No board selected.' }
+    const res = await regenerateInviteCode(inviteBoard.id)
+    if (res.error || !res.code) return res
+    setInviteBoard(prev => prev ? { ...prev, invite_code: res.code! } : null)
+    setBoards(prev => prev.map(b => b.id === inviteBoard.id ? { ...b, invite_code: res.code! } : b))
+    return { code: res.code }
+  }
+
+  // Row overflow menus. One piece of state for both tabs — only ever one is
+  // open — positioned fixed and portalled so a card's rounded overflow can't
+  // clip it (same trap ShiftCard's ⋮ menu works around).
+  const [rowMenu, setRowMenu] = useState<
+    { kind: 'user' | 'board'; id: string; top: number; right: number } | null
+  >(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const openRowMenu = (kind: 'user' | 'board', id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    setRowMenu(prev =>
+      prev?.id === id && prev.kind === kind
+        ? null
+        : { kind, id, top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) }
+    )
+  }
+  const closeRowMenu = () => setRowMenu(null)
+
+  // A fixed menu can't track the button underneath it — close on any scroll,
+  // matching the other ⋮ menus in the app.
+  useEffect(() => {
+    if (!rowMenu) return
+    const close = () => setRowMenu(null)
+    document.addEventListener('scroll', close, { passive: true, capture: true })
+    return () => document.removeEventListener('scroll', close, { capture: true })
+  }, [rowMenu])
 
   // Tab indicator animation
   const tabRefs = useRef<Map<AdminTab, HTMLButtonElement | null>>(new Map())
@@ -335,36 +429,58 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
             <p className="text-sm text-text/50 italic text-center py-8">No boards yet.</p>
           ) : (
             boards.map(b => (
-              <div key={b.id} className="card flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    {b.is_active ? (
-                      <Link href={`/boards/${b.slug}`} className="font-medium text-text hover:text-primary hover:underline transition-colors min-h-0 min-w-0">
-                        {b.name}
-                      </Link>
-                    ) : (
-                      <p className="font-medium text-text/40 line-through">{b.name}</p>
-                    )}
-                    <span className="badge text-xs bg-primary/10 text-primary shrink-0">
-                      {b.member_count} {b.member_count === 1 ? 'member' : 'members'}
-                    </span>
-                    {!b.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
-                    {!b.invite_code_enabled && b.is_active && <span className="badge text-xs bg-text/10 text-text/50">Code Paused</span>}
-                  </div>
-                  <p className="text-xs text-text/40">{new Date(b.created_at).toLocaleDateString()}</p>
-                </div>
-                <button
-                  onClick={() => toggleBoardActive(b.id, b.is_active)}
-                  disabled={processing === b.id}
-                  className={cn(
-                    'badge text-xs cursor-pointer min-h-0 min-w-0 transition-colors shrink-0',
-                    b.is_active
-                      ? 'bg-warning/20 text-warning hover:bg-warning/30'
-                      : 'bg-success/20 text-success hover:bg-success/30'
+              <div key={b.id} className="card flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                  {b.is_active ? (
+                    <Link href={`/boards/${b.slug}`} className="font-medium text-text hover:text-primary hover:underline transition-colors min-h-0 min-w-0 truncate">
+                      {b.name}
+                    </Link>
+                  ) : (
+                    <p className="font-medium text-text/40 line-through truncate">{b.name}</p>
                   )}
-                >
-                  {b.is_active ? 'Deactivate' : 'Reactivate'}
-                </button>
+                  <span
+                    className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded-full text-[11px] font-semibold leading-none shrink-0 tabular-nums bg-primary/15 text-primary"
+                    title={`${b.member_count} member${b.member_count === 1 ? '' : 's'}`}
+                  >
+                    {b.member_count}
+                  </span>
+                  {!b.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
+                  {!b.invite_code_enabled && b.is_active && <span className="badge text-xs bg-text/10 text-text/50">Code Paused</span>}
+                </div>
+
+                {/* Mirrors the board header on /boards/[slug]: Invite, rename,
+                    delete — with activate/deactivate tucked into the ⋮ menu. */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setInviteBoard(b)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold bg-info text-text dark:text-[#2F2040] px-3.5 py-1.5 rounded-full leading-none hover:bg-info/80 transition-colors min-h-0 min-w-0"
+                    title="Invite link & QR code"
+                  >
+                    <UserPlus className="w-3 h-3" /> Invite
+                  </button>
+                  <button
+                    onClick={() => setRenameBoard({ id: b.id, name: b.name })}
+                    className="hidden sm:block p-1 text-text/40 hover:text-primary min-h-0 min-w-0"
+                    title="Rename board"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteBoardTarget({ id: b.id, name: b.name })}
+                    className="hidden sm:block p-1 text-text/40 hover:text-warning min-h-0 min-w-0"
+                    title="Delete board"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={e => openRowMenu('board', b.id, e)}
+                    className="p-1 rounded text-text/40 hover:text-text hover:bg-primary-light/50 transition-colors min-h-0 min-w-0"
+                    aria-label="More options"
+                    aria-haspopup="menu"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -419,60 +535,84 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                 const displayName = u.display_name ?? 'this user'
                 return (
                   <div key={u.id} className="card">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className={cn('font-medium', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
-                            {u.display_name ?? <span className="italic text-text/40">No display name</span>}
-                          </p>
-                          <Badge variant={roleVariant[u.role as GlobalRole] ?? 'user'}>{u.role}</Badge>
-                          <span
-                            className={cn(
-                              'badge text-xs',
-                              u.board_count === 0
-                                ? 'bg-warning/20 text-warning'
-                                : 'bg-text/10 text-text/60'
-                            )}
-                            title={u.board_count === 0 ? 'Not on any board yet' : undefined}
-                          >
-                            Boards-{u.board_count}
-                          </span>
-                          {!u.is_active && <span className="badge text-xs bg-warning/20 text-warning">Inactive</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {u.id !== adminId && (
-                          <Link
-                            href={`/admin/users/${u.id}`}
-                            className="flex items-center gap-1 text-xs text-primary hover:text-primary/70 px-2 py-1 rounded border border-primary/30 hover:bg-primary-light transition-colors min-h-0"
-                          >
-                            <UserCog className="w-3.5 h-3.5" />Edit
-                          </Link>
-                        )}
-                        {u.id !== adminId ? (
-                          <button
-                            onClick={() => toggleUserActive(u.id, u.is_active)}
-                            disabled={processing === u.id}
-                            className={cn(
-                              'badge text-xs cursor-pointer min-h-0 min-w-0 transition-colors',
-                              u.is_active
-                                ? 'bg-warning/20 text-warning hover:bg-warning/30'
-                                : 'bg-success/20 text-success hover:bg-success/30'
-                            )}
-                          >
-                            {u.is_active ? 'Deactivate' : 'Reactivate'}
-                          </button>
-                        ) : (
-                          <span className="text-xs text-text/40 italic">You</span>
-                        )}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {/* Site role, icon-only — the label lives in the tooltip */}
+                        {(() => {
+                          const { Icon, className } = roleIcon[u.role as GlobalRole] ?? roleIcon.User
+                          const label = GLOBAL_ROLE_LABEL[u.role as GlobalRole] ?? u.role
+                          return (
+                            <span role="img" aria-label={label} title={label} className="inline-flex shrink-0">
+                              <Icon className={cn('w-4 h-4', className)} aria-hidden="true" />
+                            </span>
+                          )
+                        })()}
+
+                        <p className={cn('font-medium truncate', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
+                          {u.display_name ?? <span className="italic text-text/40">No display name</span>}
+                        </p>
+
+                        {/* Board count doubles as the accordion toggle — the old
+                            chevron on the right did the same job twice over. */}
                         <button
+                          type="button"
                           onClick={() => toggleUserExpanded(u.id)}
-                          className="p-1 text-text/40 hover:text-primary min-h-0 min-w-0"
-                          aria-label={isExpanded ? 'Collapse boards' : 'Show boards'}
                           aria-expanded={isExpanded}
+                          aria-label={`${u.board_count} board${u.board_count === 1 ? '' : 's'} — ${isExpanded ? 'collapse' : 'expand'}`}
+                          title={u.board_count === 0 ? 'Not on any board yet' : 'Show boards'}
+                          className={cn(
+                            'inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded-full',
+                            'text-[11px] font-semibold leading-none shrink-0 tabular-nums transition-colors',
+                            'cursor-pointer min-h-0',
+                            u.board_count === 0
+                              ? 'bg-warning/20 text-warning hover:bg-warning/30'
+                              : 'bg-primary/15 text-primary hover:bg-primary/25',
+                            isExpanded && 'ring-1 ring-primary/40'
+                          )}
                         >
-                          <ChevronDown className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')} />
+                          {u.board_count}
                         </button>
+
+                        {!u.is_active && <span className="badge text-xs bg-warning/20 text-warning shrink-0">Inactive</span>}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {u.id === adminId ? (
+                          <span className="text-xs text-text/40 italic">You</span>
+                        ) : (
+                          <>
+                            {/* Full controls from sm up; everything collapses to ⋮ below it */}
+                            <Link
+                              href={`/admin/users/${u.id}`}
+                              className="hidden sm:flex items-center gap-1 text-xs text-primary hover:text-primary/70 px-2 py-1 rounded border border-primary/30 hover:bg-primary-light transition-colors min-h-0"
+                            >
+                              <UserCog className="w-3.5 h-3.5" />Edit
+                            </Link>
+                            <button
+                              onClick={() => toggleUserActive(u.id, u.is_active)}
+                              disabled={processing === u.id}
+                              className={cn(
+                                'badge text-xs cursor-pointer min-h-0 min-w-0 transition-colors',
+                                'hidden sm:inline-flex items-center gap-1',
+                                u.is_active
+                                  ? 'bg-warning/20 text-warning hover:bg-warning/30'
+                                  : 'bg-success/20 text-success hover:bg-success/30'
+                              )}
+                            >
+                              {u.is_active
+                                ? <><UserX className="w-3.5 h-3.5" />Deactivate</>
+                                : <><UserCheck className="w-3.5 h-3.5" />Reactivate</>}
+                            </button>
+                            <button
+                              onClick={e => openRowMenu('user', u.id, e)}
+                              className="sm:hidden p-1 rounded text-text/40 hover:text-text hover:bg-primary-light/50 transition-colors min-h-0 min-w-0"
+                              aria-label="More options"
+                              aria-haspopup="menu"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -589,6 +729,134 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
             </>
           )}
         </Modal>
+      )}
+
+      {/* ── Row ⋮ menus — fixed + portalled so a card can't clip them ────── */}
+      {mounted && rowMenu && createPortal(
+        <>
+          <div className="fixed inset-0 z-40" onClick={closeRowMenu} />
+          <div
+            role="menu"
+            style={{ position: 'fixed', top: rowMenu.top, right: rowMenu.right }}
+            className="w-48 rounded-lg border border-border bg-card shadow-xl z-50 py-1 overflow-hidden"
+          >
+            {rowMenu.kind === 'user' ? (() => {
+              const u = users.find(x => x.id === rowMenu.id)
+              if (!u) return null
+              return (
+                <>
+                  <Link
+                    href={`/admin/users/${u.id}`}
+                    onClick={closeRowMenu}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
+                  >
+                    <UserCog className="w-3.5 h-3.5 shrink-0" /> Edit
+                  </Link>
+                  <button
+                    onClick={() => { closeRowMenu(); toggleUserActive(u.id, u.is_active) }}
+                    className={cn(
+                      'flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm transition-colors',
+                      u.is_active ? 'text-warning hover:bg-warning/10' : 'text-success hover:bg-success/10'
+                    )}
+                  >
+                    {u.is_active
+                      ? <><UserX className="w-3.5 h-3.5 shrink-0" /> Deactivate</>
+                      : <><UserCheck className="w-3.5 h-3.5 shrink-0" /> Reactivate</>}
+                  </button>
+                </>
+              )
+            })() : (() => {
+              const b = boards.find(x => x.id === rowMenu.id)
+              if (!b) return null
+              return (
+                <>
+                  {/* Rename and Delete are inline from sm up — here for mobile only */}
+                  <button
+                    onClick={() => { closeRowMenu(); setRenameBoard({ id: b.id, name: b.name }) }}
+                    className="sm:hidden flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5 shrink-0" /> Rename
+                  </button>
+                  <button
+                    onClick={() => { closeRowMenu(); toggleBoardActive(b.id, b.is_active) }}
+                    className={cn(
+                      'flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm transition-colors',
+                      b.is_active ? 'text-warning hover:bg-warning/10' : 'text-success hover:bg-success/10'
+                    )}
+                  >
+                    <Power className="w-3.5 h-3.5 shrink-0" /> {b.is_active ? 'Deactivate' : 'Reactivate'}
+                  </button>
+                  <button
+                    onClick={() => { closeRowMenu(); setDeleteBoardTarget({ id: b.id, name: b.name }) }}
+                    className="sm:hidden flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm text-warning hover:bg-warning/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 shrink-0" /> Delete
+                  </button>
+                </>
+              )
+            })()}
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ── Boards tab: rename ──────────────────────────────────────────── */}
+      <Modal open={!!renameBoard} onClose={() => setRenameBoard(null)} title="Rename Board" size="sm">
+        <div className="space-y-4">
+          <Input
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleRenameBoard() }}
+            maxLength={32}
+            autoFocus
+          />
+          <p className="text-xs text-warning">
+            Renaming changes the board&apos;s URL, which invalidates existing invite links.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => setRenameBoard(null)}>Cancel</Button>
+            <Button size="sm" className="flex-1" loading={boardActionLoading} onClick={handleRenameBoard}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Boards tab: delete ──────────────────────────────────────────── */}
+      <Modal open={!!deleteBoardTarget} onClose={() => setDeleteBoardTarget(null)} title="Delete Board?" size="sm">
+        {deleteBoardTarget && (
+          <div className="space-y-4">
+            <p className="text-sm text-text/70">
+              You are about to permanently delete <strong>{deleteBoardTarget.name}</strong>.
+            </p>
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 space-y-1.5">
+              <p className="text-sm font-semibold text-warning">Every member loses access immediately.</p>
+              <p className="text-xs text-text/70">
+                The board, all its posts, and all comments disappear for everyone. This cannot be undone.
+                To take a board out of circulation without destroying it, use Deactivate instead.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => setDeleteBoardTarget(null)}>Cancel</Button>
+              <Button variant="danger" size="sm" className="flex-1 gap-1" loading={boardActionLoading} onClick={handleDeleteBoard}>
+                <Trash2 className="w-3.5 h-3.5" /> Delete for Everyone
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Boards tab: invite link & QR ────────────────────────────────── */}
+      {inviteBoard && (
+        <InviteModal
+          open
+          onClose={() => setInviteBoard(null)}
+          boardName={inviteBoard.name}
+          boardSlug={inviteBoard.slug}
+          inviteCode={inviteBoard.invite_code}
+          inviteCodeEnabled={inviteBoard.invite_code_enabled}
+          isLeader
+          onToggleEnabled={handleToggleInviteCode}
+          onRegenerate={handleRegenerateInvite}
+        />
       )}
     </div>
   )
