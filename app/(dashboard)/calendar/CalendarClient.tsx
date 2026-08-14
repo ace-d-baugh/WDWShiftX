@@ -20,6 +20,7 @@ import {
   isSampleId, sampleBoardRequests, sampleBoardShifts, sampleCalendarShifts, useSampleMode,
 } from '@/lib/tour/sample-data'
 import { getSpecialEventBadges } from '@/lib/special-events'
+import { PartyLegendModal } from '@/components/features/PartyLegendModal'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -219,6 +220,8 @@ export function CalendarClient({
 
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  // Party Legend — one modal shared by every MNSSHP/HHN/MVMCP badge on the page
+  const [partyLegendOpen, setPartyLegendOpen] = useState(false)
 
   const [view, setView] = useState<ViewMode>('grid')
   useEffect(() => {
@@ -499,19 +502,24 @@ export function CalendarClient({
                           in a 24px-tall box. Desktop (sm+): a right-aligned row
                           of 24px glyphs. */}
                       {eventBadges.length > 0 && (
-                        <div className="absolute top-1 right-1 flex flex-col items-center justify-center h-6 gap-0 sm:flex-row sm:h-auto sm:justify-end sm:gap-0.5">
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); setPartyLegendOpen(true) }}
+                          aria-label="Party Legend — what these badges mean"
+                          title="What do these mean? Tap for the Party Legend"
+                          className="absolute top-1 right-1 flex flex-col items-center justify-center h-6 gap-0 sm:flex-row sm:h-auto sm:justify-end sm:gap-0.5 min-h-0 min-w-0 p-0"
+                        >
                           {eventBadges.map((b, i) => (
                             <span
                               key={i}
                               role="img"
                               aria-label={b.label}
-                              title={b.label}
                               className="leading-none text-[10px] sm:text-2xl"
                             >
                               {b.emoji}
                             </span>
                           ))}
-                        </div>
+                        </button>
                       )}
 
                       {/* User's personal shifts — given-away ones stay visible
@@ -594,26 +602,37 @@ export function CalendarClient({
                   <h2 className="font-accent text-lg font-bold text-text mb-2 mt-2 first:mt-0">{d.monthLabel}</h2>
                 )}
                 <div className="rounded-lg border border-border overflow-hidden bg-card">
-                  {/* Row 1: date header — a link to create a shift on this day */}
-                  <button
+                  {/* Row 1: date header — a link to create a shift on this day.
+                      A div playing button, not a real <button>, because the
+                      badges need to be a genuine nested <button> of their own. */}
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => goCreate(d.dateStr)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goCreate(d.dateStr) } }}
                     className={cn(
-                      'w-full flex items-center justify-between px-3 py-2 text-left text-sm font-semibold transition-colors min-h-0',
+                      'w-full flex items-center justify-between px-3 py-2 text-left text-sm font-semibold transition-colors min-h-0 cursor-pointer',
                       isToday ? 'bg-primary-light/40 text-primary' : 'text-text hover:bg-primary-light/20'
                     )}
                   >
                     <span className="truncate">{d.label}</span>
                     <span className="flex items-center gap-1.5 shrink-0">
                       {eventBadges.length > 0 && (
-                        <span className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); setPartyLegendOpen(true) }}
+                          aria-label="Party Legend — what these badges mean"
+                          title="What do these mean? Tap for the Party Legend"
+                          className="flex items-center gap-1 min-h-0 min-w-0 p-0.5 -m-0.5 rounded hover:bg-primary-light/60 transition-colors"
+                        >
                           {eventBadges.map((b, i) => (
-                            <span key={i} role="img" aria-label={b.label} title={b.label}>{b.emoji}</span>
+                            <span key={i} role="img" aria-label={b.label}>{b.emoji}</span>
                           ))}
-                        </span>
+                        </button>
                       )}
                       <Plus className="w-3.5 h-3.5 text-text/30" />
                     </span>
-                  </button>
+                  </div>
 
                   {shifts.length === 0 ? (
                     <div className="flex items-center justify-between px-3 py-2 border-t border-border">
@@ -758,6 +777,8 @@ export function CalendarClient({
           <button onClick={() => setRemoveError(null)} className="shrink-0 underline text-xs">Dismiss</button>
         </div>
       )}
+
+      <PartyLegendModal open={partyLegendOpen} onClose={() => setPartyLegendOpen(false)} />
     </div>
   )
 }

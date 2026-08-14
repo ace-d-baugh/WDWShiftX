@@ -3,7 +3,10 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow, parseISO } from 'date-fns'
-import { MessageSquare, Star, ChevronDown, User, Edit, Trash2, Flag, X, Send } from 'lucide-react'
+import {
+  MessageSquare, Star, ChevronDown, User, Edit, Trash2, Flag, X, Send,
+  HeartHandshake as Handshake,
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
@@ -38,14 +41,17 @@ interface CommentSectionProps {
   boardId?: string
   actions?: React.ReactNode
   /** Rendered first in the pill row, before Comments — shifts use this for
-   * their "I'll take this" claim control (requests have no equivalent). */
+   * their "I Can Help" claim control. Requests use the built-in `showInterest`
+   * pill below instead, which renders in the same leading position. */
   leadingAction?: React.ReactNode
   /** Accordion content shown directly under the pill row — shifts use this for
    * the owner's list of interested claimants. Caller owns the open/closed
    * state (it's driven by a pill in `leadingAction`). */
   expandedPanel?: React.ReactNode
-  /** Off for shifts — "I'll take this" replaces marking interest there.
-   * Requests have no claim system, so they keep it. Default true. */
+  /** Off for shifts — `leadingAction` (ClaimPill) replaces it there. Requests
+   * have no separate claim system, so this is their "I Can Help" control,
+   * styled the same as ClaimPill and rendered in the same leading position.
+   * Default true. */
   showInterest?: boolean
   /** Post owner's user id — enables the "Message" pill for non-owners */
   ownerUserId?: string | null
@@ -335,6 +341,36 @@ export function CommentSection({
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 pt-3 mt-3 border-t border-border">
         <div data-tour="card-actions" className="flex items-center gap-2">
           {leadingAction}
+          {/* Requests have no separate claim system, so this doubles as their
+              "I Can Help" control (leading position, mirroring ClaimPill) and
+              — for the owner — the InterestedPill-style accordion toggle.
+              Restyled to the same visual language as the Wall's shift pills:
+              outlined until acted on, solid once it is. */}
+          {showInterest && (
+            <button
+              type="button"
+              onClick={handleInterestedPillClick}
+              disabled={isOwner ? false : !currentUserId || posting}
+              title={isOwner
+                ? (displayInterestedCount === 0 ? 'Nobody has offered to help yet' : `${displayInterestedCount} offered to help — tap to review`)
+                : myInterest ? 'Sent — tap to withdraw' : 'Offer to help with this'}
+              className={cn(
+                'badge inline-flex items-center gap-1 transition-colors shrink-0 disabled:opacity-60',
+                isOwner
+                  ? displayInterestedCount === 0
+                    ? 'bg-text/10 text-text/50 cursor-default'
+                    : 'bg-primary text-white hover:bg-primary/90 cursor-pointer'
+                  : myInterest
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'border border-primary text-primary bg-transparent hover:bg-primary-light cursor-pointer'
+              )}
+            >
+              <Handshake className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{isOwner ? 'Interested' : 'I Can Help'}</span>
+              <CountPill count={displayInterestedCount} tone={(isOwner ? displayInterestedCount > 0 : myInterest) ? 'solid' : 'default'} />
+              {isOwner && <ChevronDown className={cn('w-3 h-3 transition-transform', interestedOpen && 'rotate-180')} />}
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleComments}
@@ -347,30 +383,6 @@ export function CommentSection({
             <CountPill count={displayCommentCount} />
             <ChevronDown className={cn('w-3 h-3 transition-transform', commentsOpen && 'rotate-180')} />
           </button>
-          {showInterest && (
-            <button
-              type="button"
-              onClick={handleInterestedPillClick}
-              disabled={isOwner ? false : !currentUserId || posting}
-              className={cn(
-                'badge inline-flex items-center gap-1 transition-colors shrink-0',
-                isOwner
-                  ? 'bg-secondary-accent/20 text-text hover:bg-secondary-accent/30 cursor-pointer'
-                  : myInterest
-                    ? 'bg-secondary-accent/20 text-text cursor-default'
-                    : currentUserId
-                      ? 'bg-text/10 text-text/60 hover:bg-primary-light cursor-pointer'
-                      : 'bg-text/10 text-text/50 cursor-default'
-              )}
-            >
-              {(displayInterestedCount > 0 || myInterest)
-                ? <Star className="w-3.5 h-3.5 text-secondary-accent" fill="#ffea80" strokeWidth={0} />
-                : <Star className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">Interested</span>
-              <CountPill count={displayInterestedCount} />
-              {isOwner && <ChevronDown className={cn('w-3 h-3 transition-transform', interestedOpen && 'rotate-180')} />}
-            </button>
-          )}
           {!isOwner && currentUserId && ownerUserId && (
             <button
               type="button"

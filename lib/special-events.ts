@@ -12,11 +12,18 @@
 export interface SpecialEventBadge {
   emoji: string
   label: string
+  /** The acronym shown in parentheses next to the long name — Party Legend
+   *  modal and the Help page's own Legend section. */
+  shortLabel: string
 }
 
-const MNSSHP: SpecialEventBadge = { emoji: '🎃', label: "Mickey's Not So Scary Halloween Party" }
-const HHN: SpecialEventBadge = { emoji: '🧟‍♂️', label: 'Halloween Horror Nights' }
-const MVMCP: SpecialEventBadge = { emoji: '🎄', label: "Mickey's Very Merry Christmas Party" }
+const MNSSHP: SpecialEventBadge = { emoji: '🎃', label: "Mickey's Not So Scary Halloween Party", shortLabel: 'MNSSHP' }
+const HHN: SpecialEventBadge = { emoji: '🧟‍♂️', label: 'Halloween Horror Nights', shortLabel: 'HHN' }
+const MVMCP: SpecialEventBadge = { emoji: '🎄', label: "Mickey's Very Merry Christmas Party", shortLabel: 'MVMCP' }
+
+/** All three, in the order they run through the season — used by the Party
+ *  Legend modal and the Help page's Legend, independent of any date. */
+export const ALL_SPECIAL_EVENT_BADGES: readonly SpecialEventBadge[] = [MNSSHP, HHN, MVMCP]
 
 // Keyed "yyyy-MM" -> day-of-month numbers.
 const MNSSHP_DAYS: Record<string, number[]> = {

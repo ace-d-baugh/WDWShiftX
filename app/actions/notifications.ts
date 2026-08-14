@@ -643,8 +643,8 @@ export async function notifyClaimCreated(claimId: string): Promise<void> {
       ownerId,
       bundleSize > 1 ? `${claimantName} wants all ${bundleSize} of your shifts` : `${claimantName} wants your shift`,
       bundleSize > 1
-        ? `${claimantName} tapped "I'll take all" on your ${bundleSize}-shift bundle — accept or decline on the Wall`
-        : `${claimantName} tapped "I'll take this shift" on "${anchorTitle}" — accept or decline on the Wall`,
+        ? `${claimantName} tapped "I Can Help" on your ${bundleSize}-shift bundle — accept or decline on the Wall`
+        : `${claimantName} tapped "I Can Help" on "${anchorTitle}" — accept or decline on the Wall`,
       '/wall'
     )
 
