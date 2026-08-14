@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  Users, Crown, LayoutGrid, ChevronDown, MoreHorizontal,
+  Users, Crown, LayoutGrid, ChevronDown, MoreHorizontal, MoreVertical,
   Pencil, Trash2, Check, X, MessageSquare,
   LogOut, UserMinus, Flag, UserCog, UserPlus, AlertTriangle,
 } from 'lucide-react'
@@ -76,6 +76,17 @@ export function BoardsClient({ managedBoards: initial, currentUserId, isAdmin }:
     if (openMenuFor?.id === id) { closeMenu(); return }
     const rect = e.currentTarget.getBoundingClientRect()
     setOpenMenuFor({ id, top: rect.bottom + 4, right: window.innerWidth - rect.right })
+  }
+
+  // Board-header overflow menu (mobile). Kept separate from the member-row menu
+  // above, which is keyed on userBoardId — one id space per menu.
+  const [boardMenu, setBoardMenu] = useState<{ id: string; top: number; right: number } | null>(null)
+  const closeBoardMenu = () => setBoardMenu(null)
+
+  const openBoardMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (boardMenu?.id === id) { closeBoardMenu(); return }
+    const rect = e.currentTarget.getBoundingClientRect()
+    setBoardMenu({ id, top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) })
   }
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -238,6 +249,35 @@ export function BoardsClient({ managedBoards: initial, currentUserId, isAdmin }:
         <div className="fixed inset-0 z-40" onClick={closeMenu} />
       )}
 
+      {/* Board-header ⋮ (mobile): the same rename/delete the icons offer on sm+ */}
+      {boardMenu && (() => {
+        const board = boards.find(b => b.boardId === boardMenu.id)
+        if (!board) return null
+        return (
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeBoardMenu} />
+            <div
+              role="menu"
+              style={{ position: 'fixed', top: boardMenu.top, right: boardMenu.right }}
+              className="w-44 rounded-lg border border-border bg-card shadow-xl z-50 py-1 overflow-hidden"
+            >
+              <button
+                onClick={() => { closeBoardMenu(); startEditBoard(board.boardId, board.boardName) }}
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm text-text/80 hover:bg-primary-light/50 hover:text-text transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5 shrink-0" /> Rename Board
+              </button>
+              <button
+                onClick={() => { closeBoardMenu(); setDeleteConfirm({ boardId: board.boardId, boardName: board.boardName }) }}
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm text-warning hover:bg-warning/10 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 shrink-0" /> Delete Board
+              </button>
+            </div>
+          </>
+        )
+      })()}
+
       {boards.length === 0 ? (
         <p className="text-sm text-text/50 italic">No boards to manage.</p>
       ) : (
@@ -303,11 +343,20 @@ export function BoardsClient({ managedBoards: initial, currentUserId, isAdmin }:
                       >
                         <UserPlus className="w-3 h-3" /> Invite
                       </button>
-                      {/* Admin board controls */}
+                      {/* Admin board controls — inline from sm up, folded into
+                          a ⋮ menu below it so the header doesn't crowd on a phone */}
                       {isAdmin && (
                         <>
-                          <button onClick={() => startEditBoard(board.boardId, board.boardName)} className="p-1 text-text/40 hover:text-primary min-h-0 min-w-0" title="Rename board"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => setDeleteConfirm({ boardId: board.boardId, boardName: board.boardName })} className="p-1 text-text/40 hover:text-warning min-h-0 min-w-0" title="Delete board"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => startEditBoard(board.boardId, board.boardName)} className="hidden sm:block p-1 text-text/40 hover:text-primary min-h-0 min-w-0" title="Rename board"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDeleteConfirm({ boardId: board.boardId, boardName: board.boardName })} className="hidden sm:block p-1 text-text/40 hover:text-warning min-h-0 min-w-0" title="Delete board"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button
+                            onClick={e => openBoardMenu(board.boardId, e)}
+                            className="sm:hidden p-1 rounded text-text/40 hover:text-text hover:bg-primary-light/50 transition-colors min-h-0 min-w-0"
+                            aria-label="Board options"
+                            aria-haspopup="menu"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
                         </>
                       )}
                     </div>
