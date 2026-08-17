@@ -8,9 +8,11 @@ import {
   LayoutGrid, UserPlus, MessageSquare, Layers, Compass,
   HeartHandshake as Handshake,
   Bell, Monitor, Laptop, Smartphone, CalendarDays, Camera,
+  Crown, Award, UserRound,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ALL_SPECIAL_EVENT_BADGES } from '@/lib/special-events'
+import { BOARD_ROLE_LABEL } from '@/lib/roles'
 import { setPendingChapter, type TourChapter } from '@/lib/tour/tour-state'
 import { TOUR_CHAPTERS, TOUR_CHAPTER_ORDER } from '@/lib/tour/tour-steps'
 import { Button } from '@/components/ui/Button'
@@ -338,6 +340,27 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
                     <Icon className="w-3.5 h-3.5 text-primary" />
                   </span>
                   <span className="text-sm text-text/70 truncate">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Board roles */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs font-semibold text-text/50 uppercase tracking-wide mb-2.5">
+              Board roles <span className="normal-case font-normal">(My Boards member list)</span>
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { Icon: Crown,     className: 'text-warning', label: BOARD_ROLE_LABEL.Leader },
+                { Icon: Award,     className: 'text-info',    label: BOARD_ROLE_LABEL.Mod },
+                { Icon: UserRound, className: 'text-primary', label: BOARD_ROLE_LABEL.User },
+              ].map(({ Icon, className, label }) => (
+                <div key={label} className="flex items-center gap-2 min-w-0">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon className={cn('w-3.5 h-3.5', className)} />
+                  </span>
+                  <span className="text-sm text-text/70 truncate">{label}</span>
                 </div>
               ))}
             </div>

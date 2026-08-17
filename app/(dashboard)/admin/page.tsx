@@ -1,7 +1,6 @@
 import { requireAdmin } from '@/lib/auth/session'
-import { AdminClient, type Board } from './AdminClient'
+import { AdminClient, type Board, type UserRow } from './AdminClient'
 import type { PostStats } from './AdminCharts'
-import type { GlobalRole } from '@/lib/database.types'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +12,7 @@ export default async function AdminPage() {
   const [boardsRes, usersRes, memberRowsRes, postStatsRes] = await Promise.all([
     supabase
       .from('boards')
-      .select('id, name, slug, invite_code_enabled, is_active, created_at')
+      .select('id, name, slug, invite_code_enabled, is_active, status, created_at')
       .order('name')
       .limit(200),
     // This RPC is internally gated to Admins only and returns every user.
@@ -68,7 +67,7 @@ export default async function AdminPage() {
   return (
     <AdminClient
       boards={boards as Board[]}
-      users={users as unknown as { id: string; display_name: string | null; role: GlobalRole; is_active: boolean; created_at: string; board_count: number }[]}
+      users={users as unknown as UserRow[]}
       adminId={user.id}
       postStats={postStatsRes.data as PostStats | null}
     />
