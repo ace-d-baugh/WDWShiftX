@@ -494,7 +494,7 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
             <div>
               <h3 className="font-accent font-bold text-text text-lg">Delete Board?</h3>
               <p className="text-sm text-text/70 mt-1">
-                This permanently deletes the board, all posts, and all comments.
+                This deletes the board, all posts, and all comments.
               </p>
             </div>
           </div>
@@ -509,7 +509,7 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
               to someone else instead.
             </p>
           </div>
-          <p className="text-xs text-text/40 font-medium mb-4">This cannot be undone.</p>
+          <p className="text-xs text-text/40 font-medium mb-4">This takes effect immediately, with no way to undo it from here.</p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setDeleteId(null)}>Cancel</Button>
             <Button variant="danger" size="sm" loading={deleteLoading} onClick={handleDelete} className="gap-1.5">

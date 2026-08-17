@@ -208,14 +208,24 @@ export async function leaveBoard(boardId: string): Promise<{ error?: string }> {
 
 // ── Delete a board (Leader only) ──────────────────────────────────────────────
 
+// Soft delete: the board and everything on it disappear from every member
+// immediately (is_active gates all member-facing reads), but the row survives
+// as status='deleted' rather than being cascaded away — recoverable by
+// restoring it directly in the database, not from any UI. Shared by the
+// Overlord panel, a board Leader's own /boards page, and the profile page's
+// My Boards section, so "Delete" means the same thing everywhere it appears.
 export async function deleteBoard(boardId: string): Promise<{ error?: string }> {
   try {
     const { supabase } = await getActionSession()
-    // RLS enforces leader-only; CASCADE handles user_boards, shifts, requests
-    const { error } = await supabase.from('boards').delete().eq('id', boardId)
+    // RLS enforces leader-only
+    const { error } = await supabase
+      .from('boards')
+      .update({ status: 'deleted', is_active: false })
+      .eq('id', boardId)
     if (error) return { error: error.message }
     revalidatePath('/profile')
     revalidatePath('/wall')
+    revalidatePath('/admin')
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }

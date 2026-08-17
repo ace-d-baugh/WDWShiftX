@@ -805,8 +805,17 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
             )}
           </div>
 
-          {filtersOpen && (
-            <div className="mb-6 p-4 bg-primary-light/40 rounded-lg space-y-3">
+          {/* Grid-rows 0fr/1fr collapse trick (same as DayGroup/LetterSection
+              elsewhere) so opening/closing Filters animates its height
+              instead of the panel just popping in and out. Always mounted —
+              only the wrapper's row height and the inner overflow-hidden
+              clip decide whether it's visible. */}
+          <div className={cn(
+            'grid transition-[grid-template-rows] duration-300 ease-spring',
+            filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          )}>
+          <div className="overflow-hidden">
+            <div className="mb-6 p-4 bg-primary-light rounded-lg space-y-3">
               {/* Bundle chip (Clear Filters now lives on the Filters header) */}
               {bundleFilter && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -982,7 +991,8 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                 </div>
               </div>
             </div>
-          )}
+          </div>
+          </div>
         </div>
       )}
 
