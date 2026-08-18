@@ -826,7 +826,10 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                 </div>
               )}
 
-              {/* Board — its own full-width row, first among the filters */}
+              {/* Board — its own full-width row, first among the filters.
+                  Only meaningful once there's more than one board to
+                  actually filter between. */}
+              {boards.length > 1 && (
               <div ref={boardDropdownRef} className="relative">
                   <button
                     type="button"
@@ -888,11 +891,16 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                     </div>
                   )}
                 </div>
+              )}
 
               {/* My Posts + (offers) Trade/Giveaway share a row with the Days
-                  pills on wide screens; stacks on mobile. */}
+                  pills on wide screens; stacks on mobile. sm:order flips
+                  which column each sits in on wide screens (Days first, so
+                  it lands directly above the Date picker below it) without
+                  touching DOM order, which is what keeps mobile's stack
+                  order as My Posts/Trade/Giveaway then Days. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex items-center justify-around gap-y-2 flex-wrap">
+                <div className="flex items-center justify-around gap-y-2 flex-wrap sm:order-2">
                   <label className="flex items-center gap-2 cursor-pointer min-h-0">
                     <Checkbox
                       checked={myPostsOnly}
@@ -924,7 +932,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                 {/* Days — always-visible pills, ordered from the user's
                     week-start preference. Colored (primary) when included,
                     gray when clicked off. All colored by default. */}
-                <div className="flex flex-wrap justify-around gap-y-1.5" role="group" aria-label="Filter by day of week">
+                <div className="flex flex-wrap justify-around gap-y-1.5 sm:order-1" role="group" aria-label="Filter by day of week">
                   {orderedDayIndices.map(d => (
                     <button
                       key={d}
