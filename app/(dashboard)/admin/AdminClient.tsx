@@ -960,6 +960,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                 groups={boardGroups}
                 onJump={l => jumpToLetter('boards', l)}
                 open={boardsJumpOpen}
+                direction={boardSort}
                 stickyTopClass={RESULTS_TOP}
                 maxHeightClass={RESULTS_MAX_HEIGHT}
               />
@@ -1121,6 +1122,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                 groups={userGroups}
                 onJump={l => jumpToLetter('users', l)}
                 open={usersJumpOpen}
+                direction={userSort}
                 stickyTopClass={RESULTS_TOP}
                 maxHeightClass={RESULTS_MAX_HEIGHT}
               />

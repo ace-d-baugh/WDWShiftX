@@ -111,7 +111,7 @@ export function LetterSection({
 // own children and doesn't affect whether the element sticks, so the
 // transition and the clipping both have to live on this one node.
 export function VerticalJumpBar({
-  letters, groups, onJump, open = true, stickyTopClass = 'top-[168px]', maxHeightClass = 'max-h-[calc(100vh-200px)]',
+  letters, groups, onJump, open = true, direction = 'asc', stickyTopClass = 'top-[168px]', maxHeightClass = 'max-h-[calc(100vh-200px)]',
 }: {
   letters: string[]
   groups: Map<string, unknown[]>
@@ -119,9 +119,15 @@ export function VerticalJumpBar({
   /** Show/hide via the panel toggle — defaults open for callers that don't
    *  offer a toggle at all. */
   open?: boolean
+  /** Matches the results' own current sort direction — 'desc' flips the bar
+   *  top-to-bottom (Z...A, # last) so it reads the same order the letter
+   *  sections are actually stacked in, rather than staying a fixed A-Z
+   *  reference while the results underneath it go the other way. */
+  direction?: 'asc' | 'desc'
   stickyTopClass?: string
   maxHeightClass?: string
 }) {
+  const orderedLetters = direction === 'desc' ? [...letters].reverse() : letters
   return (
     <div
       aria-hidden={!open}
@@ -131,7 +137,7 @@ export function VerticalJumpBar({
         stickyTopClass, maxHeightClass
       )}
     >
-      {letters.map(letter => {
+      {orderedLetters.map(letter => {
         const has = groups.has(letter)
         return (
           <button
