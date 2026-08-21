@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { User, Bell, LayoutDashboard, Trash2, Save, CheckCircle, Settings, Check, Lock } from 'lucide-react'
+import { Bell, LayoutDashboard, Trash2, Save, CheckCircle, Settings, Check, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MyBoardsSection } from '@/components/features/MyBoardsSection'
+import { AvatarUpload } from '@/components/features/AvatarUpload'
+import { Avatar } from '@/components/ui/Avatar'
 import { PushNotificationsToggle } from '@/components/features/PushNotificationsToggle'
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { CalendarSyncSection } from '@/components/features/CalendarSyncSection'
@@ -28,6 +30,7 @@ interface UserProfile {
   role: GlobalRole
   is_active: boolean
   created_at: string
+  avatar_url: string | null
 }
 
 interface ProfileClientProps {
@@ -63,6 +66,7 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
   const searchParams = useSearchParams()
   const isNewOAuthUser = searchParams.get('oauth') === '1'
 
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? null)
   const [displayName, setDisplayName] = useState(user?.display_name ?? '')
   const [phoneNumber, setPhoneNumber] = useState(user?.phone_number ?? '')
   const [notifyEmail, setNotifyEmail] = useState(user?.notify_via_email ?? false)
@@ -240,13 +244,15 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
       {/* Account Info */}
       <div className="card shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-primary-light rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
-          </div>
-          <div>
+          <Avatar avatarUrl={avatarUrl} displayName={displayName} size={40} />
+          <div className="flex-1 min-w-0">
             <h2 className="font-accent font-bold text-text">Account Info</h2>
             <span className="text-xs text-text/50">{user.email}</span>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <AvatarUpload userId={sessionUserId} currentAvatarUrl={avatarUrl} onChange={setAvatarUrl} />
         </div>
 
         {error && (

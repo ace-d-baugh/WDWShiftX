@@ -41,17 +41,17 @@ const SHIFT_SELECT = `
   start_time, end_time, is_trade, is_giveaway, is_overtime_approved,
   details, is_active, expires_at, created_at, bundle_id,
   boards(name),
-  users!user_id(notify_via_email, notify_via_sms, phone_number)
+  users!user_id(notify_via_email, notify_via_sms, phone_number, avatar_url)
 `
 
 const REQUEST_SELECT = `
   id, created_by, user_id, board_id, request_title, preferred_times, requested_date,
   details, is_active, expires_at, created_at,
   boards(name),
-  users!user_id(notify_via_email, notify_via_sms, phone_number)
+  users!user_id(notify_via_email, notify_via_sms, phone_number, avatar_url)
 `
 
-type PosterContact = { notify_via_email: boolean; notify_via_sms: boolean; phone_number: string | null } | null
+type PosterContact = { notify_via_email: boolean; notify_via_sms: boolean; phone_number: string | null; avatar_url: string | null } | null
 
 function posterContactReady(poster: PosterContact): boolean {
   return (poster?.notify_via_email ?? false) ||
@@ -77,6 +77,7 @@ function mapShiftRow(s: Record<string, unknown>) {
     created_at: s.created_at as string,
     bundle_id: (s.bundle_id as string | null) ?? null,
     contactReady: posterContactReady(s.users as PosterContact),
+    avatar_url: (s.users as PosterContact)?.avatar_url ?? null,
   }
 }
 
@@ -95,6 +96,7 @@ function mapRequestRow(r: Record<string, unknown>) {
     expires_at: r.expires_at as string,
     created_at: r.created_at as string,
     contactReady: posterContactReady(r.users as PosterContact),
+    avatar_url: (r.users as PosterContact)?.avatar_url ?? null,
   }
 }
 

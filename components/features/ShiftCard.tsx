@@ -9,7 +9,7 @@ import { parseISO } from 'date-fns'
 import { getSettings } from '@/lib/settings'
 import { slugify } from '@/lib/slug'
 import {
-  Clock, LayoutGrid, User, Flag, Pencil, Trash2, EyeOff,
+  Clock, LayoutGrid, Flag, Pencil, Trash2, EyeOff,
   MoreVertical, MessageSquare, Send, ChevronDown, Layers, Share2,
 } from 'lucide-react'
 import { unpostShift, dissolveBundle } from '@/app/actions/posts'
@@ -23,6 +23,7 @@ import { isSampleId } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
 import { ShareHandler } from '@/components/features/ShareHandler'
 import { buildShiftShareData, wallPostShareUrl } from '@/lib/share/buildWallPostShare'
+import { Avatar } from '@/components/ui/Avatar'
 
 export interface ShiftData {
   id: string
@@ -44,6 +45,7 @@ export interface ShiftData {
   comment_count?: number
   interested_count?: number
   contactReady?: boolean
+  avatar_url?: string | null
 }
 
 interface ShiftCardProps {
@@ -210,7 +212,7 @@ export function ShiftCard({
                   sized to match the title now — makes room for the avatar
                   that'll replace this icon. */}
               <span className="hidden sm:flex text-lg text-text/50 items-center gap-1.5 whitespace-nowrap">
-                <User className={cn('w-4 h-4 shrink-0', typeColor)} />
+                <Avatar avatarUrl={shift.avatar_url} displayName={shift.created_by} size={20} tintClassName={typeColor} />
                 {shift.created_by}
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
@@ -257,7 +259,7 @@ export function ShiftCard({
               sm+ chevron above, which stays functionally equivalent (same
               detailsOpen toggle) regardless of which button is visible. */}
           <div className="sm:hidden flex items-center gap-1.5 text-lg text-text/50">
-            <User className={cn('w-4 h-4 shrink-0', typeColor)} />
+            <Avatar avatarUrl={shift.avatar_url} displayName={shift.created_by} size={20} tintClassName={typeColor} />
             <span className="truncate">{shift.created_by}</span>
             {isOwner && (
               <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none shrink-0">you</span>

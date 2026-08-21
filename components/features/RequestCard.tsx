@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  LayoutGrid, User, Flag, Pencil, Trash2, CheckCircle,
+  LayoutGrid, Flag, Pencil, Trash2, CheckCircle,
   MoreVertical, MessageSquare, Send, Clock, ChevronDown,
   HeartHandshake as Handshake, Share2,
 } from 'lucide-react'
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import type { PreferredTime } from '@/lib/database.types'
 import { ShareHandler } from '@/components/features/ShareHandler'
 import { buildRequestShareData, wallPostShareUrl } from '@/lib/share/buildWallPostShare'
+import { Avatar } from '@/components/ui/Avatar'
 
 const timeLabels: Record<PreferredTime, string> = {
   morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', late: 'Late Night',
@@ -48,6 +49,7 @@ export interface RequestData {
   comment_count?: number
   interested_count?: number
   contactReady?: boolean
+  avatar_url?: string | null
 }
 
 interface RequestCardProps {
@@ -119,7 +121,7 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
                   sized to match the title now — makes room for the avatar
                   that'll replace this icon. */}
               <span className="hidden sm:flex text-lg text-text/50 items-center gap-1.5 whitespace-nowrap">
-                <User className="w-4 h-4 shrink-0 text-accent" />
+                <Avatar avatarUrl={request.avatar_url} displayName={request.created_by} size={20} tintClassName="text-accent" />
                 {request.created_by}
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
@@ -159,7 +161,7 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
             match the title — makes room for the avatar that'll replace this
             icon. */}
         <div className="sm:hidden flex items-center gap-1.5 text-lg text-text/50">
-          <User className="w-4 h-4 shrink-0 text-accent" />
+          <Avatar avatarUrl={request.avatar_url} displayName={request.created_by} size={20} tintClassName="text-accent" />
           <span className="truncate">{request.created_by}</span>
           {isOwner && (
             <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none shrink-0">you</span>

@@ -23,6 +23,7 @@ export interface Database {
           display_name: string | null
           first_name: string | null
           last_name: string | null
+          avatar_url: string | null
           email: string
           email_verified: boolean
           phone_number: string | null
@@ -44,6 +45,7 @@ export interface Database {
           display_name?: string | null
           first_name?: string | null
           last_name?: string | null
+          avatar_url?: string | null
           email: string
           email_verified?: boolean
           phone_number?: string | null
@@ -65,6 +67,7 @@ export interface Database {
           display_name?: string
           first_name?: string | null
           last_name?: string | null
+          avatar_url?: string | null
           email?: string
           email_verified?: boolean
           phone_number?: string | null
