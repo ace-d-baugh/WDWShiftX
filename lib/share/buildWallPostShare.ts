@@ -24,10 +24,22 @@ export function buildShiftShareData(
   const end = formatInTimeZone(parseISO(shift.end_time), tz, timePat)
   const dateLabel = formatInTimeZone(parseISO(shift.start_time), tz, 'EEE, MMM d')
 
+  // The image's left-border accent tracks the same type this badge reflects
+  // (not the separate OT badge) — falls back to gray for the edge case of a
+  // shift with neither flag set (shouldn't reach the Wall, but the accent
+  // still needs a value).
   const badges: ShareCardData['badges'] = []
-  if (shift.is_trade && shift.is_giveaway) badges.push({ label: 'Give/Trade', bg: '#EDE9FE', color: '#6D28D9' })
-  else if (shift.is_trade) badges.push({ label: 'Trade', bg: '#DBEAFE', color: '#1D4ED8' })
-  else if (shift.is_giveaway) badges.push({ label: 'Giveaway', bg: '#DCFCE7', color: '#15803D' })
+  let accentColor = '#9CA3AF'
+  if (shift.is_trade && shift.is_giveaway) {
+    badges.push({ label: 'Give/Trade', bg: '#EDE9FE', color: '#6D28D9' })
+    accentColor = '#6D28D9'
+  } else if (shift.is_trade) {
+    badges.push({ label: 'Trade', bg: '#DBEAFE', color: '#1D4ED8' })
+    accentColor = '#1D4ED8'
+  } else if (shift.is_giveaway) {
+    badges.push({ label: 'Giveaway', bg: '#DCFCE7', color: '#15803D' })
+    accentColor = '#15803D'
+  }
   if (shift.is_overtime_approved) badges.push({ label: 'OT', bg: '#FEF3C7', color: '#92400E' })
 
   return {
@@ -38,6 +50,8 @@ export function buildShiftShareData(
     timeLabel: `${start} → ${end}`,
     details: shift.details,
     badges,
+    posterName: shift.created_by,
+    accentColor,
   }
 }
 
@@ -56,6 +70,8 @@ export function buildRequestShareData(request: RequestData): ShareCardData {
     timeLabel,
     details: request.details,
     badges: [{ label: 'Request', bg: '#FFEDD5', color: '#9A3412' }],
+    posterName: request.created_by,
+    accentColor: '#9A3412',
   }
 }
 

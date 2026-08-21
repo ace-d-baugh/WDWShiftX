@@ -14,6 +14,12 @@ export interface ShareCardData {
   timeLabel: string
   details: string | null
   badges: ShareBadge[]
+  /** Poster's display name, shown under the "Posted to" line. */
+  posterName: string
+  /** Left-border accent — the same trade/giveaway/give-trade/request color
+   *  language as the live card's border-l-4, as a hex value (inline styles
+   *  can't reach Tailwind's theme classes). */
+  accentColor: string
 }
 
 /**
@@ -29,66 +35,68 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(({ 
       ref={ref}
       style={{
         width: 600,
-        padding: 32,
+        padding: '20px 24px',
         background: '#ffffff',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         color: '#1a1a1a',
         boxSizing: 'border-box',
+        borderLeft: `6px solid ${data.accentColor}`,
       }}
     >
-      <img
-        src="/logos/WDWShiftX-Full-Logo-Gradient.png"
-        alt="WDWShiftX"
-        style={{ height: 28, marginBottom: 24, display: 'block' }}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <img
+          src="/logos/WDWShiftX-Full-Logo-Gradient.png"
+          alt="WDWShiftX"
+          style={{ height: 24, display: 'block' }}
+        />
+        {data.badges.length > 0 && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {data.badges.map(b => (
+              <span
+                key={b.label}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '3px 9px',
+                  borderRadius: 999,
+                  background: b.bg,
+                  color: b.color,
+                }}
+              >
+                {b.label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {data.badges.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {data.badges.map(b => (
-            <span
-              key={b.label}
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: b.bg,
-                color: b.color,
-              }}
-            >
-              {b.label}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 12px', lineHeight: 1.25 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 6px', lineHeight: 1.25 }}>
         {data.title}
       </h1>
 
-      <div style={{ fontSize: 15, color: '#555', marginBottom: 4 }}>{data.boardName}</div>
-      <div style={{ fontSize: 15, color: '#555', marginBottom: 16 }}>
-        {data.dateLabel} • {data.timeLabel}
+      <div style={{ fontSize: 14, color: '#555', marginBottom: data.details ? 8 : 14 }}>
+        {data.boardName} • {data.dateLabel} • {data.timeLabel}
       </div>
 
       {data.details && (
         <div
           style={{
-            fontSize: 14,
+            fontSize: 13,
             fontStyle: 'italic',
             color: '#444',
             background: '#f5f5f5',
-            borderRadius: 8,
-            padding: '12px 16px',
-            marginBottom: 16,
+            borderRadius: 6,
+            padding: '8px 12px',
+            marginBottom: 12,
           }}
         >
           &ldquo;{data.details}&rdquo;
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: '#999', borderTop: '1px solid #eee', paddingTop: 16, marginTop: 8 }}>
-        Found on WDWShiftX — wdwshiftx.com
+      <div style={{ textAlign: 'right', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 2 }}>
+        <div style={{ fontSize: 12, color: '#999' }}>Posted to WDWShiftX.com</div>
+        <div style={{ fontSize: 12, color: '#777', fontWeight: 600 }}>{data.posterName}</div>
       </div>
     </div>
   )

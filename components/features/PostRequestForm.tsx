@@ -222,17 +222,8 @@ export function PostRequestForm({ userId, displayName, onSuccess, requestId, ini
             )}
 
             <div className="space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-text mb-1">Title <span className="text-warning">*</span></label>
-                <input name="request_title" type="text" value={f.request_title} onChange={onChange(i)}
-                  maxLength={35}
-                  className={`input placeholder:text-text/30 ${errs.request_title ? 'border-warning' : ''}`}
-                  placeholder="Shift Wanted" />
-                {errs.request_title && <p className="mt-1 text-xs text-warning">{errs.request_title}</p>}
-              </div>
-
-              {/* Board — hidden when user has only one board (auto-selected) */}
+              {/* Board — hidden when user has only one board (auto-selected).
+                  First row, matching PostShiftForm's field order. */}
               {boards.length > 1 && (
                 <div>
                   <label className="block text-sm font-medium text-text mb-1">Board <span className="text-warning">*</span></label>
@@ -244,6 +235,16 @@ export function PostRequestForm({ userId, displayName, onSuccess, requestId, ini
                   {errs.board_id && <p className="mt-1 text-xs text-warning">{errs.board_id}</p>}
                 </div>
               )}
+
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">Title <span className="text-warning">*</span></label>
+                <input name="request_title" type="text" value={f.request_title} onChange={onChange(i)}
+                  maxLength={35}
+                  className={`input placeholder:text-text/30 ${errs.request_title ? 'border-warning' : ''}`}
+                  placeholder="Shift Wanted" />
+                {errs.request_title && <p className="mt-1 text-xs text-warning">{errs.request_title}</p>}
+              </div>
 
               {/* Date */}
               <div>
