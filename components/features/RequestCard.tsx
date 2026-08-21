@@ -136,7 +136,7 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
 
         {/* Row 2: Preferred times + chevron toggle (chevron moves to the
             mobile name row below on small screens — stays here on sm+) */}
-        <div className="flex items-center gap-1.5 mb-3">
+        <div className="flex items-center gap-1.5 mb-0 sm:mb-3">
           <Clock className="w-3.5 h-3.5 text-accent shrink-0" />
           <div className="flex flex-wrap gap-1.5">
             {sortedTimes.map(t => (
@@ -158,7 +158,7 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
         {/* Mobile-only: poster name + chevron, below the times row. Sized to
             match the title — makes room for the avatar that'll replace this
             icon. */}
-        <div className="sm:hidden flex items-center gap-1.5 mb-3 text-lg text-text/50">
+        <div className="sm:hidden flex items-center gap-1.5 text-lg text-text/50">
           <User className="w-4 h-4 shrink-0 text-accent" />
           <span className="truncate">{request.created_by}</span>
           {isOwner && (

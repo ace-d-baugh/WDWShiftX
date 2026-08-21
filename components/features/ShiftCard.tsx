@@ -231,7 +231,7 @@ export function ShiftCard({
         <div data-tour="card-details-area">
           {/* Row 2: Times + chevron toggle (chevron moves to the mobile name
               row below on small screens — stays here on sm+) */}
-          <div className="flex items-center gap-1.5 text-base font-medium text-text/80 mb-3">
+          <div className="flex items-center gap-1.5 text-base font-medium text-text/80 mb-0 sm:mb-3">
             <Clock className={cn('w-3.5 h-3.5 shrink-0', typeColor)} />
             {startTime}
             <span className="text-text/40 mx-0.5">→</span>
@@ -256,7 +256,7 @@ export function ShiftCard({
               replace this icon. Not tour-instrumented; the tour targets the
               sm+ chevron above, which stays functionally equivalent (same
               detailsOpen toggle) regardless of which button is visible. */}
-          <div className="sm:hidden flex items-center gap-1.5 mb-3 text-lg text-text/50">
+          <div className="sm:hidden flex items-center gap-1.5 text-lg text-text/50">
             <User className={cn('w-4 h-4 shrink-0', typeColor)} />
             <span className="truncate">{shift.created_by}</span>
             {isOwner && (

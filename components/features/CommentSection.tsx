@@ -342,7 +342,7 @@ export function CommentSection({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 pt-3 mt-3 border-t border-border">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 pt-3 mt-1.5 border-t border-border">
         <div data-tour="card-actions" className="flex items-center gap-2">
           {leadingAction}
           {/* Requests have no separate claim system, so this doubles as their
