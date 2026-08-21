@@ -33,7 +33,7 @@ export default async function BoardsPage() {
     const { data: memberRows } = boardIds.length
       ? await supabase
           .from('user_boards')
-          .select('id, user_id, board_id, role, users!user_id(display_name), approver:users!approved_by_user_id(display_name)')
+          .select('id, user_id, board_id, role, users!user_id(display_name, avatar_url), approver:users!approved_by_user_id(display_name)')
           .in('board_id', boardIds).eq('is_approved', true).eq('is_hidden', false).order('role', { ascending: true })
       : { data: [] }
 
@@ -60,7 +60,7 @@ export default async function BoardsPage() {
     const { data: memberRows } = boardIds.length
       ? await supabase
           .from('user_boards')
-          .select('id, user_id, board_id, role, users!user_id(display_name), approver:users!approved_by_user_id(display_name)')
+          .select('id, user_id, board_id, role, users!user_id(display_name, avatar_url), approver:users!approved_by_user_id(display_name)')
           .in('board_id', boardIds).eq('is_approved', true).eq('is_hidden', false).order('role', { ascending: true })
       : { data: [] }
 

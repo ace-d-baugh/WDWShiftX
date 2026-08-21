@@ -11,6 +11,7 @@ export function groupMembersByBoard(rows: unknown[] | null): Map<string, BoardMe
       userBoardId: r.id as string,
       userId:      r.user_id as string,
       displayName: (r.users as { display_name: string | null } | null)?.display_name ?? null,
+      avatarUrl:   (r.users as { avatar_url: string | null } | null)?.avatar_url ?? null,
       role:        r.role as BoardRole,
       approvedBy:  (r.approver as { display_name: string | null } | null)?.display_name ?? null,
     })

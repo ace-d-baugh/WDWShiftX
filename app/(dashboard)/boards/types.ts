@@ -4,6 +4,7 @@ export interface BoardMember {
   userBoardId: string
   userId: string
   displayName: string | null
+  avatarUrl: string | null
   role: BoardRole
   approvedBy: string | null
 }

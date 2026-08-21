@@ -830,6 +830,7 @@ export interface Database {
         Args: Record<string, never>
         Returns: {
           id: string; display_name: string | null; first_name: string | null; last_name: string | null
+          avatar_url: string | null
           role: GlobalRole; is_active: boolean; created_at: string; membership: Membership
         }[]
       }

@@ -116,7 +116,7 @@ export default async function BoardSlugPage({ params, searchParams }: Props) {
   // Member or admin: show board management
   const { data: memberRows } = await supabase
     .from('user_boards')
-    .select('id, user_id, board_id, role, users!user_id(display_name), approver:users!approved_by_user_id(display_name)')
+    .select('id, user_id, board_id, role, users!user_id(display_name, avatar_url), approver:users!approved_by_user_id(display_name)')
     .eq('board_id', board.id)
     .eq('is_approved', true)
     .eq('is_hidden', false)

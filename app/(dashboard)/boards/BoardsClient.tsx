@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { FlagModal } from '@/components/features/FlagModal'
 import { InviteModal } from '@/components/features/InviteModal'
+import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/lib/utils'
 import {
   ALPHA_GROUPING_THRESHOLD, compareStrings, groupByLetter,
@@ -355,6 +356,7 @@ export function BoardsClient({ managedBoards: initial, currentUserId, isAdmin, b
               </span>
             )
           })()}
+          <Avatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={20} />
           <span className="font-medium text-text truncate">
             {member.displayName ?? <span className="italic text-text/40">No name</span>}
           </span>
