@@ -1267,10 +1267,8 @@ function DayGroup({
         isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
       )}>
         <div className="overflow-hidden">
-          <div className="max-h-[68rem] overflow-y-auto scrollbar-thin">
-            <div className="p-4 space-y-4">
-              {children}
-            </div>
+          <div className="p-4 space-y-4">
+            {children}
           </div>
         </div>
       </div>

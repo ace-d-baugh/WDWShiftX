@@ -59,6 +59,10 @@ export function Avatar({
   }
 
   const initials = initialsFrom(displayName)
+  // Fit to the two sizes actually in use — Profile's 40px circle wants ~28px
+  // text, the Wall's 20px circle wants ~12px — rather than a flat proportion
+  // of size, which undersized the small spots and left the large one small too.
+  const initialsFontSize = Math.round(Math.max(size * 0.8 - 4, 10))
   return (
     <span
       style={dimension}
@@ -69,7 +73,14 @@ export function Avatar({
       )}
     >
       {initials
-        ? <span style={{ fontSize: size * 0.4 }}>{initials}</span>
+        ? (
+          // lineHeight: 1 — text's default line box is taller than the glyph
+          // itself, which throws off the parent's flex-centering and makes
+          // initials sit visibly high in the circle.
+          <span className="flex items-center justify-center" style={{ fontSize: initialsFontSize, lineHeight: 1 }}>
+            {initials}
+          </span>
+        )
         : <User size={size * 0.55} />}
     </span>
   )
