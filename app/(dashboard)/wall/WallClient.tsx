@@ -133,11 +133,17 @@ interface WallClientProps {
   hasBoards: boolean
   initialTab?: Tab
   initialDate?: string
+  /** From a shared post link (?post=<id>) — jumps to and highlights that
+   *  card once it's loaded. Silently does nothing if it's not found (post
+   *  expired/deleted, or the viewer isn't on that board). */
+  initialPostId?: string
 }
 
 type Tab = 'offers' | 'requests'
 
-export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', initialDate = '' }: WallClientProps) {
+export function WallClient({
+  userId, boards, hasBoards, initialTab = 'offers', initialDate = '', initialPostId = '',
+}: WallClientProps) {
   const supabase = useMemo(() => createClient(), [])
   const settings = getSettings()
   const [tab, setTab] = useState<Tab>(initialTab)
@@ -184,6 +190,12 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
 
   // Party Legend — one modal shared by every MNSSHP/HHN/MVMCP badge on the page
   const [partyLegendOpen, setPartyLegendOpen] = useState(false)
+
+  // Deep link from a shared post (?post=<id>) — resolved once loading
+  // finishes, then cleared; highlightPostId drives the scroll+highlight and
+  // clears itself a few seconds later.
+  const [pendingPostId, setPendingPostId] = useState<string | null>(initialPostId || null)
+  const [highlightPostId, setHighlightPostId] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -233,8 +245,16 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     }))
   }, [supabase])
 
+  // loadShifts/loadRequests run concurrently and each flip the shared
+  // `loading` flag independently — fine for the skeleton (either one
+  // finishing is enough to show something), but the deep-link resolution
+  // effect below needs to know BOTH have settled at least once before it can
+  // safely conclude a post id isn't there. These track that separately.
+  const [shiftsReady, setShiftsReady] = useState(false)
+  const [requestsReady, setRequestsReady] = useState(false)
+
   const loadShifts = useCallback(async (silent = false) => {
-    if (!hasBoards) { if (!silent) setLoading(false); return }
+    if (!hasBoards) { if (!silent) setLoading(false); setShiftsReady(true); return }
     if (!silent) setLoading(true)
     try {
       const { data, error } = await supabase
@@ -251,11 +271,12 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       setShifts(await attachCommentCounts(mapped, 'shift'))
     } finally {
       if (!silent) setLoading(false)
+      setShiftsReady(true)
     }
   }, [hasBoards, attachCommentCounts, supabase])
 
   const loadRequests = useCallback(async (silent = false) => {
-    if (!hasBoards) { if (!silent) setLoading(false); return }
+    if (!hasBoards) { if (!silent) setLoading(false); setRequestsReady(true); return }
     if (!silent) setLoading(true)
     try {
       const { data, error } = await supabase
@@ -271,6 +292,7 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
       setRequests(await attachCommentCounts(mapped, 'request'))
     } finally {
       if (!silent) setLoading(false)
+      setRequestsReady(true)
     }
   }, [hasBoards, attachCommentCounts, supabase])
 
@@ -682,6 +704,52 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
     setSearch('')
   }
 
+  // Resolve a shared-post deep link once shifts/requests have loaded: figure
+  // out which tab/day it's in, clear filters so it can't be hidden by them,
+  // expand its day-group if collapsed, and hand off to the scroll effect
+  // below. If the id isn't in either list (expired, deleted, or the viewer
+  // isn't on that board), this is a silent no-op.
+  useEffect(() => {
+    if (!pendingPostId || !shiftsReady || !requestsReady) return
+    const shift = shifts.find(s => s.id === pendingPostId)
+    const request = shift ? undefined : requests.find(r => r.id === pendingPostId)
+    if (!shift && !request) { setPendingPostId(null); return }
+
+    clearFilters()
+    const targetTab: Tab = shift ? 'offers' : 'requests'
+    setTab(targetTab)
+
+    const dayKey = shift
+      ? formatInTimeZone(parseISO(shift.start_time), ET, 'yyyy-MM-dd')
+      : request!.requested_date
+    const collapseKey = `${targetTab}|${dayKey}`
+    setCollapsedKeys(prev => {
+      if (!prev.has(collapseKey)) return prev
+      const next = new Set(prev)
+      next.delete(collapseKey)
+      return next
+    })
+
+    setHighlightPostId(pendingPostId)
+    setPendingPostId(null)
+    // clearFilters/setTab/setCollapsedKeys are stable-enough setters; re-running
+    // this on every render would fight the tab/filter state it just set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPostId, shiftsReady, requestsReady, shifts, requests])
+
+  // Scroll to and briefly highlight the resolved post. The delay lets the
+  // day-group's grid-rows expand transition (300ms) start before we measure
+  // its position; the highlight clears itself after a few seconds.
+  useEffect(() => {
+    if (!highlightPostId) return
+    const scrollTimer = setTimeout(() => {
+      document.querySelector(`[data-post-id="${highlightPostId}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 350)
+    const clearTimer = setTimeout(() => setHighlightPostId(null), 3000)
+    return () => { clearTimeout(scrollTimer); clearTimeout(clearTimer) }
+  }, [highlightPostId])
+
   const currentPostCount = tab === 'offers' ? displayShifts.length : requests.length
 
   const tabLabel = (t: Tab) => {
@@ -1040,7 +1108,11 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                   {group.items.map((shift, ci) => (
                     <div
                       key={shift.id}
-                      className="animate-card-in"
+                      data-post-id={shift.id}
+                      className={cn(
+                        'animate-card-in rounded-xl transition-shadow duration-300',
+                        shift.id === highlightPostId && 'ring-2 ring-primary'
+                      )}
                       style={{ animationDelay: `${Math.min(gi * 60 + ci * 45, 480)}ms` }}
                     >
                       <ShiftCard
@@ -1102,7 +1174,11 @@ export function WallClient({ userId, boards, hasBoards, initialTab = 'offers', i
                   {group.items.map((request, ci) => (
                     <div
                       key={request.id}
-                      className="animate-card-in"
+                      data-post-id={request.id}
+                      className={cn(
+                        'animate-card-in rounded-xl transition-shadow duration-300',
+                        request.id === highlightPostId && 'ring-2 ring-primary'
+                      )}
                       style={{ animationDelay: `${Math.min(gi * 60 + ci * 45, 480)}ms` }}
                     >
                       <RequestCard

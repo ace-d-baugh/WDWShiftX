@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   LayoutGrid, User, Flag, Pencil, Trash2, CheckCircle,
   MoreVertical, MessageSquare, Send, Clock, ChevronDown,
-  HeartHandshake as Handshake,
+  HeartHandshake as Handshake, Share2,
 } from 'lucide-react'
 import { FlagModal } from '@/components/features/FlagModal'
 import { slugify } from '@/lib/slug'
@@ -16,6 +16,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { fulfillRequest } from '@/app/actions/posts'
 import { cn } from '@/lib/utils'
 import type { PreferredTime } from '@/lib/database.types'
+import { ShareHandler } from '@/components/features/ShareHandler'
+import { buildRequestShareData, wallPostShareUrl } from '@/lib/share/buildWallPostShare'
 
 const timeLabels: Record<PreferredTime, string> = {
   morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', late: 'Late Night',
@@ -71,8 +73,10 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
   const [openCommentsTick, setOpenCommentsTick] = useState(0)
   const [interestTick, setInterestTick] = useState(0)
   const [messageTick, setMessageTick] = useState(0)
+  const [shareTick, setShareTick] = useState(0)
 
   const isOwner = currentUserId && request.user_id === currentUserId
+  const shareData = useMemo(() => buildRequestShareData(request), [request])
 
   const TIME_ORDER: PreferredTime[] = ['morning', 'afternoon', 'evening', 'late']
   const sortedTimes = [...request.preferred_times].sort(
@@ -224,6 +228,9 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
             {isOwner && (
               <>
                 <div className="my-1 border-t border-border" />
+                <button className={menuItemCls} onClick={() => { setShareTick(t => t + 1); setMenuPos(null) }}>
+                  <Share2 className="w-3.5 h-3.5 shrink-0" /> Share
+                </button>
                 <button className={menuItemCls} onClick={() => { router.push(`/wall/edit-request/${request.id}`); setMenuPos(null) }}>
                   <Pencil className="w-3.5 h-3.5 shrink-0" /> Edit
                 </button>
@@ -247,6 +254,10 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
         targetId={request.id}
         boardId={request.board_id ?? undefined}
       />
+
+      {/* Off-screen capture node only needs to exist for the owner — Share
+          isn't offered to anyone else, so there's nothing to render it for. */}
+      {isOwner && <ShareHandler data={shareData} url={wallPostShareUrl(request.id)} tick={shareTick} />}
 
       <ConfirmDialog
         open={confirmRemove}
