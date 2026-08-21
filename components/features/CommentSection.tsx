@@ -4,12 +4,13 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
-  MessageSquare, Star, ChevronDown, User, Edit, Trash2, Flag, X, Send,
+  MessageSquare, Star, ChevronDown, Edit, Trash2, Flag, X, Send,
   HeartHandshake as Handshake, Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
+import { Avatar } from '@/components/ui/Avatar'
 import { CountPill } from '@/components/ui/CountPill'
 import { FlagModal } from '@/components/features/FlagModal'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +26,7 @@ interface CommentData {
   id: string
   user_id: string | null
   display_name: string
+  avatar_url: string | null
   body: string
   is_interested: boolean
   created_at: string
@@ -113,7 +115,7 @@ export function CommentSection({
     try {
       const { data, error } = await supabase
         .from('comments')
-        .select('id, user_id, body, is_interested, created_at, updated_at, users(display_name)')
+        .select('id, user_id, body, is_interested, created_at, updated_at, users(display_name, avatar_url)')
         .eq('post_type', postType)
         .eq('post_id', postId)
         .eq('is_active', true)
@@ -123,6 +125,7 @@ export function CommentSection({
         id: c.id as string,
         user_id: c.user_id as string | null,
         display_name: (c.users as { display_name: string } | null)?.display_name ?? 'Former User',
+        avatar_url: (c.users as { avatar_url: string | null } | null)?.avatar_url ?? null,
         body: c.body as string,
         is_interested: c.is_interested as boolean,
         created_at: c.created_at as string,
@@ -433,6 +436,7 @@ export function CommentSection({
             <ul className="space-y-1.5">
               {interestedUsers.map(u => (
                 <li key={u.user_id} className="flex items-center gap-2 text-sm text-text">
+                  <Avatar avatarUrl={u.avatar_url} displayName={u.display_name} size={20} />
                   <Star className="w-3.5 h-3.5 text-secondary-accent shrink-0" fill="#ffea80" strokeWidth={0} />
                   {u.display_name}
                   <span className="text-xs text-text/40">{formatDistanceToNow(parseISO(u.created_at), { addSuffix: true })}</span>
@@ -510,7 +514,7 @@ export function CommentSection({
                   <li key={c.id} className="text-sm border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 text-xs text-text/50 flex-wrap">
-                        <User className="w-3 h-3" />
+                        <Avatar avatarUrl={c.avatar_url} displayName={c.display_name} size={20} />
                         <span className="font-medium text-text">{c.display_name}</span>
                         {c.is_interested && (
                           <span className="inline-flex items-center gap-0.5 text-primary">

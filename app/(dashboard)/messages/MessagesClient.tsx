@@ -4,10 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow, parseISO } from 'date-fns'
-import { ChevronDown, LayoutGrid, MessageSquare, Search, SquarePen, Trash2, User } from 'lucide-react'
+import { ChevronDown, LayoutGrid, MessageSquare, Search, SquarePen, Trash2 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Avatar } from '@/components/ui/Avatar'
 import { createClient } from '@/lib/supabase/client'
 import { startConversation, deleteConversation } from '@/app/actions/messages'
 import { isSampleId, sampleConversations, useSampleMode } from '@/lib/tour/sample-data'
@@ -17,6 +18,7 @@ export interface ConversationSummary {
   conversation_id: string
   other_user_id: string | null
   other_display_name: string | null
+  other_avatar_url: string | null
   last_message_body: string | null
   last_message_at: string | null
   last_message_sender_id: string | null
@@ -26,6 +28,7 @@ export interface ConversationSummary {
 interface BoardMate {
   user_id: string
   display_name: string | null
+  avatar_url: string | null
   board_ids: string[]
 }
 
@@ -52,9 +55,7 @@ function MateRow({ member, startingWith, onStart }: {
         disabled={startingWith !== null}
         className="flex items-center gap-3 w-full text-left px-2 py-2.5 rounded-md hover:bg-primary-light/50 transition-colors disabled:opacity-60 min-h-0"
       >
-        <span className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-          <User className="w-4 h-4 text-primary" />
-        </span>
+        <Avatar avatarUrl={member.avatar_url} displayName={member.display_name} size={32} clickable={false} />
         <span className="text-sm font-medium text-text flex-1 truncate">
           {member.display_name ?? 'Unnamed User'}
         </span>
@@ -262,9 +263,7 @@ export function MessagesClient({ currentUserId, initialConversations }: Messages
                   href={`/messages/${c.conversation_id}`}
                   className="flex items-center gap-3 pl-4 pr-12 py-3.5 hover:bg-primary-light/40 transition-colors"
                 >
-                  <span className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-                    <User className="w-5 h-5 text-primary" />
-                  </span>
+                  <Avatar avatarUrl={c.other_avatar_url} displayName={name} size={36} clickable={false} />
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center justify-between gap-2">
                       <span className={cn('text-sm truncate', unread ? 'font-bold text-text' : 'font-medium text-text/90')}>

@@ -2,14 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { MessageSquare, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { Avatar } from '@/components/ui/Avatar'
 
 const TOAST_MS = 5000
 
 interface ToastData {
   conversationId: string
   senderName: string
+  senderAvatarUrl: string | null
   preview: string
 }
 
@@ -91,13 +93,14 @@ export function MessageToast({ currentUserId }: { currentUserId: string }) {
 
           const { data: sender } = await supabase
             .from('users')
-            .select('display_name')
+            .select('display_name, avatar_url')
             .eq('id', msg.sender_id)
             .single()
 
           setToast({
             conversationId: msg.conversation_id,
             senderName: sender?.display_name ?? 'Someone',
+            senderAvatarUrl: sender?.avatar_url ?? null,
             preview: msg.body.length > 80 ? `${msg.body.slice(0, 77)}…` : msg.body,
           })
           if (timerRef.current) clearTimeout(timerRef.current)
@@ -136,9 +139,7 @@ export function MessageToast({ currentUserId }: { currentUserId: string }) {
           onClick={() => { dismiss(); router.push(`/messages/${toast.conversationId}`) }}
           className="flex items-center gap-3 flex-1 min-w-0 text-left min-h-0"
         >
-          <span className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-            <MessageSquare className="w-4 h-4 text-primary" />
-          </span>
+          <Avatar avatarUrl={toast.senderAvatarUrl} displayName={toast.senderName} size={36} clickable={false} />
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-semibold text-text truncate">
               New message from {toast.senderName}

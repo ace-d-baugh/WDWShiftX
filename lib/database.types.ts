@@ -847,6 +847,7 @@ export interface Database {
           conversation_id: string
           other_user_id: string | null
           other_display_name: string | null
+          other_avatar_url: string | null
           last_message_body: string | null
           last_message_at: string | null
           last_message_sender_id: string | null
@@ -856,7 +857,7 @@ export interface Database {
       get_unread_message_count: { Args: Record<string, never>; Returns: number }
       get_messageable_users: {
         Args: Record<string, never>
-        Returns: { user_id: string; display_name: string | null; board_ids: string[] }[]
+        Returns: { user_id: string; display_name: string | null; avatar_url: string | null; board_ids: string[] }[]
       }
       is_conversation_participant: { Args: { p_conversation_id: string }; Returns: boolean }
       shares_board_with: { Args: { p_other_user_id: string }; Returns: boolean }

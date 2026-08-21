@@ -187,6 +187,7 @@ interface SampleComment {
   id: string
   user_id: string | null
   display_name: string
+  avatar_url: string | null
   body: string
   is_interested: boolean
   created_at: string
@@ -201,6 +202,7 @@ export function sampleComments(postId: string): SampleComment[] {
       id: 'sample-comment-1',
       user_id: SAMPLE_OTHER_ID,
       display_name: SAMPLE_OTHER_NAME,
+      avatar_url: null,
       body: 'Sample comment',
       is_interested: false,
       created_at: hoursAgo(2),
@@ -278,6 +280,7 @@ interface SampleConversation {
   conversation_id: string
   other_user_id: string | null
   other_display_name: string | null
+  other_avatar_url: string | null
   last_message_body: string | null
   last_message_at: string | null
   last_message_sender_id: string | null
@@ -295,6 +298,7 @@ export function sampleConversations(currentUserId: string): SampleConversation[]
       conversation_id: 'sample-conversation-1',
       other_user_id: SAMPLE_POSTER_ID,
       other_display_name: SAMPLE_POSTER_NAME,
+      other_avatar_url: null,
       last_message_body: "I'll take the Sample Morning Shift if nobody else has grabbed it.",
       last_message_at: hoursAgo(0.4),
       last_message_sender_id: SAMPLE_POSTER_ID,
@@ -304,6 +308,7 @@ export function sampleConversations(currentUserId: string): SampleConversation[]
       conversation_id: 'sample-conversation-2',
       other_user_id: SAMPLE_OTHER_ID,
       other_display_name: SAMPLE_OTHER_NAME,
+      other_avatar_url: null,
       last_message_body: 'Thanks for covering Saturday — I owe you one.',
       last_message_at: hoursAgo(5),
       last_message_sender_id: currentUserId,

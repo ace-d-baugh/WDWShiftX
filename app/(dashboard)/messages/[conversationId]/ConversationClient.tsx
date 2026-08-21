@@ -6,10 +6,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatInTimeZone } from 'date-fns-tz'
 import { parseISO } from 'date-fns'
-import { ArrowLeft, Eye, EyeOff, Flag, MoreVertical, Send, Star, Trash2, User } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Flag, MoreVertical, Send, Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { FlagModal } from '@/components/features/FlagModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Avatar } from '@/components/ui/Avatar'
 import { createClient } from '@/lib/supabase/client'
 import { getSettings } from '@/lib/settings'
 import { sendMessage, markConversationRead, reactToMessage, deleteConversation } from '@/app/actions/messages'
@@ -65,6 +66,7 @@ interface ConversationClientProps {
   currentUserId: string
   otherUserId: string | null
   otherName: string
+  otherAvatarUrl: string | null
   otherLastReadAt: string | null
   initialMessages: Message[]
 }
@@ -74,6 +76,7 @@ export function ConversationClient({
   currentUserId,
   otherUserId,
   otherName,
+  otherAvatarUrl,
   otherLastReadAt,
   initialMessages,
 }: ConversationClientProps) {
@@ -337,9 +340,7 @@ export function ConversationClient({
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <span className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-          <User className="w-4 h-4 text-primary" />
-        </span>
+        <Avatar avatarUrl={otherAvatarUrl} displayName={otherName} size={32} />
         <h1 className="font-accent text-lg font-bold text-text truncate">{otherName}</h1>
 
         {/* ⋮ menu: flag the other user / delete this chat */}

@@ -22,7 +22,7 @@ export default async function ConversationPage({
   const [{ data: participants }, { data: messages }] = await Promise.all([
     supabase
       .from('conversation_participants')
-      .select('user_id, last_read_at, hidden_at, users(display_name)')
+      .select('user_id, last_read_at, hidden_at, users(display_name, avatar_url)')
       .eq('conversation_id', conversationId),
     supabase
       .from('messages')
@@ -35,8 +35,9 @@ export default async function ConversationPage({
   if (!me) redirect('/messages')
 
   const other = participants!.find(p => p.user_id !== user.id)
-  const otherName =
-    (other?.users as unknown as { display_name: string | null } | null)?.display_name ?? 'Former User'
+  const otherUser = other?.users as unknown as { display_name: string | null; avatar_url: string | null } | null
+  const otherName = otherUser?.display_name ?? 'Former User'
+  const otherAvatarUrl = otherUser?.avatar_url ?? null
 
   // A deleted (hidden) chat clears the user's view of the history — only
   // messages newer than their hidden_at are shown.
@@ -51,6 +52,7 @@ export default async function ConversationPage({
       currentUserId={user.id}
       otherUserId={other?.user_id ?? null}
       otherName={otherName}
+      otherAvatarUrl={otherAvatarUrl}
       otherLastReadAt={other?.last_read_at ?? null}
       initialMessages={visibleMessages}
     />
