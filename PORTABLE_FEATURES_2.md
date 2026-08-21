@@ -1,0 +1,195 @@
+# WDWShiftX Changes Since Last Sync (2026-07-27 → 2026-08-17)
+
+This covers every commit on WDWShiftX's `main` between `7216964` ("All audit items complete") and the current tip (`144e1e3`) — the point where MyShiftX and WDWShiftX were last brought in sync. 26 commits, spanning three feature branches merged into `dev`: **Product Tour**, **Wall Filters / Legend / Copy**, and **Admin Boards / Jump Bars / Roles**, plus a handful of smaller standalone commits.
+
+Nothing here is blog or AdSense related. Two items are removals/renames driven by a WDW-specific decision rather than new capability — they're included per your call, flagged clearly, so you can decide per-item.
+
+**How to use this:** read through, tell me which numbered items you want, and I'll build the task list document from your picks. Items are grouped by the page/area they touch. Where a feature was built across many small iterative commits (Wall filters especially — 15 commits), I've described the **final state only**, not the history, since that's what would actually get ported.
+
+---
+
+## The Wall
+
+### 1. Type filter (Trade / Giveaway)
+Two star-checkbox toggles on the Offers tab — "Trade" and "Giveaway" — checking the underlying `is_trade`/`is_giveaway` flags so a Give/Trade post matches either. Defaults to both checked (type filter is always applied; unchecking both shows nothing). Hidden on the Requests tab, since it's a shift-only distinction. Feeds Clear Filters and the active-filter indicator.
+
+**Portability:** ✅ Genuinely new capability, self-contained to the Wall filter panel.
+
+### 2. Days filter (day-of-week)
+Seven always-visible day pills (Sun–Sat by default, or reordered to match the user's week-start preference), colored when included and grayed when clicked off. All on by default; the filter is always applied (all-off shows nothing, matching the Type filter's behavior). Available on both Offers and Requests tabs.
+
+**Portability:** ✅ New capability. Note it evolved from an earlier Boards-style dropdown to always-visible pills after direct iteration — the pill version is the one to port, not the dropdown.
+
+### 3. Wall filter panel layout rework
+The filter panel was substantially reorganized across ~12 small commits: Board gets its own full-width row (first); My Posts/Trade/Giveaway share a row with the Days pills (justify-around spacing); Any Date shares a row with the search box; field labels dropped in favor of self-explanatory placeholders ("All Boards", "Any Date", "All Days") with aria-labels for accessibility; Clear Filters moved to the always-visible header row instead of pushing content down when the panel opens; the date field became a controlled toggle (click to open, click again to close); distinct icons per control (LayoutGrid for Board, CalendarDays for Date, calendar-1 SVG for Days).
+
+**Portability:** ✅ Portable as a layout/UX pattern, but it's entangled with items 1 and 2 above — it only makes sense once those filters exist. Port together.
+
+### 4. MNSSHP / HHN / MVMCP date badges
+Purely decorative emoji badges (🎃 Halloween party, 🧟 Horror Nights, 🎄 Christmas party) on Wall day-headers and calendar cells for 2026's special-ticketed-event nights at Disney parks. Tapping a badge opens a shared "Party Legend" modal explaining what it means. New `lib/special-events.ts` holds the date lookup.
+
+**Portability:** ⚠️ **WDW-specific by design** — this is Disney park event marketing, meaningful only to cast members/guides who care about MNSSHP/HHN/MVMCP nights. Almost certainly not relevant to MyShiftX's general audience unless you want a generic "special dates" badge system. Listed for completeness; my default recommendation is to skip it.
+
+### 5. "I'll take this" renamed to "I Can Help"
+Renamed everywhere user-facing: the claim pill, Help page, guided tour copy, push/email notification text, and the Trade Record empty state. The old bundle-only "I'll take all" label folded into the same "I Can Help" text, since the confirmation modal already spells out the all-or-nothing part.
+
+**Portability:** ✅ Trivial copy change, no functional risk. Purely a naming preference — include only if you like the new wording better.
+
+### 6. Requests now match Offers' action-row layout
+Request cards previously had their own layout for the interest control. Now reads leadingAction → Comments → Message, same as Offers, and the built-in "interested" pill is restyled to match the Wall's claim pill (outline-to-solid, Handshake icon).
+
+**Portability:** ✅ Small, self-contained visual consistency fix.
+
+---
+
+## Calendar
+
+### 7. Shift titles color-coded to match the Wall
+Calendar shift titles now use the same trade/giveaway color language as Wall cards (neutral when the shift isn't posted). Month grid also splits its activity dots so offers sit left and requests sit right in the day cell.
+
+**Portability:** ✅ Small, self-contained visual consistency fix. Built as a supporting piece of the Product Tour (item 11) but stands alone fine.
+
+### 8. Special-event badges on Calendar (see item 4)
+Same MNSSHP/HHN/MVMCP badges as the Wall, placed in Calendar List view (left of the day row's + icon) and Grid view (top-right of the day cell). Same portability caveat as item 4.
+
+---
+
+## Help Page
+
+### 9. Legend section
+A new Help page section: shift-type color chips (built from the exact CSS classes real cards use, not hand-rolled approximations — this mattered because several themes, Cyberpunk especially, override those specific classes for contrast and a generic swatch would've shown the wrong color), icon rows explaining Bundled / I Can Help / Comments / Message, and the three party badges with their full name + acronym.
+
+**Portability:** ✅ Portable, but depends on whichever of the above features you actually port — a legend entry for a feature you don't have doesn't make sense. Build to match your final feature set, not copy verbatim.
+
+### 10. Help page: Product Tour launch cards
+See item 11 below — the Help page carries one card per tour chapter for jumping straight into it.
+
+---
+
+## Cross-cutting: Guided Product Tour
+
+### 11. Full product tour with in-memory sample data
+A four-chapter guided tour (Wall, posting a shift, Calendar, Messages) built on `driver.js`, themed from the app's CSS custom properties so it follows every theme automatically. Auto-starts once on a new member's first Wall visit; each chapter hands off to the next via `sessionStorage`; Help page has a card per chapter to re-launch any of them manually.
+
+The interesting engineering piece: while a tour runs, three fake demo shifts (one per posting type) plus matching calendar entries and two fake conversations are merged into the real lists **in memory only** — nothing touches the database, the rows are inert/unclickable, and they vanish the instant the tour ends however it ends (finished, skipped, navigated away). This exists because a brand-new member with an empty Wall would otherwise get a tour where most steps have nothing to point at.
+
+Steps that describe a control also operate it (expands a card's notes, sends the sample claim, opens comments, opens the filter panel), so the tour demonstrates behavior instead of just pointing at static UI.
+
+**Portability:** ✅ Genuinely new capability and probably the single biggest lift in this list — new dependency (`driver.js`), 3 new files (~950 lines: `ProductTour.tsx`, `sample-data.ts`, `tour-state.ts`, `tour-steps.ts`, `product-tour.css`), and touches Wall/Calendar/Messages/Help/Navbar/layout. Worth it if onboarding new members is a pain point on MyShiftX; skip if it isn't. The tour steps reference the exact UI copy/controls, so porting requires either matching MyShiftX's current UI or updating the step text — not a pure copy-paste if MyShiftX's Wall doesn't have the same filters (items 1–3) by the time this ports.
+
+---
+
+## Messaging / Notifications
+
+### 12. Push notification when a comment is posted
+Comments previously notified nobody unless the commenter also marked interest. New `notifyComment` server action pushes the post owner plus everyone else who has commented on that post (minus the commenter themself). **Push only** — comments never send email, so a busy thread can't burn through the Resend send quota. Recipients and message content are read server-side from the DB, and the caller must have their own comment on the post already, closing the same class of hole S1 fixed elsewhere (can't be used to blast arbitrary pushes).
+
+**Portability:** ✅ Genuinely new capability, and written with the S1 lesson already applied (auth-checked, DB-derived content). Clean port.
+
+---
+
+## Auth / Profile / Display Names
+
+### 13. ⚠️ Display names: "First L." → "First Last" *(optional — WDW-specific decision)*
+Changes the derived display-name format from "First L." (first name + last initial) to the full "First Last" everywhere it's constructed or validated: the regex, profile editor, register-page live preview, the OAuth callback, and the `handle_new_user()` DB trigger. Includes a one-time backfill script to expand existing "First L." names.
+
+**Portability:** ⚠️ This is a product decision about how much of a coworker's identity to show, not a bug fix. MyShiftX currently uses "First L." — before porting, decide whether you actually want full last names visible on MyShiftX too (different context: WDW is ~255 known coworkers at one employer; MyShiftX is a broader public product where showing full last names to strangers on a shared board is a different privacy tradeoff). Flagged per your instruction, not recommended by default.
+
+### 14. Display-name copy clarification
+Small follow-up to item 13 — updates helper text/placeholders to say "full first and last name" instead of the old copy. Only relevant if you take item 13.
+
+### 15. User first_name / last_name split
+`users.first_name` / `users.last_name` added as separate columns alongside `display_name` (part of the larger Aug 17 migration, item 18). Lets the app reason about the two parts independently rather than parsing `display_name`.
+
+**Portability:** ✅ Reasonable schema hygiene independent of item 13 — you can split the columns without changing the display format. Consider decoupling if you want the data model improvement without the visibility change.
+
+---
+
+## Admin ("Overlord") Panel
+
+### 16. Board-less user detection
+Users tab shows a "Boards-N" pill per user (counting non-hidden memberships, approved + pending) that turns warning-colored at 0, plus a "Show only users with 0 boards" filter checkbox and a warning dot on the tab itself. Built after finding two real users who registered but never landed on any board and had to be found by hand. No new RPC — reuses the existing member-count query.
+
+**Portability:** ✅ Small, useful, no schema change. Good candidate regardless of what else you take.
+
+### 17. Admin panel overhaul (final state)
+This was built across two branches (`feat/admin-rows-and-count-pills`, `feat/admin-boards-jumpbars-and-roles`) and is presented here as one item per your call — final state, not the intermediate steps:
+
+- **Users tab:** icon → name → count → actions row layout. Site role shown as an icon (crown/user/ghost) with the label as a tooltip instead of a text badge (also fixes the badge literally reading "Admin" instead of "Overlord"). Board count is a bare number that doubles as the accordion toggle. Edit/Deactivate stay inline on wider screens, fold into a ⋮ menu on mobile.
+- **Boards tab:** right side now mirrors the real board header (Invite / Rename / Delete), with Pause/Resume (renamed from Deactivate/Reactivate) moved into a ⋮ menu so a board can be parked without deletion. Delete became a genuine **soft delete** (new `boards.status` column: active/paused/deleted) rather than a hard delete, everywhere it's triggered (Overlord, `/boards`, profile).
+- **Sticky, letter-sectioned tabs** with a vertical A–Z jump bar once a list passes 25+ results, collapsible-but-sticky Filters, an Inactive-user filter, always-visible Reactivate.
+- **`/boards` and `/boards/[slug]`:** sticky headers/search rows, member rows switched from per-section tables to a grid layout (fixes column misalignment across sections), role icons (Crown/Award/UserRound) replacing text badges with a matching icon key.
+- Shared `CountPill` component unifies count styling across Wall tab-counts, day-headers, and admin panel counts.
+- Along the way: found and fixed that `invite_code` has no client SELECT grant (the S8 lockdown from the last sync) — admin now reads codes through `get_board_invite_codes()` like `/boards` already does, instead of selecting the column directly.
+
+**Portability:** ✅ The soft-delete/status model and jump-bar/sticky-header patterns are genuinely useful UX. This is the largest single change in the list (two commits, ~2,700 lines) and touches `AdminClient.tsx`, `BoardsClient.tsx`, `boards.ts` heavily. Recommend treating it as its own dedicated work session if chosen — it's not a quick cherry-pick.
+
+### 18. New admin form: assign a user to a board
+A "User Boards" section on the admin Edit User form: an overlord can add a user directly to a board (board + role picker), bypassing the normal self-service join flow (runs on the service client since the S16 fix from last sync intentionally only allows self-service *pending* joins now). Full member-management parity with `/boards/[slug]` — message, change role, remove, transfer ownership — with admin-correct transfer semantics (promotes the target, steps down the visible Leader, leaves the hidden Overlord auto-memberships untouched).
+
+**Portability:** ✅ Useful, and correctly threads through the S16 authorization fix rather than working around it. Depends on nothing else in this list.
+
+---
+
+## Infrastructure / Removed
+
+### 19. ⚠️ Weekly digest removed entirely *(optional — WDW-specific decision)*
+Deletes the Sunday digest cron route, the unsubscribe route, the email template, the profile toggle, and drops the `notify_weekly_digest` column. Reason given: avoiding Resend send-cap risk at WDW's send volume.
+
+**Portability:** ⚠️ This is a removal, and MyShiftX still has the weekly digest live today. Only relevant if MyShiftX is *also* approaching a Resend send-cap concern, or if you've independently decided the feature isn't worth keeping. Not recommended by default — flagged per your instruction since it does touch shared code (email templates, profile settings) that a future merge could otherwise conflict on.
+
+---
+
+## Since last sync (2026-08-20 → 2026-08-21)
+
+New work on `dev`/`main` since the 26-commit sync above — the Wall post sharing feature and a couple of related fixes. All commits: `b53f097`, `19850bc`, `8f6753d`, `c89d995`.
+
+### 20. Wall post sharing (native share sheet, image + link)
+
+Owner-only **Share** control on Wall posts — appears inline in the post's action row (in the spot "Message" would occupy on the poster's own card, since you can't message yourself: icon+text on larger screens, icon-only on mobile) and as a "Share" item in the `⋮` menu, on both Shift Offer and Shift Request cards.
+
+Clicking it renders a branded off-screen card (title, board, date/time, details, left-border + type-badge colors, footer) and captures it to an image via `html-to-image`, then calls `navigator.share()` with the image + text + a `/wall?post=<id>` deep link (falling back to text+link only if the browser can't share files, falling back further to a copy-text/download-image modal if `navigator.share` doesn't exist at all — most desktop browsers). Opening the deep link switches to the right tab, clears filters so the post can't be hidden, expands its day-group, and scrolls to + briefly highlights the card.
+
+The colors on the captured image (left border, type badge background/text) are read live off the actual DOM at capture time rather than hardcoded — a CSS custom property for the border accent, and an off-screen instance of the real badge class for the pills — so the image automatically matches whichever of this app's many themes (dark, cyberpunk, nordic, christmas, patriotic, ...) the poster has active, instead of only ever matching one.
+
+New files: `components/features/ShareCard.tsx`, `ShareHandler.tsx`, `ShareModal.tsx`, `lib/share/buildWallPostShare.ts`. New dependency: `html-to-image`. Also added a "Share" row to the Help page's icon Legend.
+
+**Portability:** ✅ Genuinely new capability, self-contained. The one thing to redo rather than copy verbatim: the color-matching technique (read live computed colors instead of hardcoding hex) only pays off if you apply it against *MyShiftX's own* theme tokens — a straight file copy would carry over WDWShiftX's CSS variable names, which won't exist there.
+
+### 21. Post-a-Request form: Board field reordered to match Post-a-Shift
+
+`PostRequestForm.tsx`'s Board field was second (after Title); moved to first, matching `PostShiftForm.tsx`'s field order. Confirmed both forms already correctly hide the Board field entirely for single-board users (`boards.length > 1` gate) — no fix needed there, just verified consistent.
+
+**Portability:** ✅ Trivial UI-consistency fix, no functional risk.
+
+---
+
+## Summary table
+
+| # | Feature | Area | Portability |
+|---|---|---|---|
+| 1 | Type filter (Trade/Giveaway) | Wall | ✅ |
+| 2 | Days filter | Wall | ✅ |
+| 3 | Filter panel layout rework | Wall | ✅ (pairs with 1–2) |
+| 4 | MNSSHP/HHN/MVMCP badges | Wall/Calendar | ⚠️ WDW-specific |
+| 5 | "I Can Help" rename | Wall | ✅ trivial |
+| 6 | Requests match Offers layout | Wall | ✅ |
+| 7 | Calendar color-coding + dot split | Calendar | ✅ |
+| 8 | Special-event badges on Calendar | Calendar | ⚠️ WDW-specific (=4) |
+| 9 | Help Legend section | Help | ✅ (build to your feature set) |
+| 10 | Tour launch cards | Help | ✅ (needs 11) |
+| 11 | Guided Product Tour | Cross-cutting | ✅ biggest lift |
+| 12 | Push on comment posted | Notifications | ✅ |
+| 13 | Full "First Last" display names | Auth/Profile | ⚠️ optional, decide first |
+| 14 | Display-name copy update | Auth/Profile | ✅ (needs 13) |
+| 15 | first_name/last_name columns | Database | ✅ decoupled from 13 |
+| 16 | Board-less user detection | Admin | ✅ |
+| 17 | Admin panel overhaul + board soft-delete | Admin | ✅ largest scope |
+| 18 | Admin: assign user to board | Admin | ✅ |
+| 19 | Weekly digest removal | Infra | ⚠️ optional, WDW-specific |
+| 20 | Wall post sharing (native share sheet) | Wall | ✅ redo the color-matching technique, not just the code |
+| 21 | Request form Board-field reorder | Wall | ✅ trivial |
+
+---
+
+**Next step:** tell me which numbers you want (e.g. "1, 2, 3, 6, 9, 11, 12, 16, 18, 20, 21"), and I'll turn your picks into a task list document, same format as the security-fix one, before we start porting.

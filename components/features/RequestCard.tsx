@@ -115,8 +115,11 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
               {request.request_title}
             </h3>
             <div className="flex items-center gap-1 shrink-0">
-              <span className="hidden sm:flex text-xs text-text/50 items-center gap-1.5 whitespace-nowrap">
-                <User className="w-3 h-3 shrink-0 text-accent" />
+              {/* Name hidden on mobile (moves below the times row there),
+                  sized to match the title now — makes room for the avatar
+                  that'll replace this icon. */}
+              <span className="hidden sm:flex text-lg text-text/50 items-center gap-1.5 whitespace-nowrap">
+                <User className="w-4 h-4 shrink-0 text-accent" />
                 {request.created_by}
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
@@ -129,17 +132,10 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
               </button>
             </div>
           </div>
-          {/* Mobile-only: poster name below title */}
-          <div className="sm:hidden flex items-center gap-1.5 mt-0.5 text-xs text-text/50">
-            <User className="w-3 h-3 shrink-0 text-accent" />
-            {request.created_by}
-            {isOwner && (
-              <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
-            )}
-          </div>
         </div>
 
-        {/* Row 2: Preferred times + chevron toggle */}
+        {/* Row 2: Preferred times + chevron toggle (chevron moves to the
+            mobile name row below on small screens — stays here on sm+) */}
         <div className="flex items-center gap-1.5 mb-3">
           <Clock className="w-3.5 h-3.5 text-accent shrink-0" />
           <div className="flex flex-wrap gap-1.5">
@@ -152,7 +148,25 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
           </div>
           <button
             onClick={() => setDetailsOpen(o => !o)}
-            className="ml-auto p-0.5 text-text/40 hover:text-accent min-h-0 min-w-0"
+            className="ml-auto p-0.5 text-text/40 hover:text-accent min-h-0 min-w-0 hidden sm:inline-flex"
+            aria-label="Toggle details"
+          >
+            <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', detailsOpen && 'rotate-180')} />
+          </button>
+        </div>
+
+        {/* Mobile-only: poster name + chevron, below the times row. Sized to
+            match the title — makes room for the avatar that'll replace this
+            icon. */}
+        <div className="sm:hidden flex items-center gap-1.5 mb-3 text-lg text-text/50">
+          <User className="w-4 h-4 shrink-0 text-accent" />
+          <span className="truncate">{request.created_by}</span>
+          {isOwner && (
+            <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none shrink-0">you</span>
+          )}
+          <button
+            onClick={() => setDetailsOpen(o => !o)}
+            className="ml-auto p-0.5 text-text/40 hover:text-accent min-h-0 min-w-0 shrink-0"
             aria-label="Toggle details"
           >
             <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', detailsOpen && 'rotate-180')} />

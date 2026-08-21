@@ -206,9 +206,11 @@ export function ShiftCard({
               {shift.shift_title}
             </h3>
             <div className="flex items-center gap-1 shrink-0">
-              {/* Name hidden on mobile, visible sm+ */}
-              <span className="hidden sm:flex text-xs text-text/50 items-center gap-1.5 whitespace-nowrap">
-                <User className={cn('w-3 h-3 shrink-0', typeColor)} />
+              {/* Name hidden on mobile (moves below the date/time row there),
+                  sized to match the title now — makes room for the avatar
+                  that'll replace this icon. */}
+              <span className="hidden sm:flex text-lg text-text/50 items-center gap-1.5 whitespace-nowrap">
+                <User className={cn('w-4 h-4 shrink-0', typeColor)} />
                 {shift.created_by}
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
@@ -222,20 +224,13 @@ export function ShiftCard({
               </button>
             </div>
           </div>
-          {/* Mobile-only: poster name below title */}
-          <div className="sm:hidden flex items-center gap-1.5 mt-0.5 text-xs text-text/50">
-            <User className={cn('w-3 h-3 shrink-0', typeColor)} />
-            {shift.created_by}
-            {isOwner && (
-              <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
-            )}
-          </div>
         </div>
 
         {/* Times + the collapsible notes, wrapped together so the tour can
             highlight the chevron and what it reveals as one region. */}
         <div data-tour="card-details-area">
-          {/* Row 2: Times + chevron toggle */}
+          {/* Row 2: Times + chevron toggle (chevron moves to the mobile name
+              row below on small screens — stays here on sm+) */}
           <div className="flex items-center gap-1.5 text-base font-medium text-text/80 mb-3">
             <Clock className={cn('w-3.5 h-3.5 shrink-0', typeColor)} />
             {startTime}
@@ -249,7 +244,27 @@ export function ShiftCard({
                  underneath" actually reveals it. Not aria-expanded, because
                  driver.js writes and then strips that on whatever it highlights. */
               data-tour-open={String(detailsOpen)}
-              className="ml-auto p-0.5 text-text/40 hover:text-primary min-h-0 min-w-0"
+              className="ml-auto p-0.5 text-text/40 hover:text-primary min-h-0 min-w-0 hidden sm:inline-flex"
+              aria-label="Toggle details"
+            >
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', detailsOpen && 'rotate-180')} />
+            </button>
+          </div>
+
+          {/* Mobile-only: poster name + chevron, below the date/time row.
+              Sized to match the title — makes room for the avatar that'll
+              replace this icon. Not tour-instrumented; the tour targets the
+              sm+ chevron above, which stays functionally equivalent (same
+              detailsOpen toggle) regardless of which button is visible. */}
+          <div className="sm:hidden flex items-center gap-1.5 mb-3 text-lg text-text/50">
+            <User className={cn('w-4 h-4 shrink-0', typeColor)} />
+            <span className="truncate">{shift.created_by}</span>
+            {isOwner && (
+              <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none shrink-0">you</span>
+            )}
+            <button
+              onClick={() => setDetailsOpen(o => !o)}
+              className="ml-auto p-0.5 text-text/40 hover:text-primary min-h-0 min-w-0 shrink-0"
               aria-label="Toggle details"
             >
               <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', detailsOpen && 'rotate-180')} />
