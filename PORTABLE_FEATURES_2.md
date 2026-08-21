@@ -142,7 +142,7 @@ Deletes the Sunday digest cron route, the unsubscribe route, the email template,
 
 ## Since last sync (2026-08-20 → 2026-08-21)
 
-New work on `dev`/`main` since the 26-commit sync above — the Wall post sharing feature and a couple of related fixes. All commits: `b53f097`, `19850bc`, `8f6753d`, `c89d995`.
+New work on `dev`/`main` since the 26-commit sync above — the Wall post sharing feature, a couple of related fixes, and prep work for an upcoming profile-pictures feature. All commits: `b53f097`, `19850bc`, `8f6753d`, `c89d995`, `6fafba9`, `3e14b52`.
 
 ### 20. Wall post sharing (native share sheet, image + link)
 
@@ -161,6 +161,20 @@ New files: `components/features/ShareCard.tsx`, `ShareHandler.tsx`, `ShareModal.
 `PostRequestForm.tsx`'s Board field was second (after Title); moved to first, matching `PostShiftForm.tsx`'s field order. Confirmed both forms already correctly hide the Board field entirely for single-board users (`boards.length > 1` gate) — no fix needed there, just verified consistent.
 
 **Portability:** ✅ Trivial UI-consistency fix, no functional risk.
+
+### 22. Wall card poster-name resize + reflow (profile-pictures prep)
+
+On both `ShiftCard` and `RequestCard`, the poster name grew from a tiny `text-xs` label to `text-lg` — matching the title's size, explicitly **not** bold — and its icon grew `w-3→w-4`. This is prep, not the feature itself: a plain generic-user icon reads fine at 12px, but an actual avatar image needs real size to be recognizable, so the name (and the space around it) had to grow first to make room for one.
+
+Desktop keeps the name inline with the title, in its existing position — just larger. Mobile moves the name to its own row below the date/time row, and takes the accordion chevron down with it (desktop's chevron stays on the date/time row, unchanged). The collapsible notes/board panel still expands directly beneath whichever row holds the active chevron on both breakpoints. Does **not** touch the share image in any way (confirmed via `git diff --stat` before committing — `ShareCard.tsx`/`ShareHandler.tsx`/`buildWallPostShare.ts` untouched).
+
+**Portability:** ✅ Straightforward, but sequence it as prep-then-feature there too, same as here — don't skip straight to dropping in avatar images without first confirming the surrounding layout has room for them at each breakpoint.
+
+### 23. Wall card spacing tightened on mobile
+
+Two small follow-up spacing fixes on the same cards: mobile's date/time row and poster-name row now sit flush against each other (bottom margin removed) instead of carrying the same 12px gap desktop uses to separate date/time from the collapsible content beneath it — desktop still needs that gap, since it has no intervening name row, so it kept it. Separately, the divider above the Comments/Message/Share pill row (`CommentSection.tsx`) had its top margin halved (12px → 6px) on both breakpoints.
+
+**Portability:** ✅ Trivial, cosmetic only.
 
 ---
 
@@ -189,7 +203,9 @@ New files: `components/features/ShareCard.tsx`, `ShareHandler.tsx`, `ShareModal.
 | 19 | Weekly digest removal | Infra | ⚠️ optional, WDW-specific |
 | 20 | Wall post sharing (native share sheet) | Wall | ✅ redo the color-matching technique, not just the code |
 | 21 | Request form Board-field reorder | Wall | ✅ trivial |
+| 22 | Poster-name resize + reflow (avatar prep) | Wall | ✅ sequence as prep-then-feature |
+| 23 | Mobile card spacing tightened | Wall | ✅ trivial |
 
 ---
 
-**Next step:** tell me which numbers you want (e.g. "1, 2, 3, 6, 9, 11, 12, 16, 18, 20, 21"), and I'll turn your picks into a task list document, same format as the security-fix one, before we start porting.
+**Next step:** tell me which numbers you want (e.g. "1, 2, 3, 6, 9, 11, 12, 16, 18, 20, 21, 22, 23"), and I'll turn your picks into a task list document, same format as the security-fix one, before we start porting.
