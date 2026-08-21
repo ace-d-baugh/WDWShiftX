@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
   MessageSquare, Star, ChevronDown, User, Edit, Trash2, Flag, X, Send,
-  HeartHandshake as Handshake,
+  HeartHandshake as Handshake, Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -58,6 +58,9 @@ interface CommentSectionProps {
   openCommentsTick?: number
   interestTick?: number
   messageTick?: number
+  /** Owner-only "Share" pill, rendered in the Message pill's spot (empty for
+   *  owners since they can't message themselves). Omit to not show it. */
+  onShare?: () => void
 }
 
 export function CommentSection({
@@ -76,6 +79,7 @@ export function CommentSection({
   openCommentsTick,
   interestTick,
   messageTick,
+  onShare,
 }: CommentSectionProps) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -393,6 +397,18 @@ export function CommentSection({
             >
               <Send className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Message</span>
+            </button>
+          )}
+          {/* Owners can't message themselves — Share takes that spot instead. */}
+          {isOwner && onShare && (
+            <button
+              type="button"
+              onClick={onShare}
+              className="badge bg-text/10 text-text/70 hover:bg-primary-light cursor-pointer inline-flex items-center gap-1 transition-colors shrink-0"
+              title="Share this post"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Share</span>
             </button>
           )}
         </div>

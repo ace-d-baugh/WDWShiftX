@@ -188,6 +188,7 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
           openCommentsTick={openCommentsTick}
           interestTick={interestTick}
           messageTick={messageTick}
+          onShare={() => setShareTick(t => t + 1)}
           actions={
             <span className="badge bg-accent/20 text-text shrink-0 font-medium">
               <span className="sm:hidden font-bold">R</span>

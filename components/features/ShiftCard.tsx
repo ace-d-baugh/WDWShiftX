@@ -285,6 +285,7 @@ export function ShiftCard({
           ownerUserId={shift.user_id}
           openCommentsTick={openCommentsTick}
           messageTick={messageTick}
+          onShare={() => setShareTick(t => t + 1)}
           showInterest={false}
           leadingAction={
             isOwner ? (
