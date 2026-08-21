@@ -17,8 +17,8 @@ export interface ShareCardData {
   /** Poster's display name, shown under the "Posted to" line. */
   posterName: string
   /** Left-border accent — the same trade/giveaway/give-trade/request color
-   *  language as the live card's border-l-4, as a hex value (inline styles
-   *  can't reach Tailwind's theme classes). */
+   *  the live card's title/border-l-4 use, read live off the current theme
+   *  (see themeColor() in buildWallPostShare.ts) since it varies by theme. */
   accentColor: string
 }
 
@@ -75,7 +75,7 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(({ 
       </h1>
 
       <div style={{ fontSize: 14, color: '#555', marginBottom: data.details ? 8 : 14 }}>
-        {data.boardName} • {data.dateLabel} • {data.timeLabel}
+        {data.dateLabel} • {data.timeLabel}
       </div>
 
       {data.details && (
@@ -96,6 +96,7 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(({ 
 
       <div style={{ textAlign: 'right', borderTop: '1px solid #eee', paddingTop: 10, marginTop: 2 }}>
         <div style={{ fontSize: 12, color: '#999' }}>Posted to WDWShiftX.com</div>
+        <div style={{ fontSize: 12, color: '#999' }}>{data.boardName}</div>
         <div style={{ fontSize: 12, color: '#777', fontWeight: 600 }}>{data.posterName}</div>
       </div>
     </div>
