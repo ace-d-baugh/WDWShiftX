@@ -142,7 +142,9 @@ Deletes the Sunday digest cron route, the unsubscribe route, the email template,
 
 ## Since last sync (2026-08-20 → 2026-08-21)
 
-New work on `dev`/`main` since the 26-commit sync above — the Wall post sharing feature, a couple of related fixes, and prep work for an upcoming profile-pictures feature. All commits: `b53f097`, `19850bc`, `8f6753d`, `c89d995`, `6fafba9`, `3e14b52`.
+New work on `dev`/`main` since the 26-commit sync above — the Wall post sharing feature, profile pictures (upload, crop, and display everywhere a user's identity shows), and a handful of related fixes. All commits: `b53f097`, `19850bc`, `8f6753d`, `c89d995`, `6fafba9`, `3e14b52`, `5f45f69`, `9e358ee`, `e4f86e2`, `07ed1ec`, `8bb22f2`.
+
+**Not included below, and deliberately not for porting:** `9d30910` ("Re-add join-a-board on profile page for users who register directly") — this opened up entering an invite code for WDWShiftX's two boards from the Profile page. MyShiftX's board-join flow already works this way as part of its existing model, so there's nothing to port here.
 
 ### 20. Wall post sharing (native share sheet, image + link)
 
@@ -178,6 +180,63 @@ Two small follow-up spacing fixes on the same cards: mobile's date/time row and 
 
 ---
 
+## Profile Pictures
+
+### 24. Upload, crop, and store a profile picture
+
+New capability: any user can upload a photo, crop it to a circle, and have it show up as their avatar everywhere their identity is shown. Built from scratch — nothing like it existed before this.
+
+**Storage & schema:**
+- First Supabase Storage bucket in this project: `avatars` — **public-read** (so `<img>` tags load the URL directly, no signed-URL dance), 2MB size limit, `image/jpeg`/`image/png`/`image/webp` MIME allowlist.
+- `storage.objects` RLS: anyone can `SELECT` (public bucket); `INSERT`/`UPDATE`/`DELETE` restricted to `(storage.foldername(name))[1] = auth.uid()::text` — a user can only ever touch objects under their own `<user_id>/` path.
+- New `users.avatar_url text` column + a `GRANT SELECT (avatar_url) ON public.users TO anon, authenticated` in the same migration (this app uses explicit column-level grants instead of table-wide — a new column with no grant fails the *whole* query for every reader, not just that column, so the grant has to land in the same migration as the column).
+- Migration: `supabase/migrations/20260821120000_avatars_storage_and_column.sql`.
+
+**Client-side flow (`components/features/AvatarUpload.tsx`, new):**
+1. Hidden `<input type="file" accept="image/*">` triggered by a styled button.
+2. On file pick, opens a modal with `react-easy-crop`'s `<Cropper aspect={1} cropShape="round">` — drag to reposition, a range slider to zoom.
+3. On save, draws the returned crop region onto a fixed 512×512 `<canvas>`, `.toBlob(..., 'image/jpeg', 0.85)`.
+4. Uploads via `supabase.storage.from('avatars').upload(path, blob, { upsert: true })` to **always the same path** (`<user_id>/avatar.jpg` — the client always re-encodes to JPEG regardless of the source format, so the path never varies and a re-upload is a clean overwrite, no orphaned files).
+5. Builds the public URL and appends a cache-busting `?v=<timestamp>` query string before writing it to `users.avatar_url` — the Storage object path never changes on re-upload, so without this a viewer who already loaded the page would keep seeing the old cached image.
+6. Includes a "Remove photo" action (clears `avatar_url`, best-effort deletes the Storage object).
+
+New dependency: `react-easy-crop`.
+
+**Portability:** ✅ Genuinely new capability, but the Storage bucket and RLS policies need to be created fresh against *MyShiftX's own* Supabase project — a bucket reference can't be copied between projects. The crop/compress/cache-bust techniques are directly reusable as code.
+
+### 25. Shared `Avatar` component + display rollout everywhere
+
+New `components/ui/Avatar.tsx` — the single place avatar-or-fallback rendering lives, used everywhere a user's identity is shown:
+- Shows the real photo (circular, `object-cover`) when `avatarUrl` is set.
+- Falls back to a single letter (the first letter of the person's first name/display name) in a colored circle when there's no photo but there is a name.
+- Falls back further to a generic person icon when there's neither.
+- Clicking a real photo opens a lightbox with the full image (self-contained — no extra wiring needed at each call site).
+- `size` prop (diameter in px) floors at 20px internally — a circle never renders illegibly small regardless of what a caller passes.
+
+**Every place it was wired in**, each requiring the relevant query/RPC to also select `avatar_url`:
+- **Wall cards** (`ShiftCard`/`RequestCard`): both the desktop inline spot (next to the post title) and the mobile-only spot (its own row below date/time) — replaces the old generic user icon.
+- **Profile page**: the Account Info card, next to the upload control (item 24).
+- **Comments** (`CommentSection.tsx`): each comment row, and the owner-only "who's interested" list.
+- **Messages**: the "Start a chat" board-mate picker, the conversation list, the chat header, and the new-message toast.
+- **Boards** (`/boards` and `/boards/[slug]` — both render through one shared `BoardsClient.tsx`, so one component edit covers both routes) and the **Overlord panel's Users tab**: here the placement is different from everywhere else — the avatar goes **between the existing role icon (Crown/Award/UserRound) and the member's name**, not replacing anything, since that icon means *role*, not identity.
+
+**The one non-obvious gotcha for whoever ports this:** two of the places above (`get_conversations()`/`get_messageable_users()` for Messages, `get_users_admin()` for the Overlord panel) are `SECURITY DEFINER` RPC functions, not plain table selects. Postgres won't let `CREATE OR REPLACE FUNCTION` change a `RETURNS TABLE` column list — extending them needs `DROP FUNCTION` then `CREATE FUNCTION`, and critically, **the DROP resets the function's EXECUTE grants to the Postgres default (`PUBLIC`)**, so the original `REVOKE`/`GRANT EXECUTE` statements have to be explicitly reissued in the same migration or the function becomes callable by roles that shouldn't have it. Migrations: `20260821130000_avatar_url_in_messaging_rpcs.sql`, `20260821140000_avatar_url_in_admin_rpc.sql`.
+
+Every one of these was verified to **degrade cleanly** (icon/initials fallback, no crash, no console error) if a query hasn't been extended yet — worth keeping that property when porting, so a partial rollout never breaks a page.
+
+**Portability:** ✅ The `Avatar.tsx` component and the display-integration pattern are directly reusable. The RPC-extension technique (DROP+CREATE+reissue-grants) is worth documenting for MyShiftX's own team even beyond this feature — it'll bite again on any future RPC signature change.
+
+### 26. Avatar fallback: single-letter initial, and a real light-theme contrast bug
+
+Two rounds of polish on the fallback state (no photo) in `Avatar.tsx`:
+
+- **Single letter, not two-letter initials** — sized 14px inside every 20px circle, 28px inside the one 40px circle (Profile page). An early version showed two-letter initials at a flat proportional size; simplified after checking how it looked in practice.
+- **Real accessibility bug, not just a style tweak:** the fallback letter's color used to inherit whatever tint color the calling card passed in (trade blue, giveaway green, board-role accent, etc.) so the fallback would echo that card's color language. On WDWShiftX's light theme, several of those tint tokens measured as low as **1.26:1 contrast** against the fallback circle's background — WCAG AA requires 4.5:1 for normal text, so this was functionally invisible, not just suboptimal. Root cause: those color tokens are pastel/light values by design, tuned for icon strokes and badge fills, not small foreground text. Fixed by always using the app's solid body-text color for the letter regardless of the passed tint; re-measured at 11.54:1 on the same theme.
+
+**Portability:** ⚠️ The single-letter/sizing choice is a straightforward copy. **The contrast fix itself must be re-verified against MyShiftX's own theme tokens, not copied as a hex value** — this is the exact same lesson as the Wall-share-image color-matching technique (item 20): measure contrast live against whatever MyShiftX's light theme actually resolves those tokens to, don't assume WDWShiftX's numbers transfer. If MyShiftX has only one theme, this may be a non-issue there, or a different token may be the culprit — check before assuming a fix is needed at all.
+
+---
+
 ## Summary table
 
 | # | Feature | Area | Portability |
@@ -205,7 +264,10 @@ Two small follow-up spacing fixes on the same cards: mobile's date/time row and 
 | 21 | Request form Board-field reorder | Wall | ✅ trivial |
 | 22 | Poster-name resize + reflow (avatar prep) | Wall | ✅ sequence as prep-then-feature |
 | 23 | Mobile card spacing tightened | Wall | ✅ trivial |
+| 24 | Profile picture upload (Storage + crop + compress) | Profile | ✅ redo the Storage bucket/RLS against your own project |
+| 25 | Avatar component + rollout everywhere | Wall/Profile/Comments/Messages/Boards/Admin | ✅ watch the SECURITY DEFINER RPC grant-reissue gotcha |
+| 26 | Avatar fallback: single letter + contrast fix | Avatar component | ⚠️ re-measure contrast against your own theme, don't copy the fix verbatim |
 
 ---
 
-**Next step:** tell me which numbers you want (e.g. "1, 2, 3, 6, 9, 11, 12, 16, 18, 20, 21, 22, 23"), and I'll turn your picks into a task list document, same format as the security-fix one, before we start porting.
+**Next step:** tell me which numbers you want (e.g. "1, 2, 3, 6, 9, 11, 12, 16, 18, 20, 21, 22, 23, 24, 25, 26"), and I'll turn your picks into a task list document, same format as the security-fix one, before we start porting.
