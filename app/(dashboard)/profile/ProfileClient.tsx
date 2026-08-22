@@ -342,7 +342,7 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
             <p className="text-xs text-text/50">Manage your board membership</p>
           </div>
         </div>
-        <MyBoardsSection userId={sessionUserId} />
+        <MyBoardsSection userId={sessionUserId} showJoin />
       </div>
 
       {/* Trade Record — claims made/received + reliability stats (Task 21) */}

@@ -33,9 +33,11 @@ interface BoardEntry {
 
 interface MyBoardsSectionProps {
   userId: string
-  /** Show the invite-code "Join a Board" input. Off by default — WDWShiftX
-   * pre-assigns everyone to one of two boards during onboarding; the
-   * dashboard shouldn't let already-onboarded users join a second one. */
+  /** Show the invite-code "Join a Board" input. Off by default. Many users
+   * register directly instead of via an invite link and never get assigned
+   * to a board — profile and onboarding both turn this on so they can join
+   * with a code. Codes only ever resolve to one of WDWShiftX's two
+   * pre-seeded boards, since board creation is disabled. */
   showJoin?: boolean
 }
 
@@ -345,7 +347,7 @@ export function MyBoardsSection({ userId, showJoin = false }: MyBoardsSectionPro
         </div>
       )}
 
-      {/* Join with invite code — onboarding only (see showJoin prop) */}
+      {/* Join with invite code (see showJoin prop) */}
       {showJoin && (
         <div className="pt-2 border-t border-border">
           <p className="text-xs font-medium text-text/50 mb-2 uppercase tracking-wide">Join a Board</p>
