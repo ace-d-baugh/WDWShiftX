@@ -237,6 +237,44 @@ Two rounds of polish on the fallback state (no photo) in `Avatar.tsx`:
 
 ---
 
+## Since last sync (2026-08-23)
+
+Two small Overlord panel fixes, both from the same round of work as a couple of WDW-only items (a past-day Calendar badge tweak and a new Wall reminder banner — not included here since they're not relevant to MyShiftX). Commit: `4a88ec8`.
+
+### 27. Overlord panel: "Clear Filters" on Boards and Users tabs
+
+Both tabs' sticky Filters header row now shows a **Clear Filters** link — same convention as the Wall's existing one (`text-warning`, small `X` icon, positioned at the end of the header row) — whenever any filter is actually active on that tab, and disappears when none are. Clicking it resets that tab's filters back to defaults in one action instead of clearing each control by hand.
+
+- **Boards tab:** counts as active if `boardSearch` (trimmed) or `boardStatusFilter` is set. Clears both.
+- **Users tab:** counts as active if `userSearch` (trimmed), `filterRole`, or the Boardless checkbox is set. Clears all three.
+
+**Portability:** ✅ Trivial, self-contained UI consistency fix — no schema/RPC involved. Only depends on each tab already having its own filter state (which any admin/user-management panel will).
+
+### 28. Overlord Users tab: inactive users no longer leak into the default view
+
+Real bug, not a feature: inactive users used to show up under "All Users" and under every role filter — the "Inactive" role-filter option was meant to be the *only* place they'd appear, but the filtering logic never actually excluded them anywhere else. Fixed in four places, all in the same filtering logic:
+
+- **Default/role list** (`filteredUsers`): now excludes `!u.is_active` unless the "Inactive" filter is explicitly selected.
+- **Boardless count/filter** (`zeroBoardsCount`): now counts only `u.is_active && u.board_count === 0` — an inactive user with zero boards was previously inflating this count for something nobody needed to act on.
+- **Users tab header count badge**: now counts only active users (`activeUserCount`), not `users.length` (which included inactive).
+- The "Inactive" filter itself is unaffected — selecting it still shows exactly the inactive users, with the Boardless pill's count switching to show `inactiveCount` for that view (pre-existing behavior, untouched).
+
+**Portability:** ✅ Straightforward filtering-logic fix, no schema/RPC change — check whether MyShiftX's own admin/user-management view has the same "inactive leaks into the default view" bug before assuming it needs the fix; if MyShiftX's filter logic was written correctly from the start, this may be a non-issue there.
+
+---
+
+## Porting prompt — items 27 & 28 (hand this to the MyShiftX agent)
+
+> Port two small Overlord/admin-panel fixes from WDWShiftX to MyShiftX. Both are pure client-side filtering/UI logic — no schema or RPC changes involved. Read `PORTABLE_FEATURES_2.md` items 27 and 28 in the WDWShiftX repo for full context; summary below.
+>
+> **1. "Clear Filters" on the admin panel's Boards and Users tabs (item 27).** Find MyShiftX's equivalent admin/user-management filter UI. For each tab that has its own filter state (search text, a status/role select, any boolean toggle filters), add a small link — same visual convention as wherever MyShiftX already has a Clear Filters control elsewhere (check the main board/list view first, e.g. a "Wall" or dashboard filter panel, and match that convention; if none exists, use `text-warning`-equivalent color + a small X icon). Show it only when at least one filter on that tab is currently active (non-empty search, a non-default select value, a checked toggle); clicking it resets every filter on that tab back to its default in one action. Reference implementation: `app/(dashboard)/admin/AdminClient.tsx` in WDWShiftX — search for `boardsHasActiveFilters`/`clearBoardFilters` and `usersHasActiveFilters`/`clearUserFilters`.
+>
+> **2. Fix inactive users leaking into the default admin Users view (item 28).** Before touching anything, check whether MyShiftX's admin Users view actually has this bug: does an inactive/deactivated user show up under "All Users" or under a specific-role filter, when it should only show up under an explicit "Inactive" (or equivalent) filter? If MyShiftX's filtering was already written correctly, skip this item entirely — don't introduce a fix for a bug that doesn't exist there. If the bug is present, the fix is: (a) the main filtered-user list must exclude inactive users unless the inactive filter is explicitly selected, (b) any "boardless"/zero-boards-style count or filter must only count active users, (c) any header/tab count badge showing a total user count must count active users only, not the raw total. Reference implementation: same file, `filteredUsers`/`zeroBoardsCount`/`activeUserCount` in `AdminClient.tsx`.
+>
+> Verify both live in the browser (apply a filter, confirm Clear Filters appears and works; toggle a user inactive, confirm it's excluded from the default view and counts, and only shows under the Inactive filter) before committing.
+
+---
+
 ## Summary table
 
 | # | Feature | Area | Portability |
@@ -267,6 +305,8 @@ Two rounds of polish on the fallback state (no photo) in `Avatar.tsx`:
 | 24 | Profile picture upload (Storage + crop + compress) | Profile | ✅ redo the Storage bucket/RLS against your own project |
 | 25 | Avatar component + rollout everywhere | Wall/Profile/Comments/Messages/Boards/Admin | ✅ watch the SECURITY DEFINER RPC grant-reissue gotcha |
 | 26 | Avatar fallback: single letter + contrast fix | Avatar component | ⚠️ re-measure contrast against your own theme, don't copy the fix verbatim |
+| 27 | Overlord panel: Clear Filters (Boards + Users tabs) | Admin | ✅ trivial |
+| 28 | Overlord Users tab: inactive users excluded from default view | Admin | ✅ check if the bug even exists there first |
 
 ---
 
