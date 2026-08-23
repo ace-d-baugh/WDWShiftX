@@ -472,7 +472,10 @@ export function CalendarClient({
                   const data    = dayMap.get(dateStr)
                   const isToday = dateStr === todayStr
                   const isPast  = dateStr < todayStr
-                  const eventBadges = getSpecialEventBadges(dateStr)
+                  // Once a day has passed there's no party to prep for — same
+                  // reasoning the Wall already gets for free (a past day's
+                  // shifts are gone, so it never gets a day-header to badge).
+                  const eventBadges = isPast ? [] : getSpecialEventBadges(dateStr)
 
                   return (
                     <div
@@ -594,7 +597,9 @@ export function CalendarClient({
             const shifts = data?.myShifts ?? []
             const isToday = d.dateStr === todayStr
             const showMonthHeader = idx === 0 || listDays[idx - 1].monthLabel !== d.monthLabel
-            const eventBadges = getSpecialEventBadges(d.dateStr)
+            const isPast = d.dateStr < todayStr
+            // Once a day has passed there's no party to prep for.
+            const eventBadges = isPast ? [] : getSpecialEventBadges(d.dateStr)
 
             return (
               <div key={d.dateStr}>

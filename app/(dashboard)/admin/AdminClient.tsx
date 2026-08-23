@@ -6,7 +6,7 @@ import {
   Settings, LayoutGrid, Users, BarChart3, Trophy, CheckCircle, Search, UserCog,
   UserMinus, Crown, UserRound, Ghost, UserX, UserCheck, MoreVertical,
   Pencil, Trash2, UserPlus, Pause, Play, ChevronDown, SlidersHorizontal,
-  ArrowDownAZ, ArrowDownZA, Activity, ShieldX,
+  ArrowDownAZ, ArrowDownZA, Activity, ShieldX, X,
 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { setBoardActive, setUserActive } from '@/app/actions/admin'
@@ -358,8 +358,12 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
     return () => window.clearTimeout(t)
   }, [tab])
 
-  const zeroBoardsCount = useMemo(() => users.filter(u => u.board_count === 0).length, [users])
+  // Active only — an inactive user with 0 boards isn't "fell through the
+  // cracks," they're just gone. Counting them here would inflate the warning
+  // pill for something nobody needs to act on.
+  const zeroBoardsCount = useMemo(() => users.filter(u => u.is_active && u.board_count === 0).length, [users])
   const inactiveCount = useMemo(() => users.filter(u => !u.is_active).length, [users])
+  const activeUserCount = useMemo(() => users.filter(u => u.is_active).length, [users])
   const isInactiveFilter = filterRole === 'Inactive'
 
   // "Boardless" is purely cosmetic while the Inactive role filter is active
@@ -381,11 +385,19 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
       if (userSearch && !(u.display_name ?? '').toLowerCase().includes(userSearch.toLowerCase())) return false
       if (filterRole === 'Inactive') {
         if (u.is_active) return false
-      } else if (filterRole && u.role !== filterRole) return false
+      } else {
+        // Default/role views are active-only — inactive users only ever
+        // surface behind the explicit "Inactive" filter.
+        if (!u.is_active) return false
+        if (filterRole && u.role !== filterRole) return false
+      }
       if (zeroBoardsOnly && filterRole !== 'Inactive' && u.board_count !== 0) return false
       return true
     })
   }, [users, userSearch, filterRole, zeroBoardsOnly])
+
+  const usersHasActiveFilters = !!userSearch.trim() || !!filterRole || zeroBoardsOnly
+  const clearUserFilters = () => { setUserSearch(''); setFilterRole(''); setZeroBoardsOnly(false) }
 
   // Sorted by whichever name the format toggle currently keys off, then
   // bucketed into letter sections in that same order — grouping after
@@ -407,6 +419,9 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
       return true
     })
   }, [boards, boardSearch, boardStatusFilter])
+
+  const boardsHasActiveFilters = !!boardSearch.trim() || !!boardStatusFilter
+  const clearBoardFilters = () => { setBoardSearch(''); setBoardStatusFilter('') }
 
   const sortedBoards = useMemo(
     () => [...filteredBoards].sort((a, b) => compareStrings(a.name, b.name, boardSort)),
@@ -748,7 +763,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
 
   const tabs: { key: AdminTab; label: string; icon: React.ReactNode; count: number | null }[] = [
     { key: 'boards', label: 'Boards', icon: <LayoutGrid className="w-4 h-4" />, count: boards.length },
-    { key: 'users',  label: 'Users',  icon: <Users className="w-4 h-4" />,     count: users.length },
+    { key: 'users',  label: 'Users',  icon: <Users className="w-4 h-4" />,     count: activeUserCount },
     { key: 'charts', label: 'Stats',  icon: <BarChart3 className="w-4 h-4" />, count: null },
     { key: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="w-4 h-4" />, count: null },
   ]
@@ -864,9 +879,20 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                 Filters
                 <ChevronDown className={cn('w-4 h-4 transition-transform', filtersOpen && 'rotate-180')} />
               </button>
-              {showBoardJumpBar && (
-                <JumpPanelToggle open={boardsJumpOpen} onClick={() => setBoardsJumpOpen(o => !o)} />
-              )}
+              <div className="flex items-center gap-3">
+                {boardsHasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearBoardFilters}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
+                  >
+                    <X className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                )}
+                {showBoardJumpBar && (
+                  <JumpPanelToggle open={boardsJumpOpen} onClick={() => setBoardsJumpOpen(o => !o)} />
+                )}
+              </div>
             </div>
 
             {/* Grid-rows 0fr/1fr collapse trick (same as the Wall's Filters
@@ -991,9 +1017,20 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
                 Filters
                 <ChevronDown className={cn('w-4 h-4 transition-transform', filtersOpen && 'rotate-180')} />
               </button>
-              {showUserJumpBar && (
-                <JumpPanelToggle open={usersJumpOpen} onClick={() => setUsersJumpOpen(o => !o)} />
-              )}
+              <div className="flex items-center gap-3">
+                {usersHasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearUserFilters}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-warning hover:text-warning/80 transition-colors min-h-0 min-w-0"
+                  >
+                    <X className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                )}
+                {showUserJumpBar && (
+                  <JumpPanelToggle open={usersJumpOpen} onClick={() => setUsersJumpOpen(o => !o)} />
+                )}
+              </div>
             </div>
 
             {/* Same grid-rows 0fr/1fr collapse trick as the Boards tab and

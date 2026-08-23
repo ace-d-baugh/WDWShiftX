@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import { deactivateShift, deactivateRequest } from '@/app/actions/posts'
 import { PushPromptBanner } from '@/components/features/PushPromptBanner'
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
+import { TradeCompletionReminderBanner } from '@/components/features/TradeCompletionReminderBanner'
 import { ShiftCard, type ShiftData } from '@/components/features/ShiftCard'
 import type { MyClaim, PendingClaim } from '@/components/features/ClaimSection'
 import { RequestCard, type RequestData } from '@/components/features/RequestCard'
@@ -803,6 +804,8 @@ export function WallClient({
 
       {/* iOS Safari tab: push needs a Home Screen install first (Task 23) */}
       <IosInstallPrompt />
+
+      <TradeCompletionReminderBanner />
 
       {/* Trade Loop: accepted trades past their shift end, awaiting confirmation */}
       {awaitingFinalize > 0 && (
