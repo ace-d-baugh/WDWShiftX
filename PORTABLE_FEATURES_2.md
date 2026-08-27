@@ -275,6 +275,42 @@ Real bug, not a feature: inactive users used to show up under "All Users" and un
 
 ---
 
+## Since last sync (2026-08-26)
+
+A full Notifications feature: a persistent, per-user record of every event WDWShiftX already pushed/emailed (shift match, interest, comment, claim lifecycle, board-approved), plus a new capability — Mods/Admins can broadcast pinned, board-wide announcements. Commit: (pending — implemented on `dev`, not yet merged/deployed).
+
+### 29. Notifications page + Mod/Admin board announcements
+
+The biggest addition since the initial sync. Two new tables (`notifications` — one row per event/announcement; `notification_recipients` — per-user, and for board announcements per-board, read/dismiss state), retrofitted into every existing push call site so the in-app page shows the exact same title/body/link that was pushed:
+
+- `notifyInterest`, `notifyComment`, `sendMatchNotifications` (shift/request match), `notifyClaimCreated`, `notifyClaimResolved`, `notifyClaimFinalized`, `notifyBoardApproved` — all in `app/actions/notifications.ts`, each now calls a small `createNotification()` helper right next to its existing `sendPushNotification()` call.
+
+New capability: `app/actions/boardNotifications.ts` lets a Mod (boards they moderate) or global Admin (any board) send a title+details announcement to one or more boards at once. It's pinned (yellow background, "Pinned" section) for 14 days from send/last-edit, then moves into the regular chronological list but keeps the yellow tint. Editing resets it to unread for every recipient and re-fires push/email, as if newly sent. Regular members get a per-user, non-destructive **Dismiss**; the sender or an Admin get **Edit** and a hard **Delete** that removes it for everyone. A member of several targeted boards gets one card per board (each labeled with that board's name — the label is suppressed entirely for a user who only belongs to one board), since one `notifications` row can fan out to several `notification_recipients` rows.
+
+Any notification — personal or board — is hard-deleted 14 days after being read; unread ones never expire. A `purge_expired_notifications()` SQL function handles this, scheduled via `pg_cron` where available, and also called opportunistically (non-blocking) from the Notifications page load as a fallback in case cron isn't enabled on the project.
+
+UI: `app/(dashboard)/notifications/` (page + `NotificationsClient.tsx`), a Bell entry in the account dropdown (`components/layout/AccountDropdown.tsx`) with an unread-count badge, and the same red-dot-on-closed-menu treatment the Approvals badge already uses (`Navbar.tsx`'s `hasUnresolved`). The 3-dot card menu and card-list layout deliberately reuse the exact patterns already in the codebase — `ShiftCard.tsx`'s fixed-position portal menu, `MessagesClient.tsx`'s card-list/avatar/unread-badge structure — rather than inventing new ones.
+
+Two judgment calls made without an explicit spec, worth re-deciding for MyShiftX rather than copying blind: (1) only the original sender of a board announcement or a global Admin may edit/delete it — not any Mod who happens to moderate one of its target boards, to avoid ambiguous multi-board co-ownership; (2) editing an announcement changes title/body only, not its target boards — re-targeting isn't supported.
+
+**Portability:** ✅ Genuinely new capability (the board-announcement half) plus a real gap-fill (the persisted-history half) — but it's the largest single lift in this document after item 11/17: 2 new tables + RLS + 2 SQL functions, ~8 existing notifier call sites touched, 2 new server-action files, and a new page. If MyShiftX doesn't have `pg_cron` enabled, the expiry sweep degrades gracefully to the opportunistic page-load purge — confirm that's acceptable there or enable the extension. **Not yet verified end-to-end** — the migration needs to be applied by hand (no MCP path to this project's DB) and then walked through logged-in as a regular member and as a Mod/Admin before treating this as done, let alone porting it.
+
+### 30. Profile page: Account Security section (add password / connect-disconnect OAuth)
+
+New card on the Profile page, placed just above Danger Zone: `components/features/AccountSecuritySection.tsx`. Lets a user manage how they log in, whichever way their account started out:
+
+- **OAuth-only account** (signed up via Google/LinkedIn, no password): shows "Add Password" — a password + confirm form (same strength meter/requirements as registration and reset-password) that calls `supabase.auth.updateUser({ password })`. Once set, the account can log in with either the OAuth provider or email+password.
+- **Account with a password already** (whether it started that way or had one added): the same form relabels to "Update Password" — no old-password re-entry needed since Supabase authenticates via the existing session.
+- **Connected Accounts** subsection: any linked OAuth identity (Google/LinkedIn — Facebook omitted, matching `OAuthButtons.tsx`'s `ENABLED` map, no Meta app configured) shows with a Disconnect button; any not-yet-linked provider shows a Connect button that calls `supabase.auth.linkIdentity()` and redirects through the existing `/auth/callback` route (`?next=/profile`) to complete the flow. Disconnect is disabled with a tooltip when it's the user's only identity, since Supabase's `unlinkIdentity()` requires at least 2 identities to remain — this is deliberately conservative for a password-added-to-OAuth account (which has only 1 identity row even though password login works); a stricter check that accounted for that case wasn't worth the complexity here.
+
+Detection quirk worth knowing before porting: Supabase does **not** retroactively create an `'email'` identity when a password is added to an OAuth-originated account, so `getUserIdentities()` alone can't reliably answer "does this account have a password." The component works around this with a local `passwordOverride` flag that flips the UI the instant `updateUser({password})` succeeds, rather than depending on a refetch to reflect it.
+
+**Requires Manual Linking enabled** in Supabase Dashboard → Authentication → Settings (confirmed already on for this project) — without it, `linkIdentity()` fails outright.
+
+**Portability:** ✅ Self-contained (one new component + a 3-line import/render in the Profile client), no schema changes. Before porting, confirm Manual Linking is enabled on MyShiftX's own Supabase project — it won't work otherwise — and re-derive the connectable-provider list from whatever MyShiftX actually has configured (don't assume Google+LinkedIn match there).
+
+---
+
 ## Summary table
 
 | # | Feature | Area | Portability |
@@ -307,6 +343,8 @@ Real bug, not a feature: inactive users used to show up under "All Users" and un
 | 26 | Avatar fallback: single letter + contrast fix | Avatar component | ⚠️ re-measure contrast against your own theme, don't copy the fix verbatim |
 | 27 | Overlord panel: Clear Filters (Boards + Users tabs) | Admin | ✅ trivial |
 | 28 | Overlord Users tab: inactive users excluded from default view | Admin | ✅ check if the bug even exists there first |
+| 29 | Notifications page + Mod/Admin board announcements | Notifications/Admin | ✅ largest lift after 11/17; not yet verified end-to-end |
+| 30 | Profile: Account Security (add password / connect-disconnect OAuth) | Profile/Auth | ✅ requires Manual Linking enabled on target project |
 
 ---
 

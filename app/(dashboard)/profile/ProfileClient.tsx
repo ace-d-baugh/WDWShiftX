@@ -12,6 +12,7 @@ import { PushNotificationsToggle } from '@/components/features/PushNotifications
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { CalendarSyncSection } from '@/components/features/CalendarSyncSection'
 import { TradeRecordSection } from '@/components/features/TradeRecordSection'
+import { AccountSecuritySection } from '@/components/features/AccountSecuritySection'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { displayNameRegex } from '@/lib/validations/auth'
@@ -457,6 +458,9 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
           </div>
         </div>
       </div>
+
+      {/* Account Security — set/change password, connect/disconnect OAuth */}
+      <AccountSecuritySection />
 
       {/* Danger Zone */}
       <div className="card shadow-sm border border-warning/20">
