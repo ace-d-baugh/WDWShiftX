@@ -8,7 +8,7 @@ import { sendPushNotification } from '@/lib/push-server'
 import { boardApprovedHtml, claimReceivedHtml, claimResultHtml, interestedHtml, shiftMatchHtml } from '@/components/email-template'
 import { formatInTimeZone } from 'date-fns-tz'
 import { parseISO } from 'date-fns'
-import type { PreferredTime } from '@/lib/database.types'
+import type { PreferredTime, NotificationType } from '@/lib/database.types'
 import { optionalServerEnv } from '@/lib/env'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://wdwshiftx.com'
@@ -27,6 +27,50 @@ const resend = new Resend(optionalServerEnv.RESEND_API_KEY ?? '')
  * Returns null rather than throwing: these are fire-and-forget, so an
  * unauthenticated call should quietly do nothing instead of surfacing an error.
  */
+/**
+ * Persist one notification + its single recipient row, right alongside the
+ * matching sendPushNotification call so the in-app Notifications page shows
+ * the same title/body/link that was pushed. Fire-and-forget: logs and
+ * swallows errors, same posture as the push/email calls it sits next to.
+ */
+async function createNotification(
+  db: ReturnType<typeof createAdminClient>,
+  opts: {
+    type: NotificationType
+    userId: string
+    title: string
+    body: string
+    linkUrl: string
+    actorUserId?: string | null
+  }
+): Promise<void> {
+  try {
+    const { data: notification, error } = await db
+      .from('notifications')
+      .insert({
+        type: opts.type,
+        title: opts.title,
+        body: opts.body,
+        link_url: opts.linkUrl,
+        actor_user_id: opts.actorUserId ?? null,
+      })
+      .select('id')
+      .single()
+    if (error || !notification) {
+      console.error('[createNotification] insert failed:', error?.message)
+      return
+    }
+    const { error: recipientError } = await db
+      .from('notification_recipients')
+      .insert({ notification_id: notification.id, user_id: opts.userId })
+    if (recipientError) {
+      console.error('[createNotification] recipient insert failed:', recipientError.message)
+    }
+  } catch (err) {
+    console.error('[createNotification] unexpected error:', err)
+  }
+}
+
 async function callerId(tag: string): Promise<string | null> {
   try {
     const { userId } = await getActionSession()
@@ -110,12 +154,12 @@ export async function notifyInterest(opts: {
     // Push and email are independent channels: push goes to whatever devices
     // the owner has enabled; notify_via_email only gates the email.
     if (ownerId) {
-      await sendPushNotification(
-        ownerId,
-        `${commenterName} is interested`,
-        `${commenterName} marked interest in "${postTitle}"`,
-        '/wall'
-      )
+      const title = `${commenterName} is interested`
+      const body = `${commenterName} marked interest in "${postTitle}"`
+      await sendPushNotification(ownerId, title, body, '/wall')
+      await createNotification(db, {
+        type: 'interest', userId: ownerId, title, body, linkUrl: '/wall', actorUserId: uid,
+      })
     }
 
     if (!ownerWantsEmail) return
@@ -218,16 +262,22 @@ export async function notifyComment(opts: {
     recipients.delete(uid)
     if (recipients.size === 0) return
 
+    const title = `${commenterName} commented`
+    const body = `${commenterName} commented on "${postTitle}"`
     const results = await Promise.allSettled(
-      [...recipients].map(rid => sendPushNotification(
-        rid,
-        `${commenterName} commented`,
-        `${commenterName} commented on "${postTitle}"`,
-        '/wall'
-      ))
+      [...recipients].flatMap(rid => [
+        sendPushNotification(rid, title, body, '/wall'),
+        // Message always points at the post owner, not the commenter who
+        // triggered this — so a recipient who *is* the owner gets no actor
+        // (they can't message themselves).
+        createNotification(db, {
+          type: 'comment', userId: rid, title, body, linkUrl: '/wall',
+          actorUserId: rid === ownerId ? null : ownerId,
+        }),
+      ])
     )
     for (const r of results) {
-      if (r.status === 'rejected') console.error('[notifyComment] push failed:', r.reason)
+      if (r.status === 'rejected') console.error('[notifyComment] push/notify failed:', r.reason)
     }
   } catch (err) {
     console.error('[notifyComment] unexpected error:', err)
@@ -329,20 +379,22 @@ async function sendMatchNotifications(opts: MatchPayload) {
 
   // Web push to both parties — independent of the notify_via_email pref
   if (opts.requesterUserId) {
-    sends.push(sendPushNotification(
-      opts.requesterUserId,
-      'Possible shift match',
-      `${opts.shiftPosterName}'s shift "${opts.shiftTitle}" on ${displayDate} may match your request`,
-      '/wall'
-    ))
+    const title = 'Possible shift match'
+    const body = `${opts.shiftPosterName}'s shift "${opts.shiftTitle}" on ${displayDate} may match your request`
+    sends.push(sendPushNotification(opts.requesterUserId, title, body, '/wall'))
+    sends.push(createNotification(createAdminClient(), {
+      type: 'shift_match', userId: opts.requesterUserId, title, body, linkUrl: '/wall',
+      actorUserId: opts.shiftPosterUserId,
+    }))
   }
   if (opts.shiftPosterUserId) {
-    sends.push(sendPushNotification(
-      opts.shiftPosterUserId,
-      'Possible shift match',
-      `${opts.requesterName} is looking for a shift on ${displayDate} — yours may match`,
-      '/wall'
-    ))
+    const title = 'Possible shift match'
+    const body = `${opts.requesterName} is looking for a shift on ${displayDate} — yours may match`
+    sends.push(sendPushNotification(opts.shiftPosterUserId, title, body, '/wall'))
+    sends.push(createNotification(createAdminClient(), {
+      type: 'shift_match', userId: opts.shiftPosterUserId, title, body, linkUrl: '/wall',
+      actorUserId: opts.requesterUserId,
+    }))
   }
 
   if (opts.requesterNotify && opts.requesterEmail) {
@@ -639,14 +691,15 @@ export async function notifyClaimCreated(claimId: string): Promise<void> {
       ? `${anchorTitle} + ${bundleSize - 1} more`
       : anchorTitle
 
-    await sendPushNotification(
-      ownerId,
-      bundleSize > 1 ? `${claimantName} wants all ${bundleSize} of your shifts` : `${claimantName} wants your shift`,
-      bundleSize > 1
-        ? `${claimantName} tapped "I Can Help" on your ${bundleSize}-shift bundle — accept or decline on the Wall`
-        : `${claimantName} tapped "I Can Help" on "${anchorTitle}" — accept or decline on the Wall`,
-      '/wall'
-    )
+    const ccTitle = bundleSize > 1 ? `${claimantName} wants all ${bundleSize} of your shifts` : `${claimantName} wants your shift`
+    const ccBody = bundleSize > 1
+      ? `${claimantName} tapped "I Can Help" on your ${bundleSize}-shift bundle — accept or decline on the Wall`
+      : `${claimantName} tapped "I Can Help" on "${anchorTitle}" — accept or decline on the Wall`
+    await sendPushNotification(ownerId, ccTitle, ccBody, '/wall')
+    await createNotification(db, {
+      type: 'claim_created', userId: ownerId, title: ccTitle, body: ccBody, linkUrl: '/wall',
+      actorUserId: claim.claimant_id as string,
+    })
 
     const { data: owner } = await db
       .from('users')
@@ -724,21 +777,27 @@ export async function notifyClaimResolved(
         .filter((id): id is string => !!id && id !== claimantId)
     }
 
+    const claimantTitle = accepted ? 'Your claim was accepted! 🎉' : 'Your claim was declined'
+    const claimantBody = accepted
+      ? `${ownerName} accepted your claim on "${shiftTitle}" — complete the trade in your company system`
+      : `${ownerName} declined your claim on "${shiftTitle}"`
+    const claimantLink = accepted ? '/profile' : '/wall'
+    const rivalTitle = 'Shift covered'
+    const rivalBody = `"${shiftTitle}" was covered by someone else — more shifts are on the Wall`
+
     const sends: Promise<unknown>[] = [
-      sendPushNotification(
-        claimantId,
-        accepted ? 'Your claim was accepted! 🎉' : 'Your claim was declined',
-        accepted
-          ? `${ownerName} accepted your claim on "${shiftTitle}" — complete the trade in your company system`
-          : `${ownerName} declined your claim on "${shiftTitle}"`,
-        accepted ? '/profile' : '/wall'
-      ),
-      ...rivalClaimantIds.map(rid => sendPushNotification(
-        rid,
-        'Shift covered',
-        `"${shiftTitle}" was covered by someone else — more shifts are on the Wall`,
-        '/wall'
-      )),
+      sendPushNotification(claimantId, claimantTitle, claimantBody, claimantLink),
+      createNotification(db, {
+        type: 'claim_resolved', userId: claimantId, title: claimantTitle, body: claimantBody,
+        linkUrl: claimantLink, actorUserId: claim.owner_id as string,
+      }),
+      ...rivalClaimantIds.flatMap(rid => [
+        sendPushNotification(rid, rivalTitle, rivalBody, '/wall'),
+        createNotification(db, {
+          type: 'claim_resolved', userId: rid, title: rivalTitle, body: rivalBody,
+          linkUrl: '/wall', actorUserId: null,
+        }),
+      ]),
     ]
 
     const { data: claimant } = await db
@@ -798,14 +857,15 @@ export async function notifyClaimFinalized(claimId: string): Promise<void> {
     const completed = claim.status === 'completed'
     const shiftTitle = (claim.shifts as unknown as { shift_title: string } | null)?.shift_title ?? 'the shift'
 
-    await sendPushNotification(
-      claim.claimant_id as string,
-      completed ? 'Trade confirmed ✅' : 'Trade marked as fell through',
-      completed
-        ? `The trade for "${shiftTitle}" was confirmed — it's on your trade record now`
-        : `The owner marked the trade for "${shiftTitle}" as fell through`,
-      '/profile'
-    )
+    const cfTitle = completed ? 'Trade confirmed ✅' : 'Trade marked as fell through'
+    const cfBody = completed
+      ? `The trade for "${shiftTitle}" was confirmed — it's on your trade record now`
+      : `The owner marked the trade for "${shiftTitle}" as fell through`
+    await sendPushNotification(claim.claimant_id as string, cfTitle, cfBody, '/profile')
+    await createNotification(db, {
+      type: 'claim_finalized', userId: claim.claimant_id as string, title: cfTitle, body: cfBody,
+      linkUrl: '/profile', actorUserId: null,
+    })
   } catch (err) {
     console.error('[notifyClaimFinalized] unexpected error:', err)
   }
@@ -857,12 +917,13 @@ export async function notifyBoardApproved(userBoardId: string): Promise<void> {
 
     const memberUserId = ub.user_id as string | null
     if (memberUserId) {
-      await sendPushNotification(
-        memberUserId,
-        `You've been accepted to ${boardName}!`,
-        'Your join request was approved. Head to the Wall to see posts.',
-        '/wall'
-      )
+      const baTitle = `You've been accepted to ${boardName}!`
+      const baBody = 'Your join request was approved. Head to the Wall to see posts.'
+      await sendPushNotification(memberUserId, baTitle, baBody, '/wall')
+      await createNotification(db, {
+        type: 'board_approved', userId: memberUserId, title: baTitle, body: baBody,
+        linkUrl: '/wall', actorUserId: uid,
+      })
     }
 
     if (!optionalServerEnv.RESEND_API_KEY) {

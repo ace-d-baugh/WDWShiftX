@@ -21,7 +21,7 @@ export default async function DashboardLayout({
   const { supabase, user } = await requireUser()
 
   // Profile, moderator check, and unread messages are independent — fetch together
-  const [profileRes, { data: isMod }, { data: unreadMessages }] = await Promise.all([
+  const [profileRes, { data: isMod }, { data: unreadMessages }, { data: unreadNotifications }] = await Promise.all([
     supabase
       .from('users')
       .select('id, display_name, role, is_active')
@@ -29,6 +29,7 @@ export default async function DashboardLayout({
       .single() as unknown as Promise<{ data: UserProfileRow }>,
     supabase.rpc('is_any_board_moderator'),
     supabase.rpc('get_unread_message_count'),
+    supabase.rpc('get_unread_notification_count'),
   ])
   const userProfile = profileRes.data
 
@@ -89,6 +90,7 @@ export default async function DashboardLayout({
         pendingApprovalsCount={pendingApprovalsCount}
         pendingFlagsCount={pendingFlagsCount}
         unreadMessagesCount={unreadMessages ?? 0}
+        unreadNotificationsCount={unreadNotifications ?? 0}
       />
       <main className="flex-1 pb-20 md:pb-0">
         {children}

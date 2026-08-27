@@ -26,6 +26,7 @@ interface NavbarProps {
   pendingApprovalsCount?: number
   pendingFlagsCount?: number
   unreadMessagesCount?: number
+  unreadNotificationsCount?: number
 }
 
 export function Navbar({
@@ -36,6 +37,7 @@ export function Navbar({
   pendingApprovalsCount = 0,
   pendingFlagsCount = 0,
   unreadMessagesCount = 0,
+  unreadNotificationsCount = 0,
 }: NavbarProps) {
   const pathname = usePathname()
   const supabase = createClient()
@@ -45,7 +47,7 @@ export function Navbar({
 
   const isAdmin = userRole === 'Admin'
   const showModItems = isBoardModerator || isAdmin
-  const hasUnresolved = pendingApprovalsCount > 0 || pendingFlagsCount > 0
+  const hasUnresolved = pendingApprovalsCount > 0 || pendingFlagsCount > 0 || unreadNotificationsCount > 0
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -76,7 +78,7 @@ export function Navbar({
   // ── Dropdown menu items (role-scoped) ──────────────────────────────────────
   const dropdownItems = buildRoleDropdownItems({
     isAdmin, showModItems, isLeader,
-    pendingApprovalsCount, pendingFlagsCount,
+    pendingApprovalsCount, pendingFlagsCount, unreadNotificationsCount,
   })
 
   return (

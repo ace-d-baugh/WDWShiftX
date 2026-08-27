@@ -150,6 +150,23 @@ export const boardApprovedHtml = (opts: {
     ${muted('You received this because you requested to join a board on WDWShiftX.')}
   `)
 
+/** Sent to board members when a Mod/Admin posts a board-wide announcement */
+export const boardAnnouncementHtml = (opts: {
+  senderName: string
+  boardName: string
+  title: string
+  body: string
+  notificationsUrl: string
+}) =>
+  shell(`
+    ${h1('📌 Board Announcement')}
+    ${p(`<strong>${esc(opts.senderName)}</strong> posted an announcement to <strong>${esc(opts.boardName)}</strong>:`)}
+    ${highlight(esc(opts.title))}
+    ${p(esc(opts.body))}
+    ${btn(opts.notificationsUrl, 'View Notification')}
+    ${muted('You received this because you\'re a member of this board.')}
+  `)
+
 /** Sent to a post owner when someone marks interest on their shift or request */
 export const interestedHtml = (opts: {
   commenterName: string

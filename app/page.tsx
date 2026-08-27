@@ -82,16 +82,19 @@ export default async function HomePage() {
   let pendingApprovalsCount = 0
   let pendingFlagsCount = 0
   let unreadMessagesCount = 0
+  let unreadNotificationsCount = 0
 
   if (user) {
-    const [{ data: profile }, { data: isModRpc }, { data: unreadMessages }] = await Promise.all([
+    const [{ data: profile }, { data: isModRpc }, { data: unreadMessages }, { data: unreadNotifications }] = await Promise.all([
       supabase.from('users').select('display_name, role').eq('id', user.id).single(),
       supabase.rpc('is_any_board_moderator'),
       supabase.rpc('get_unread_message_count'),
+      supabase.rpc('get_unread_notification_count'),
     ])
     displayName = profile?.display_name ?? user.email ?? 'Account'
     userRole = (profile?.role as GlobalRole | undefined) ?? 'User'
     unreadMessagesCount = unreadMessages ?? 0
+    unreadNotificationsCount = unreadNotifications ?? 0
 
     const isAdmin = userRole === 'Admin'
     isBoardModerator = Boolean(isModRpc)
@@ -128,6 +131,7 @@ export default async function HomePage() {
         pendingApprovalsCount={pendingApprovalsCount}
         pendingFlagsCount={pendingFlagsCount}
         unreadMessagesCount={unreadMessagesCount}
+        unreadNotificationsCount={unreadNotificationsCount}
       />
 
       {/* ── Hero ── */}

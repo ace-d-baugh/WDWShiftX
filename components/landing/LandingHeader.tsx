@@ -17,6 +17,7 @@ interface LandingHeaderProps {
   pendingApprovalsCount?: number
   pendingFlagsCount?: number
   unreadMessagesCount?: number
+  unreadNotificationsCount?: number
 }
 
 export function LandingHeader({
@@ -27,6 +28,7 @@ export function LandingHeader({
   pendingApprovalsCount = 0,
   pendingFlagsCount = 0,
   unreadMessagesCount = 0,
+  unreadNotificationsCount = 0,
 }: LandingHeaderProps) {
   const supabase = createClient()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -34,7 +36,7 @@ export function LandingHeader({
 
   const isAdmin = userRole === 'Admin'
   const showModItems = isBoardModerator || isAdmin
-  const hasNotifications = pendingApprovalsCount > 0 || pendingFlagsCount > 0 || unreadMessagesCount > 0
+  const hasNotifications = pendingApprovalsCount > 0 || pendingFlagsCount > 0 || unreadMessagesCount > 0 || unreadNotificationsCount > 0
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -54,7 +56,7 @@ export function LandingHeader({
   ]
   const dropdownItems = [
     ...primaryItems,
-    ...buildRoleDropdownItems({ isAdmin, showModItems, isLeader, pendingApprovalsCount, pendingFlagsCount }),
+    ...buildRoleDropdownItems({ isAdmin, showModItems, isLeader, pendingApprovalsCount, pendingFlagsCount, unreadNotificationsCount }),
   ]
 
   return (
