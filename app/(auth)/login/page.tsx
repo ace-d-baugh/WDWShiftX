@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, LogIn, Clock, AlertTriangle } from 'lucide-react'
+import { Eye, EyeOff, LogIn, Clock, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { loginSchema } from '@/lib/validations/auth'
 import { OAuthButtons } from '@/components/ui/OAuthButtons'
@@ -35,6 +35,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
   const [form, setForm] = useState({ email: '', password: '' })
+  const [unverified, setUnverified] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -47,6 +57,8 @@ export default function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setServerError(null)
+    setUnverified(false)
+    setResendMessage(null)
 
     const result = loginSchema.safeParse(form)
     if (!result.success) {
@@ -66,7 +78,11 @@ export default function LoginPage() {
         password: form.password,
       })
       if (error) {
-        setServerError(error.message)
+        if (error.code === 'email_not_confirmed' || /email not confirmed/i.test(error.message)) {
+          setUnverified(true)
+        } else {
+          setServerError(error.message)
+        }
         return
       }
       router.push('/wall')
@@ -74,6 +90,29 @@ export default function LoginPage() {
       setServerError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!form.email || resendCooldown > 0 || resending) return
+    setResending(true)
+    setResendMessage(null)
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: form.email,
+        options: { emailRedirectTo: `${window.location.origin}/verify-email?email=${encodeURIComponent(form.email)}` },
+      })
+      if (error) {
+        setResendMessage({ type: 'error', text: error.message })
+      } else {
+        setResendMessage({ type: 'success', text: 'Verification email sent! Please check your inbox (and spam folder).' })
+        setResendCooldown(60)
+      }
+    } catch {
+      setResendMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' })
+    } finally {
+      setResending(false)
     }
   }
 
@@ -95,6 +134,44 @@ export default function LoginPage() {
       {serverError && (
         <div key={serverError} className="mb-4 p-3 rounded-md bg-warning/10 border border-warning/20 text-warning text-sm animate-shake">
           {serverError}
+        </div>
+      )}
+
+      {unverified && (
+        <div className="mb-4 p-3 rounded-md bg-warning/10 border border-warning/20 text-warning text-sm animate-shake">
+          <p className="mb-1">Your email address hasn&apos;t been verified yet.</p>
+          <p className="text-xs opacity-80 mb-3">
+            Check your inbox for the verification link — and your spam or junk folder, since it sometimes ends up there.
+          </p>
+          {resendMessage && (
+            <div
+              className={`mb-3 p-2 rounded-md border text-xs flex items-center gap-2 ${
+                resendMessage.type === 'success'
+                  ? 'bg-success/10 border-success/20 text-success'
+                  : 'bg-warning/20 border-warning/30 text-warning'
+              }`}
+            >
+              {resendMessage.type === 'success' && <CheckCircle className="w-3.5 h-3.5 shrink-0" />}
+              {resendMessage.text}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resending || resendCooldown > 0}
+            className="btn btn-outline w-full gap-2"
+          >
+            {resending ? (
+              <span className="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            {resending
+              ? 'Sending...'
+              : resendCooldown > 0
+                ? `Resend available in ${resendCooldown}s`
+                : 'Resend Verification Email'}
+          </button>
         </div>
       )}
 

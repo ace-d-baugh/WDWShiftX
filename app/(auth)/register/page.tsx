@@ -114,9 +114,9 @@ function RegisterForm() {
         return
       }
 
-      const verifyPath = redirect
-        ? `/verify-email?redirect=${encodeURIComponent(redirect)}`
-        : '/verify-email'
+      const verifyParams = new URLSearchParams({ email: form.email })
+      if (redirect) verifyParams.set('redirect', redirect)
+      const verifyPath = `/verify-email?${verifyParams.toString()}`
 
       if (data.user && !data.session) {
         router.push(verifyPath)
