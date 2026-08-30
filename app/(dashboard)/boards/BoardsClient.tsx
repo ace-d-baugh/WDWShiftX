@@ -15,6 +15,7 @@ import { Modal } from '@/components/ui/Modal'
 import { FlagModal } from '@/components/features/FlagModal'
 import { InviteModal } from '@/components/features/InviteModal'
 import { Avatar } from '@/components/ui/Avatar'
+import { UserLink } from '@/components/ui/UserLink'
 import { cn } from '@/lib/utils'
 import {
   ALPHA_GROUPING_THRESHOLD, compareStrings, groupByLetter,
@@ -356,10 +357,12 @@ export function BoardsClient({ managedBoards: initial, currentUserId, isAdmin, b
               </span>
             )
           })()}
-          <Avatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={20} />
-          <span className="font-medium text-text truncate">
-            {member.displayName ?? <span className="italic text-text/40">No name</span>}
-          </span>
+          <UserLink userId={member.userId} displayName={member.displayName} currentUserId={currentUserId} className="flex items-center gap-2 min-w-0">
+            <Avatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={20} />
+            <span className="font-medium text-text truncate">
+              {member.displayName ?? <span className="italic text-text/40">No name</span>}
+            </span>
+          </UserLink>
           {isMe && <span className="ml-1.5 text-xs text-text/40 shrink-0">(you)</span>}
         </div>
 

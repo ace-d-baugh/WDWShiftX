@@ -19,6 +19,7 @@ import type { PreferredTime } from '@/lib/database.types'
 import { ShareHandler } from '@/components/features/ShareHandler'
 import { buildRequestShareData, wallPostShareUrl } from '@/lib/share/buildWallPostShare'
 import { Avatar } from '@/components/ui/Avatar'
+import { UserLink } from '@/components/ui/UserLink'
 
 const timeLabels: Record<PreferredTime, string> = {
   morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', late: 'Late Night',
@@ -121,8 +122,10 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
                   sized to match the title now — makes room for the avatar
                   that'll replace this icon. */}
               <span className="hidden sm:flex text-lg text-text/50 items-center gap-1.5 whitespace-nowrap">
-                <Avatar avatarUrl={request.avatar_url} displayName={request.created_by} size={20} tintClassName="text-accent" />
-                {request.created_by}
+                <UserLink userId={request.user_id} displayName={request.created_by} currentUserId={currentUserId} className="flex items-center gap-1.5">
+                  <Avatar avatarUrl={request.avatar_url} displayName={request.created_by} size={20} tintClassName="text-accent" />
+                  {request.created_by}
+                </UserLink>
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
                 )}
@@ -161,8 +164,10 @@ export function RequestCard({ request, currentUserId, onDeactivate, onFulfilled 
             match the title — makes room for the avatar that'll replace this
             icon. */}
         <div className="sm:hidden flex items-center gap-1.5 text-lg text-text/50">
-          <Avatar avatarUrl={request.avatar_url} displayName={request.created_by} size={20} tintClassName="text-accent" />
-          <span className="truncate">{request.created_by}</span>
+          <UserLink userId={request.user_id} displayName={request.created_by} currentUserId={currentUserId} className="flex items-center gap-1.5 min-w-0">
+            <Avatar avatarUrl={request.avatar_url} displayName={request.created_by} size={20} tintClassName="text-accent" />
+            <span className="truncate">{request.created_by}</span>
+          </UserLink>
           {isOwner && (
             <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none shrink-0">you</span>
           )}

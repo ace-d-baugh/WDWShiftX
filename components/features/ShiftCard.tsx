@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { ShareHandler } from '@/components/features/ShareHandler'
 import { buildShiftShareData, wallPostShareUrl } from '@/lib/share/buildWallPostShare'
 import { Avatar } from '@/components/ui/Avatar'
+import { UserLink } from '@/components/ui/UserLink'
 
 export interface ShiftData {
   id: string
@@ -212,8 +213,10 @@ export function ShiftCard({
                   sized to match the title now — makes room for the avatar
                   that'll replace this icon. */}
               <span className="hidden sm:flex text-lg text-text/50 items-center gap-1.5 whitespace-nowrap">
-                <Avatar avatarUrl={shift.avatar_url} displayName={shift.created_by} size={20} tintClassName={typeColor} />
-                {shift.created_by}
+                <UserLink userId={shift.user_id} displayName={shift.created_by} currentUserId={currentUserId} className="flex items-center gap-1.5">
+                  <Avatar avatarUrl={shift.avatar_url} displayName={shift.created_by} size={20} tintClassName={typeColor} />
+                  {shift.created_by}
+                </UserLink>
                 {isOwner && (
                   <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">you</span>
                 )}
@@ -259,8 +262,10 @@ export function ShiftCard({
               sm+ chevron above, which stays functionally equivalent (same
               detailsOpen toggle) regardless of which button is visible. */}
           <div className="sm:hidden flex items-center gap-1.5 text-lg text-text/50">
-            <Avatar avatarUrl={shift.avatar_url} displayName={shift.created_by} size={20} tintClassName={typeColor} />
-            <span className="truncate">{shift.created_by}</span>
+            <UserLink userId={shift.user_id} displayName={shift.created_by} currentUserId={currentUserId} className="flex items-center gap-1.5 min-w-0">
+              <Avatar avatarUrl={shift.avatar_url} displayName={shift.created_by} size={20} tintClassName={typeColor} />
+              <span className="truncate">{shift.created_by}</span>
+            </UserLink>
             {isOwner && (
               <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none shrink-0">you</span>
             )}

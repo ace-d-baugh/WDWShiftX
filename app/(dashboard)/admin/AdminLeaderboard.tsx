@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Trophy, HeartHandshake as Handshake, Frown, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { UserLink } from '@/components/ui/UserLink'
 
 interface LeaderboardRow {
   category: 'posts' | 'reliable' | 'disappointing'
@@ -15,6 +16,7 @@ interface LeaderboardRow {
 
 interface AdminLeaderboardProps {
   boards: { id: string; name: string }[]
+  currentUserId: string
 }
 
 const MEDAL = ['🏆', '🥈', '🥉'] as const
@@ -25,8 +27,8 @@ const CATEGORIES: { key: LeaderboardRow['category']; title: string; icon: React.
   { key: 'disappointing', title: 'Most Disappointing', icon: Frown, color: 'text-warning', unit: 'fell through' },
 ]
 
-function CategoryCard({ title, icon: Icon, color, unit, rows }: {
-  title: string; icon: React.ComponentType<{ className?: string }>; color: string; unit: string; rows: LeaderboardRow[]
+function CategoryCard({ title, icon: Icon, color, unit, rows, currentUserId }: {
+  title: string; icon: React.ComponentType<{ className?: string }>; color: string; unit: string; rows: LeaderboardRow[]; currentUserId: string
 }) {
   return (
     <div className="card">
@@ -47,7 +49,7 @@ function CategoryCard({ title, icon: Icon, color, unit, rows }: {
             >
               <span className="w-5 shrink-0 text-text/40 text-xs">{r.rank}.</span>
               {r.rank <= 3 && <span className="shrink-0">{MEDAL[r.rank - 1]}</span>}
-              <span className="flex-1 min-w-0 truncate">{r.display_name ?? 'A board member'}</span>
+              <UserLink userId={r.user_id} displayName={r.display_name ?? 'A board member'} currentUserId={currentUserId} className="flex-1 min-w-0 truncate" />
               <span className="shrink-0 text-text/50 text-xs">{r.cnt} {unit}</span>
             </li>
           ))}
@@ -57,7 +59,7 @@ function CategoryCard({ title, icon: Icon, color, unit, rows }: {
   )
 }
 
-export function AdminLeaderboard({ boards }: AdminLeaderboardProps) {
+export function AdminLeaderboard({ boards, currentUserId }: AdminLeaderboardProps) {
   const supabase = createClient()
   const [boardId, setBoardId] = useState('')
   const [rows, setRows] = useState<LeaderboardRow[]>([])
@@ -97,7 +99,7 @@ export function AdminLeaderboard({ boards }: AdminLeaderboardProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {CATEGORIES.map(c => (
-          <CategoryCard key={c.key} title={c.title} icon={c.icon} color={c.color} unit={c.unit} rows={byCategory(c.key)} />
+          <CategoryCard key={c.key} title={c.title} icon={c.icon} color={c.color} unit={c.unit} rows={byCategory(c.key)} currentUserId={currentUserId} />
         ))}
       </div>
     </div>

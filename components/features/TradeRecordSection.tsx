@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { finalizeClaim, withdrawClaim } from '@/app/actions/claims'
 import { getSettings } from '@/lib/settings'
 import { cn } from '@/lib/utils'
+import { UserLink } from '@/components/ui/UserLink'
 import type { ClaimStatus } from '@/lib/database.types'
 
 interface ClaimRow {
@@ -170,7 +171,9 @@ export function TradeRecordSection({ userId }: { userId: string }) {
                           <Clock className="w-3 h-3" /> {shiftLine(c)}
                         </p>
                         <p className="text-[11px] text-text/50">
-                          {c.owner_id === userId ? <>Claimed by <strong>{c.claimant_name}</strong></> : <>Your claim to <strong>{c.owner_name}</strong></>}
+                          {c.owner_id === userId
+                            ? <>Claimed by <UserLink userId={c.claimant_id} displayName={c.claimant_name} currentUserId={userId} className="font-semibold text-text/70" /></>
+                            : <>Your claim to <UserLink userId={c.owner_id} displayName={c.owner_name} currentUserId={userId} className="font-semibold text-text/70" /></>}
                         </p>
                       </div>
                       {c.status === 'accepted' && c.owner_id === userId ? (
@@ -223,7 +226,10 @@ export function TradeRecordSection({ userId }: { userId: string }) {
                     </span>
                     <span className="truncate text-text/70">{c.shift?.shift_title ?? 'Shift'}</span>
                     <span className="text-[11px] text-text/40 shrink-0 ml-auto">
-                      {c.owner_id === userId ? `with ${c.claimant_name}` : `with ${c.owner_name}`}
+                      with{' '}
+                      {c.owner_id === userId
+                        ? <UserLink userId={c.claimant_id} displayName={c.claimant_name} currentUserId={userId} />
+                        : <UserLink userId={c.owner_id} displayName={c.owner_name} currentUserId={userId} />}
                     </span>
                   </li>
                 ))}
