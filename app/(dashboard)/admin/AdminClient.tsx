@@ -19,6 +19,7 @@ import { slugify } from '@/lib/slug'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
+import { UserLink } from '@/components/ui/UserLink'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { BOARD_ROLE_LABEL, GLOBAL_ROLE_LABEL } from '@/lib/roles'
@@ -646,11 +647,13 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
               )
             })()}
 
-            <Avatar avatarUrl={u.avatar_url} displayName={formattedName || u.display_name} size={20} />
+            <UserLink userId={u.id} displayName={formattedName || u.display_name} currentUserId={adminId} className="flex items-center gap-2 min-w-0">
+              <Avatar avatarUrl={u.avatar_url} displayName={formattedName || u.display_name} size={20} />
 
-            <p className={cn('font-medium truncate', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
-              {formattedName || <span className="italic text-text/40">No display name</span>}
-            </p>
+              <p className={cn('font-medium truncate', u.is_active ? 'text-text' : 'text-text/40 line-through')}>
+                {formattedName || <span className="italic text-text/40">No display name</span>}
+              </p>
+            </UserLink>
 
             {/* Board count doubles as the accordion toggle — the old
                 chevron on the right did the same job twice over. */}
@@ -1174,7 +1177,7 @@ export function AdminClient({ boards: initBoards, users: initUsers, adminId, pos
 
       {/* Stats Tab */}
       {tab === 'charts' && <AdminCharts stats={postStats} boards={boards} />}
-      {tab === 'leaderboard' && <AdminLeaderboard boards={boards} />}
+      {tab === 'leaderboard' && <AdminLeaderboard boards={boards} currentUserId={adminId} />}
 
       {/* ── Remove-from-board confirmation / last-Admin reassignment ────── */}
       {removeTarget && (

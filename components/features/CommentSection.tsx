@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
 import { Avatar } from '@/components/ui/Avatar'
+import { UserLink } from '@/components/ui/UserLink'
 import { CountPill } from '@/components/ui/CountPill'
 import { FlagModal } from '@/components/features/FlagModal'
 import { createClient } from '@/lib/supabase/client'
@@ -436,9 +437,11 @@ export function CommentSection({
             <ul className="space-y-1.5">
               {interestedUsers.map(u => (
                 <li key={u.user_id} className="flex items-center gap-2 text-sm text-text">
-                  <Avatar avatarUrl={u.avatar_url} displayName={u.display_name} size={20} />
-                  <Star className="w-3.5 h-3.5 text-secondary-accent shrink-0" fill="#ffea80" strokeWidth={0} />
-                  {u.display_name}
+                  <UserLink userId={u.user_id} displayName={u.display_name} currentUserId={currentUserId} className="flex items-center gap-2">
+                    <Avatar avatarUrl={u.avatar_url} displayName={u.display_name} size={20} />
+                    <Star className="w-3.5 h-3.5 text-secondary-accent shrink-0" fill="#ffea80" strokeWidth={0} />
+                    {u.display_name}
+                  </UserLink>
                   <span className="text-xs text-text/40">{formatDistanceToNow(parseISO(u.created_at), { addSuffix: true })}</span>
                 </li>
               ))}
@@ -514,8 +517,10 @@ export function CommentSection({
                   <li key={c.id} className="text-sm border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 text-xs text-text/50 flex-wrap">
-                        <Avatar avatarUrl={c.avatar_url} displayName={c.display_name} size={20} />
-                        <span className="font-medium text-text">{c.display_name}</span>
+                        <UserLink userId={c.user_id} displayName={c.display_name} currentUserId={currentUserId} className="flex items-center gap-1.5">
+                          <Avatar avatarUrl={c.avatar_url} displayName={c.display_name} size={20} />
+                          <span className="font-medium text-text">{c.display_name}</span>
+                        </UserLink>
                         {c.is_interested && (
                           <span className="inline-flex items-center gap-0.5 text-primary">
                             <Star className="w-3 h-3 text-secondary-accent" fill="#ffea80" strokeWidth={0} /> Interested

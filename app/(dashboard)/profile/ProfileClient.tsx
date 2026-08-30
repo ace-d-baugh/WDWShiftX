@@ -13,13 +13,14 @@ import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { CalendarSyncSection } from '@/components/features/CalendarSyncSection'
 import { TradeRecordSection } from '@/components/features/TradeRecordSection'
 import { AccountSecuritySection } from '@/components/features/AccountSecuritySection'
+import { PublicProfileEditor } from '@/components/features/PublicProfileEditor'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { displayNameRegex } from '@/lib/validations/auth'
 import { getSettings, saveSettings, type UserSettings, type WeekStart, type DateFormat, type TimeFormat, DEFAULT_SETTINGS } from '@/lib/settings'
 import { getStoredTheme, applyTheme, freeThemeFallback, THEMES, isProTheme, type Theme, type ThemeInfo } from '@/lib/theme'
 import { upsertPreferences } from '@/lib/preferences'
-import type { GlobalRole } from '@/lib/database.types'
+import type { GlobalRole, ContactMethodType } from '@/lib/database.types'
 
 interface UserProfile {
   id: string
@@ -32,11 +33,23 @@ interface UserProfile {
   is_active: boolean
   created_at: string
   avatar_url: string | null
+  bio: string | null
+  birthday_month: number | null
+  birthday_day: number | null
+  birthday_year: number | null
+}
+
+interface ContactMethodRow {
+  id: string
+  type: ContactMethodType
+  value: string
+  sort_order: number
 }
 
 interface ProfileClientProps {
   user: UserProfile | null
   sessionUserId: string
+  contactMethods: ContactMethodRow[]
 }
 
 // Premium (seasonal/Pro) themes — Nordic, Kitty, Midnight, Cyberpunk —
@@ -61,11 +74,14 @@ const THEME_GRID_POSITION: Partial<Record<Theme, string>> = {
   cyberpunk: 'row-start-3 col-start-2 sm:row-start-2 sm:col-start-3',
 }
 
-export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
+export function ProfileClient({ user, sessionUserId, contactMethods }: ProfileClientProps) {
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
   const isNewOAuthUser = searchParams.get('oauth') === '1'
+  const [activeTab, setActiveTab] = useState<'account' | 'public'>(
+    searchParams.get('tab') === 'public' ? 'public' : 'account'
+  )
 
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? null)
   const [displayName, setDisplayName] = useState(user?.display_name ?? '')
@@ -242,6 +258,40 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
         </div>
       )}
 
+      <div className="flex border-b border-border">
+        <button
+          type="button"
+          onClick={() => setActiveTab('account')}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            activeTab === 'account' ? 'border-primary text-primary' : 'border-transparent text-text/60 hover:text-text'
+          }`}
+        >
+          Account
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('public')}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            activeTab === 'public' ? 'border-primary text-primary' : 'border-transparent text-text/60 hover:text-text'
+          }`}
+        >
+          Public Profile
+        </button>
+      </div>
+
+      {activeTab === 'public' && (
+        <PublicProfileEditor
+          sessionUserId={sessionUserId}
+          initialBio={user.bio}
+          initialBirthdayMonth={user.birthday_month}
+          initialBirthdayDay={user.birthday_day}
+          initialBirthdayYear={user.birthday_year}
+          initialContactMethods={contactMethods.map(c => ({ id: c.id, type: c.type, value: c.value }))}
+        />
+      )}
+
+      {activeTab === 'account' && (
+      <>
       {/* Account Info */}
       <div className="card shadow-sm">
         <div className="flex items-center gap-3 mb-4">
@@ -496,6 +546,8 @@ export function ProfileClient({ user, sessionUserId }: ProfileClientProps) {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }

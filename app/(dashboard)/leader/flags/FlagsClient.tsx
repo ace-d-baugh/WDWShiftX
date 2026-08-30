@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { resolveFlag as resolveFlagAction } from '@/app/actions/flags'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { UserLink } from '@/components/ui/UserLink'
 import type { PreferredTime } from '@/lib/database.types'
 
 const ET = 'America/New_York'
@@ -23,6 +24,7 @@ interface FlagItem {
   reason: string
   status: string
   created_at: string
+  flagged_by_user_id: string | null
   users: { display_name: string | null } | null
 }
 
@@ -37,9 +39,10 @@ type FlaggedContent =
 
 interface FlagsClientProps {
   flags: FlagItem[]
+  currentUserId: string
 }
 
-export function FlagsClient({ flags: initialFlags }: FlagsClientProps) {
+export function FlagsClient({ flags: initialFlags, currentUserId }: FlagsClientProps) {
   const supabase = createClient()
   const [flags, setFlags] = useState(initialFlags)
   const [processing, setProcessing] = useState<string | null>(null)
@@ -215,7 +218,7 @@ export function FlagsClient({ flags: initialFlags }: FlagsClientProps) {
                   </div>
                   <p className="text-sm font-medium text-text">Reason: {flag.reason}</p>
                   <p className="text-xs text-text/50 mt-0.5">
-                    Flagged by: {flag.users?.display_name ?? 'Anonymous'}
+                    Flagged by: <UserLink userId={flag.flagged_by_user_id} displayName={flag.users?.display_name ?? 'Anonymous'} currentUserId={currentUserId} />
                   </p>
                 </div>
                 <button

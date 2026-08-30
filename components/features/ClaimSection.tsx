@@ -8,6 +8,7 @@ import { messageAboutShift } from '@/app/actions/messages'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { CountPill } from '@/components/ui/CountPill'
+import { UserLink } from '@/components/ui/UserLink'
 import { isSampleId } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
 import type { ClaimStatus } from '@/lib/database.types'
@@ -133,7 +134,7 @@ export function ClaimSection({ pendingClaims, shiftSummary, onChanged }: ClaimSe
         {pendingClaims.map(claim => (
           <li key={claim.id} className="flex items-center gap-2 flex-wrap">
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-text">{claim.claimant_name}</span>
+              <UserLink userId={claim.claimant_id} displayName={claim.claimant_name} className="text-sm font-medium text-text" />
               {claim.bundleSize && claim.bundleSize > 1 && (
                 <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none align-middle">
                   <Layers className="w-2.5 h-2.5" />
