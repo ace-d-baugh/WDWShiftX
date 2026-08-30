@@ -311,6 +311,42 @@ Detection quirk worth knowing before porting: Supabase does **not** retroactivel
 
 ---
 
+## Since last sync (2026-08-28)
+
+One small auth/UX fix, prompted by real users who registered but never received (or never noticed) their confirmation email and were stuck unable to log in with no way to trigger a second attempt themselves. Commit: `0668fe3` (merged to `main` at `1622684`).
+
+### 31. Resend-verification-email flow for unconfirmed accounts
+
+Two entry points, both calling Supabase's built-in `supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } })` — no new backend/schema, Supabase already tracks confirmation state and its own resend rate limit:
+
+- **`/verify-email` page** (`app/(auth)/verify-email/page.tsx`): the register flow now passes the just-registered email through as a `?email=` query param (`app/(auth)/register/page.tsx`). The page shows the address back to the user and adds a "Resend Verification Email" button with a 60s client-side cooldown (separate from whatever cooldown/quota Supabase itself enforces server-side), success/error feedback, and a more explicit "check spam/junk folder" line.
+- **`/login` page** (`app/(auth)/login/page.tsx`): if `signInWithPassword` fails specifically because the email isn't confirmed (`error.code === 'email_not_confirmed'`, matched with a message-text regex fallback for older/self-hosted Supabase versions that may not set `.code`), the generic error banner is replaced with an inline "your email hasn't been verified yet" banner carrying the same resend button + cooldown + spam-folder note, using the email the user just typed into the form (no session or extra round-trip needed — `resend()` works pre-session for `type: 'signup'`).
+
+**Portability:** ✅ Trivial, self-contained, no schema or migration involved — pure client-side use of an existing Supabase Auth API. The only thing to double check on the target project: confirm Supabase's error code for an unconfirmed-email sign-in attempt is still `email_not_confirmed` on whatever supabase-js version MyShiftX pins (WDWShiftX is on `^2.108.1`); the regex fallback on the message text covers most drift, but worth a quick live test either way.
+
+---
+
+## Since last sync (2026-08-30)
+
+Public user profiles, plus linkifying names throughout the app so they lead somewhere. Commit: `d66dce3` (merged to `main` at `091d0c5`).
+
+### 32. Public user profiles + names linkified site-wide
+
+New per-user public profile page and a matching self-service editor, following the same "click a name, land on a person" pattern most social apps have but this app didn't yet:
+
+- **Schema** (`supabase/migrations/20260830120000_public_profile_fields.sql`): `users` gets `bio text`, `birthday_month/day/year smallint` (each independently nullable — a user can show just month+day, a full date, or nothing at all; CHECK constraints bound the ranges, no cross-validation between month/day at the DB level). New table `user_contact_methods` (`user_id`, `type`, `value`, `sort_order`) — a repeatable list rather than fixed columns, since a user can add as many phone/email/social rows as they want. `type` is a CHECK-constrained enum: `phone, email, instagram, facebook, twitter, tiktok, discord, snapchat, linkedin, other`.
+- **The column-grant gotcha strikes again** (see item 24/25's notes and every migration since `20260701152710`): `users` has table-wide SELECT revoked, columns exposed one at a time via explicit `GRANT SELECT (col, ...)`. The new bio/birthday columns needed their own grant line — `GRANT SELECT (bio, birthday_month, birthday_day, birthday_year) ON public.users TO authenticated;` — deliberately **`authenticated` only, not `anon`**, since public profiles require sign-in (unlike avatar_url/email which are anon-visible). `user_contact_methods` is a brand-new table so it just gets a normal table-wide grant, no precedent to fight.
+- **RLS split by concern, not by table**: `user_contact_methods` SELECT is open to any authenticated user (mirrors `users_select_authenticated`'s `(select auth.role()) = 'authenticated'` idiom); INSERT/UPDATE/DELETE is owner-only (`(select auth.uid()) = user_id`, the init-plan-wrapped form used throughout the newer migrations).
+- **Editor**: a new "Public Profile" tab on the existing Profile page (`app/(dashboard)/profile/ProfileClient.tsx` — no tab primitive existed anywhere in the codebase, built a plain two-button `border-b-2` bar rather than pulling in a UI library for it), rendering `components/features/PublicProfileEditor.tsx`. Birthday is three independent `<select>`s (month/day/year, all optional). Contact methods are edited via `components/features/ContactMethodsEditor.tsx` — add/remove rows, a type dropdown, and light regex validation on Phone/Email only (socials stay freeform, e.g. "Insta @handle"). Saving contact methods does a delete-all-then-reinsert for that user rather than 3-way diffing inserts/updates/deletes — simpler and safe given the tiny row counts involved.
+- **Public page**: `app/(dashboard)/users/[id]/` (page + `PublicProfileClient.tsx`) — read-only for everyone, including the owner viewing their own page (owners edit only from the Profile tab, never inline here). A deliberately "not a boring settings page" hero card (gradient banner + a couple of decorative `lucide-react` sparkle/star icons) rather than a plain form dump. **Terminology note:** an early draft used "cast member" language throughout (fits WDWShiftX's Disney-park framing) — this was deliberately generalized to plain "user" wording since it doesn't fit MyShiftX's context; if porting, grep the ported files for any leftover Disney-specific phrasing before shipping.
+- **Every blank field gets an explicit note**, not silent omission — "This user hasn't shared their birthday / a bio / any contact info," per section, so a sparse profile still reads as intentional rather than broken.
+- **New dependency: `react-icons`** (added to `package.json` this feature) — used only for real brand marks (Instagram/Facebook/X/TikTok/Discord/Snapchat/LinkedIn) via `react-icons/fa6`, imported per-icon (tree-shakes fine) in `lib/contactMethods.ts`. Phone/Email keep `lucide-react` icons since they aren't "brand" marks. This is the first icon dependency beyond lucide-react anywhere in the codebase — small package, but worth knowing it's now a dependency at all.
+- **Linkification**: new `components/ui/UserLink.tsx` — links to the viewer's own `/profile` when the name belongs to them, otherwise `/users/[id]`; renders plain (non-linked) text when no id is available (e.g. a shift whose original poster's account no longer exists — `shifts.user_id` can be null while `created_by` is a denormalized text snapshot). Rolled out to `ShiftCard`, `RequestCard`, `CommentSection`, `TradeRecordSection`, `ClaimSection`, the messages conversation header, `AdminClient`, `AdminLeaderboard`, and `BoardsClient`'s member list. **Deliberately left unlinked**, and confirmed with the user as fine to skip: `Navbar`/`LandingHeader`'s account-menu name (it's already a dropdown trigger, not free text — nesting a link would fight the click handler), `MessageToast`/`MessagesClient`/`NotificationsClient` rows (each row is already a click target for a different action — open the conversation, start a chat, open the notification's link), and the Leader Approvals/Archive/Flags-detail-modal names (each would need a small RPC or query change to expose a real user id that isn't currently selected — judged not worth doing pre-emptively).
+
+**Portability:** ⚠️ Real lift, but modular — schema (2 migrations' worth of pattern to replicate: new columns + grants + a new RLS-protected table), one new npm dependency, ~6 new files, and ~9 existing files touched for linkification (each a small, mechanical `UserLink` swap once you confirm that call site actually has a real user id in scope — several places in this codebase only have a denormalized display-name string, not an id, and those were skipped rather than guessed at). Before porting: (1) apply the migration and double-check the column grants against MyShiftX's own users-table grant setup (don't assume it matches WDWShiftX's `anon`/`authenticated` split); (2) decide MyShiftX's own visibility policy for public profiles (this build made it "any signed-in user can view anyone's" — a `SECURITY DEFINER` RPC would be needed instead of plain column grants if MyShiftX wants row-level scoping, e.g. "same board only"); (3) re-derive the contact-method type list/icons to whatever platforms actually make sense there; (4) re-decide the "cast member" vs "user" wording, and any other Disney-specific copy, for MyShiftX's own voice.
+
+---
+
 ## Summary table
 
 | # | Feature | Area | Portability |
@@ -345,6 +381,8 @@ Detection quirk worth knowing before porting: Supabase does **not** retroactivel
 | 28 | Overlord Users tab: inactive users excluded from default view | Admin | ✅ check if the bug even exists there first |
 | 29 | Notifications page + Mod/Admin board announcements | Notifications/Admin | ✅ largest lift after 11/17; not yet verified end-to-end |
 | 30 | Profile: Account Security (add password / connect-disconnect OAuth) | Profile/Auth | ✅ requires Manual Linking enabled on target project |
+| 31 | Resend-verification-email flow (verify-email page + login banner) | Auth | ✅ trivial, no schema |
+| 32 | Public user profiles + names linkified site-wide | Profile/Cross-cutting | ⚠️ real lift, modular — new table/columns/dependency, decide visibility scope first |
 
 ---
 
