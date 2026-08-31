@@ -345,6 +345,14 @@ New per-user public profile page and a matching self-service editor, following t
 
 **Portability:** ⚠️ Real lift, but modular — schema (2 migrations' worth of pattern to replicate: new columns + grants + a new RLS-protected table), one new npm dependency, ~6 new files, and ~9 existing files touched for linkification (each a small, mechanical `UserLink` swap once you confirm that call site actually has a real user id in scope — several places in this codebase only have a denormalized display-name string, not an id, and those were skipped rather than guessed at). Before porting: (1) apply the migration and double-check the column grants against MyShiftX's own users-table grant setup (don't assume it matches WDWShiftX's `anon`/`authenticated` split); (2) decide MyShiftX's own visibility policy for public profiles (this build made it "any signed-in user can view anyone's" — a `SECURITY DEFINER` RPC would be needed instead of plain column grants if MyShiftX wants row-level scoping, e.g. "same board only"); (3) re-derive the contact-method type list/icons to whatever platforms actually make sense there; (4) re-decide the "cast member" vs "user" wording, and any other Disney-specific copy, for MyShiftX's own voice.
 
+### 33. Custom email sender no longer reads "no-reply"
+
+Resend's deliverability audit flagged two things on the account: the shared `EMAIL_FROM` sender used by every app-triggered email (notifications, help/support, board announcements, schedule-import reports) read `noreply@wdwshiftx.com`, and the *Supabase Auth* signup-confirmation email's verify link (`https://<project-ref>.supabase.co/auth/v1/verify?...`) doesn't match the `wdwshiftx.com` sending domain.
+
+Only the first is a code fix: `lib/email-constants.ts`'s `EMAIL_FROM` changed from `WDWShiftX <noreply@wdwshiftx.com>` to `WDWShiftX <support@wdwshiftx.com>` — a monitored inbox that already exists (`SUPPORT_EMAIL` in the same file). The second isn't reachable from app code at all: that email is Supabase's own built-in template, sent via `supabase.auth.resend()`/the signup flow, and its verify link always points at the project's own `*.supabase.co` domain unless a **Custom Domain for Supabase Auth** is configured in the dashboard (Authentication → URL Configuration → Custom Domains — typically a paid add-on). Left unresolved here; flagged for whoever owns the Supabase project.
+
+**Portability:** ✅ The sender-name fix is a one-line constant change, trivially portable if MyShiftX's own `EMAIL_FROM` (or equivalent) also uses a `noreply@` address. The custom-domain gap is project-specific dashboard config, not something to port — check whether MyShiftX's Supabase project already has a custom Auth domain set up before assuming it has the same Resend warning.
+
 ---
 
 ## Summary table
@@ -383,6 +391,7 @@ New per-user public profile page and a matching self-service editor, following t
 | 30 | Profile: Account Security (add password / connect-disconnect OAuth) | Profile/Auth | ✅ requires Manual Linking enabled on target project |
 | 31 | Resend-verification-email flow (verify-email page + login banner) | Auth | ✅ trivial, no schema |
 | 32 | Public user profiles + names linkified site-wide | Profile/Cross-cutting | ⚠️ real lift, modular — new table/columns/dependency, decide visibility scope first |
+| 33 | Email sender fix (drop "no-reply") | Infra/Auth | ✅ one-line constant change; Supabase Auth link-domain gap not portable (dashboard config) |
 
 ---
 
