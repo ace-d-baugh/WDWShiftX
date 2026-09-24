@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, UserPlus, Ticket } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
 import { OAuthButtons } from '@/components/ui/OAuthButtons'
@@ -22,7 +21,6 @@ function RegisterForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? ''
   const oauthBlocked = searchParams.get('oauth_blocked') === '1'
-  const supabase = createClient()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -51,6 +49,9 @@ function RegisterForm() {
     password: '',
     confirm_password: '',
     terms_accepted: false,
+    // Honeypot — stays empty for real users (hidden off-screen below), so
+    // a non-empty value on submit means a bot filled every input it found.
+    website: '',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,28 +90,32 @@ function RegisterForm() {
         ? `${verifyBase}?redirect=${encodeURIComponent(redirect)}`
         : verifyBase
 
+      // Routed through /api/auth/register (not supabase.auth.signUp directly)
+      // so signups can be rate-limited by IP server-side and the honeypot
+      // field can be checked before anything reaches Supabase Auth.
       // given_name/family_name use the same metadata keys Google OAuth sends,
       // so the handle_new_user trigger derives the site display name
       // ("First Last") identically for both paths. full_name fills the Supabase
       // auth Display Name; users can still edit theirs later (same convention).
-      const first = parseResult.data.first_name
-      const last = parseResult.data.last_name
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: parseResult.data.first_name,
+          last_name: parseResult.data.last_name,
+          email: form.email,
+          password: form.password,
+          confirm_password: form.confirm_password,
+          terms_accepted: form.terms_accepted,
+          website: form.website,
           emailRedirectTo,
-          data: {
-            given_name: first,
-            family_name: last,
-            full_name: `${first} ${last}`,
-            ...(inviteCode && { invite_code: inviteCode }),
-          },
-        },
+          ...(inviteCode && { invite_code: inviteCode }),
+        }),
       })
+      const result = await res.json()
 
-      if (error) {
-        setServerError(error.message)
+      if (!res.ok || !result.ok) {
+        setServerError(result.error ?? 'An unexpected error occurred. Please try again.')
         return
       }
 
@@ -118,7 +123,7 @@ function RegisterForm() {
       if (redirect) verifyParams.set('redirect', redirect)
       const verifyPath = `/verify-email?${verifyParams.toString()}`
 
-      if (data.user && !data.session) {
+      if (result.needsVerification) {
         router.push(verifyPath)
       } else {
         router.push(redirect || '/wall')
@@ -164,6 +169,22 @@ function RegisterForm() {
       {!REGISTRATION_PAUSED && <OAuthButtons mode="register" />}
 
       <form onSubmit={onSubmit} className="space-y-4 mt-4" noValidate>
+        {/* Honeypot — off-screen, unreachable by tab or screen reader, so a
+            real visitor never sees or fills it. A bot that fills every field
+            it finds trips this one; checked server-side in /api/auth/register. */}
+        <div className="absolute -left-[9999px] w-px h-px overflow-hidden" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            id="website"
+            name="website"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={form.website}
+            onChange={handleChange}
+          />
+        </div>
+
         {/* Name — becomes the Supabase display name; the site name shown to
             boards is the full "First Last" (editable later, same convention) */}
         <div className="grid grid-cols-2 gap-3">

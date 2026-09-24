@@ -36,13 +36,43 @@ const passwordSchema = z.string().refine(passwordMeetsRequirements, {
   message: 'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a symbol',
 })
 
-// Mirrored in the handle_new_user() DB trigger so a direct API call can't
-// bypass this — see supabase/migrations for the matching domain check.
-const BLOCKED_EMAIL_DOMAINS = ['disney.com']
+// disney.com: Disney's mail servers silently drop our verification emails.
+// Everything else: disposable/throwaway inboxes used by fake-account bots to
+// clear email verification without a real address. Mirrored in the
+// handle_new_user() DB trigger so a direct API call can't bypass this — see
+// supabase/migrations for the matching domain check. Keep both lists in sync.
+const BLOCKED_EMAIL_DOMAINS = [
+  'disney.com',
+  // Disposable / temp-mail providers
+  '0-mail.com', '0815.ru', '0clickemail.com', '10minutemail.com', '10minutemail.net',
+  '1secmail.com', '1secmail.net', '1secmail.org', '20minutemail.com', '33mail.com',
+  'anonbox.net', 'boximail.com', 'burnermail.io', 'byom.de', 'crazymailing.com',
+  'deadaddress.com', 'dispostable.com', 'dropmail.me', 'emailondeck.com',
+  'emailsensei.com', 'fakeinbox.com', 'fakemailgenerator.com', 'getairmail.com',
+  'getnada.com', 'grr.la', 'guerrillamail.com', 'guerrillamail.net',
+  'guerrillamail.org', 'guerrillamailblock.com', 'harakirimail.com',
+  'inboxbear.com', 'inboxkitten.com', 'jetable.org', 'kasmail.com',
+  'luxusmail.org', 'mail-temporaire.fr', 'mailcatch.com', 'maildrop.cc',
+  'mailinator.com', 'mailinator.net', 'mailinator2.com', 'mailnesia.com',
+  'mailpoof.com', 'mailsac.com', 'mintemail.com', 'mytemp.email',
+  'mohmal.com', 'moakt.com', 'nada.email', 'noclickemail.com',
+  'no-spam.ws', 'notsharingmy.info', 'obobbo.com', 'onewaymail.com',
+  'owlymail.com', 'pokemail.net', 'putthisinyourspamdatabase.com',
+  'quickemailverification.com', 'sharklasers.com', 'shieldedmail.com',
+  'spam4.me', 'spamavert.com', 'spambog.com', 'spambox.us', 'spamgourmet.com',
+  'spamherelots.com', 'spamthisplease.com', 'spamex.com', 'spamfree24.org',
+  'superrito.com', 'tempail.com', 'tempinbox.com', 'tempmail.com',
+  'tempmail.de', 'tempmailo.com', 'tempmail2.com', 'temp-mail.org',
+  'temp-mail.io', 'tempr.email', 'throwawaymail.com', 'trashmail.com',
+  'trashmail.net', 'trbvm.com', 'tyldd.com', 'wegwerfemail.de',
+  'wegwerfmail.de', 'yopmail.com', 'yopmail.fr', 'yopmail.net',
+  'zetmail.com',
+]
+const BLOCKED_EMAIL_DOMAIN_SET = new Set(BLOCKED_EMAIL_DOMAINS)
 
 function hasBlockedEmailDomain(email: string): boolean {
   const domain = email.trim().toLowerCase().split('@').pop() ?? ''
-  return BLOCKED_EMAIL_DOMAINS.includes(domain)
+  return BLOCKED_EMAIL_DOMAIN_SET.has(domain)
 }
 
 export const registerSchema = z.object({
