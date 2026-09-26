@@ -43,6 +43,20 @@ export function AccountSecuritySection() {
   const loadIdentities = useCallback(async () => {
     const { data, error } = await supabase.auth.getUserIdentities()
     if (!error) setIdentities(data.identities)
+
+    // Identities can't tell us about a password added to an OAuth-first account.
+    // Fall back to (a) a persisted user_metadata flag and (b) whether this very
+    // session was established with a password; (b) also backfills the flag.
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user?.user_metadata?.has_password) {
+      setPasswordOverride(true)
+    } else {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (aal?.currentAuthenticationMethods?.some(m => (typeof m === 'string' ? m : m.method) === 'password')) {
+        setPasswordOverride(true)
+        supabase.auth.updateUser({ data: { has_password: true } })
+      }
+    }
     setLoading(false)
   }, [supabase])
 
@@ -73,7 +87,7 @@ export function AccountSecuritySection() {
 
     setSaving(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password })
+      const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } })
       if (error) throw error
       setSuccess(hasPassword ? 'Password updated.' : 'Password added — you can now log in with your email too.')
       setPasswordOverride(true)
