@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Checkbox } from '@/components/ui/Checkbox'
+import { Radio } from '@/components/ui/Radio'
 import type { PushMode } from '@/lib/database.types'
 
 export interface PushPrefsValue {
@@ -63,10 +65,9 @@ export function PushPreferences({ userId, initial }: { userId: string; initial: 
       <div role="radiogroup" aria-label="Push notification preference" className="space-y-1.5">
         {MODES.map(m => (
           <label key={m.value} className="flex items-start gap-2.5 cursor-pointer min-h-0">
-            <input
-              type="radio"
+            <Radio
               name="push_mode"
-              className="mt-1"
+              className="mt-0.5"
               checked={prefs.push_mode === m.value}
               onChange={() => save({ ...prefs, push_mode: m.value })}
             />
@@ -82,9 +83,8 @@ export function PushPreferences({ userId, initial }: { userId: string; initial: 
         <div className="mt-3 ml-6 space-y-2 border-l border-border pl-4">
           {CATEGORIES.map(c => (
             <label key={c.key} className="flex items-start gap-2.5 cursor-pointer min-h-0">
-              <input
-                type="checkbox"
-                className="mt-1"
+              <Checkbox
+                className="mt-0.5"
                 checked={prefs[c.key]}
                 onChange={e => save({ ...prefs, [c.key]: e.target.checked })}
               />
