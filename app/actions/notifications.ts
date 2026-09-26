@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getActionSession } from '@/lib/auth/session'
 import { EMAIL_FROM } from '@/lib/email-constants'
 import { sendPushNotification } from '@/lib/push-server'
-import { boardApprovedHtml, claimReceivedHtml, claimResultHtml, interestedHtml, shiftMatchHtml } from '@/components/email-template'
+import { boardApprovedHtml, claimReceivedHtml, claimResultHtml, interestedHtml, shiftMatchHtml, modPromotedHtml, leaderPromotedHtml, joinRequestPendingHtml } from '@/components/email-template'
 import { formatInTimeZone } from 'date-fns-tz'
 import { parseISO } from 'date-fns'
 import type { PreferredTime, NotificationType } from '@/lib/database.types'
@@ -156,7 +156,7 @@ export async function notifyInterest(opts: {
     if (ownerId) {
       const title = `${commenterName} is interested`
       const body = `${commenterName} marked interest in "${postTitle}"`
-      await sendPushNotification(ownerId, title, body, '/wall')
+      await sendPushNotification(ownerId, 'comments', title, body, '/wall')
       await createNotification(db, {
         type: 'interest', userId: ownerId, title, body, linkUrl: '/wall', actorUserId: uid,
       })
@@ -266,7 +266,7 @@ export async function notifyComment(opts: {
     const body = `${commenterName} commented on "${postTitle}"`
     const results = await Promise.allSettled(
       [...recipients].flatMap(rid => [
-        sendPushNotification(rid, title, body, '/wall'),
+        sendPushNotification(rid, 'comments', title, body, '/wall'),
         // Message always points at the post owner, not the commenter who
         // triggered this — so a recipient who *is* the owner gets no actor
         // (they can't message themselves).
@@ -381,7 +381,7 @@ async function sendMatchNotifications(opts: MatchPayload) {
   if (opts.requesterUserId) {
     const title = 'Possible shift match'
     const body = `${opts.shiftPosterName}'s shift "${opts.shiftTitle}" on ${displayDate} may match your request`
-    sends.push(sendPushNotification(opts.requesterUserId, title, body, '/wall'))
+    sends.push(sendPushNotification(opts.requesterUserId, 'shift_activity', title, body, '/wall'))
     sends.push(createNotification(createAdminClient(), {
       type: 'shift_match', userId: opts.requesterUserId, title, body, linkUrl: '/wall',
       actorUserId: opts.shiftPosterUserId,
@@ -390,7 +390,7 @@ async function sendMatchNotifications(opts: MatchPayload) {
   if (opts.shiftPosterUserId) {
     const title = 'Possible shift match'
     const body = `${opts.requesterName} is looking for a shift on ${displayDate} — yours may match`
-    sends.push(sendPushNotification(opts.shiftPosterUserId, title, body, '/wall'))
+    sends.push(sendPushNotification(opts.shiftPosterUserId, 'shift_activity', title, body, '/wall'))
     sends.push(createNotification(createAdminClient(), {
       type: 'shift_match', userId: opts.shiftPosterUserId, title, body, linkUrl: '/wall',
       actorUserId: opts.requesterUserId,
@@ -436,6 +436,45 @@ async function sendMatchNotifications(opts: MatchPayload) {
   }
 
   await Promise.all(sends)
+}
+
+// ── Wall post broadcast ────────────────────────────────────────────────────────
+
+/**
+ * Push every other approved member of a board when a shift offer or request is
+ * posted. Recipients' own preferences (push_wall_posts / push_mode) are applied
+ * inside sendPushNotification. `excludeIds` skips people who already got a more
+ * specific push about the same post (the match notification). Push only, no
+ * email and no Notifications-page row, so a busy board can't flood either.
+ * The poster is deliberately anonymous in the copy.
+ */
+async function broadcastWallPost(
+  db: ReturnType<typeof createAdminClient>,
+  opts: { boardId: string; posterId: string; kind: 'shift offer' | 'shift request'; isoDate: string; excludeIds: Set<string> }
+): Promise<void> {
+  const { data: members, error } = await db
+    .from('user_boards')
+    .select('user_id')
+    .eq('board_id', opts.boardId)
+    .eq('is_approved', true)
+  if (error) { console.error('[broadcastWallPost] member query error:', error.message); return }
+
+  const recipients = [...new Set(
+    (members ?? [])
+      .map(m => m.user_id as string | null)
+      .filter((id): id is string => !!id && id !== opts.posterId && !opts.excludeIds.has(id))
+  )]
+  const title = opts.kind === 'shift offer' ? 'New shift offer on the Wall' : 'New shift request on the Wall'
+  const body = `Someone posted a ${opts.kind} for ${formatDisplayDate(opts.isoDate)} on WDWShiftX.com. Tap to see it. Change notification settings in your Profile.`
+
+  for (let i = 0; i < recipients.length; i += NOTIFY_BATCH_SIZE) {
+    const results = await Promise.allSettled(
+      recipients.slice(i, i + NOTIFY_BATCH_SIZE).map(rid => sendPushNotification(rid, 'wall_posts', title, body, '/wall'))
+    )
+    for (const r of results) {
+      if (r.status === 'rejected') console.error('[broadcastWallPost] push failed:', r.reason)
+    }
+  }
 }
 
 // ── Match notifications ────────────────────────────────────────────────────────
@@ -501,7 +540,7 @@ export async function notifyShiftPosted(opts: { shiftId: string }): Promise<void
       .gt('expires_at', new Date().toISOString())
       .neq('user_id', posterUserId) // don't match your own posts
 
-    if (error) { console.error('[notifyShiftPosted] query error:', error.message); return }
+    if (error) console.error('[notifyShiftPosted] query error:', error.message)
 
     // Deduplicate by requester user_id — same person may have multiple matching requests
     const seenRequesters = new Set<string>()
@@ -536,6 +575,9 @@ export async function notifyShiftPosted(opts: { shiftId: string }): Promise<void
       })
     }
     await sendMatchNotificationsBatched(payloads)
+    await broadcastWallPost(db, {
+      boardId, posterId: posterUserId, kind: 'shift offer', isoDate: shiftDate, excludeIds: seenRequesters,
+    })
   } catch (err) {
     console.error('[notifyShiftPosted] unexpected error:', err)
   }
@@ -599,7 +641,7 @@ export async function notifyRequestPosted(opts: { requestId: string }): Promise<
       .gt('expires_at', new Date().toISOString())
       .neq('user_id', requesterUserId)
 
-    if (error) { console.error('[notifyRequestPosted] query error:', error.message); return }
+    if (error) console.error('[notifyRequestPosted] query error:', error.message)
 
     // Deduplicate by shift poster user_id — same person may have multiple matching shifts
     const seenPosters = new Set<string>()
@@ -635,6 +677,9 @@ export async function notifyRequestPosted(opts: { requestId: string }): Promise<
       })
     }
     await sendMatchNotificationsBatched(payloads)
+    await broadcastWallPost(db, {
+      boardId, posterId: requesterUserId, kind: 'shift request', isoDate: requestedDate, excludeIds: seenPosters,
+    })
   } catch (err) {
     console.error('[notifyRequestPosted] unexpected error:', err)
   }
@@ -695,7 +740,7 @@ export async function notifyClaimCreated(claimId: string): Promise<void> {
     const ccBody = bundleSize > 1
       ? `${claimantName} tapped "I Can Help" on your ${bundleSize}-shift bundle — accept or decline on the Wall`
       : `${claimantName} tapped "I Can Help" on "${anchorTitle}" — accept or decline on the Wall`
-    await sendPushNotification(ownerId, ccTitle, ccBody, '/wall')
+    await sendPushNotification(ownerId, 'shift_activity', ccTitle, ccBody, '/wall')
     await createNotification(db, {
       type: 'claim_created', userId: ownerId, title: ccTitle, body: ccBody, linkUrl: '/wall',
       actorUserId: claim.claimant_id as string,
@@ -786,13 +831,13 @@ export async function notifyClaimResolved(
     const rivalBody = `"${shiftTitle}" was covered by someone else — more shifts are on the Wall`
 
     const sends: Promise<unknown>[] = [
-      sendPushNotification(claimantId, claimantTitle, claimantBody, claimantLink),
+      sendPushNotification(claimantId, 'shift_activity', claimantTitle, claimantBody, claimantLink),
       createNotification(db, {
         type: 'claim_resolved', userId: claimantId, title: claimantTitle, body: claimantBody,
         linkUrl: claimantLink, actorUserId: claim.owner_id as string,
       }),
       ...rivalClaimantIds.flatMap(rid => [
-        sendPushNotification(rid, rivalTitle, rivalBody, '/wall'),
+        sendPushNotification(rid, 'shift_activity', rivalTitle, rivalBody, '/wall'),
         createNotification(db, {
           type: 'claim_resolved', userId: rid, title: rivalTitle, body: rivalBody,
           linkUrl: '/wall', actorUserId: null,
@@ -861,7 +906,7 @@ export async function notifyClaimFinalized(claimId: string): Promise<void> {
     const cfBody = completed
       ? `The trade for "${shiftTitle}" was confirmed — it's on your trade record now`
       : `The owner marked the trade for "${shiftTitle}" as fell through`
-    await sendPushNotification(claim.claimant_id as string, cfTitle, cfBody, '/profile')
+    await sendPushNotification(claim.claimant_id as string, 'shift_activity', cfTitle, cfBody, '/profile')
     await createNotification(db, {
       type: 'claim_finalized', userId: claim.claimant_id as string, title: cfTitle, body: cfBody,
       linkUrl: '/profile', actorUserId: null,
@@ -919,7 +964,7 @@ export async function notifyBoardApproved(userBoardId: string): Promise<void> {
     if (memberUserId) {
       const baTitle = `You've been accepted to ${boardName}!`
       const baBody = 'Your join request was approved. Head to the Wall to see posts.'
-      await sendPushNotification(memberUserId, baTitle, baBody, '/wall')
+      await sendPushNotification(memberUserId, 'account', baTitle, baBody, '/wall')
       await createNotification(db, {
         type: 'board_approved', userId: memberUserId, title: baTitle, body: baBody,
         linkUrl: '/wall', actorUserId: uid,
@@ -943,5 +988,232 @@ export async function notifyBoardApproved(userBoardId: string): Promise<void> {
     })
   } catch (err) {
     console.error('[notifyBoardApproved] failed:', err)
+  }
+}
+
+// Shared by notifyModPromoted/notifyLeaderPromoted: only a Mod/Leader of the
+// board (or a global Admin) may announce a role change on it — same
+// authorization shape as notifyBoardApproved's isMod check.
+async function callerCanManageBoard(
+  db: ReturnType<typeof createAdminClient>,
+  callerId: string,
+  boardId: string
+): Promise<boolean> {
+  const [{ data: membership }, { data: role }] = await Promise.all([
+    db.from('user_boards').select('role')
+      .eq('board_id', boardId).eq('user_id', callerId)
+      .eq('is_approved', true).maybeSingle(),
+    db.from('users').select('role').eq('id', callerId).single(),
+  ])
+  return membership?.role === 'Mod' || membership?.role === 'Leader' || role?.role === 'Admin'
+}
+
+/**
+ * Fire-and-forget: congratulate a member just promoted from User to Mod.
+ * Per product decision, promotion to Mod is the moment a member starts
+ * receiving board email — if their preference was off, this turns it on
+ * (never the reverse) and the email explains why. Either way the email
+ * reminds them to allow-list our sending address, since Mods are the first
+ * tier of users who actually depend on these emails arriving.
+ */
+export async function notifyModPromoted(userBoardId: string): Promise<void> {
+  try {
+    const uid = await callerId('notifyModPromoted')
+    if (!uid) return
+
+    if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[notifyModPromoted] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
+      return
+    }
+
+    const db = createAdminClient()
+
+    const { data: ub } = await db
+      .from('user_boards')
+      .select('user_id, board_id, boards(name), users!user_id(email, display_name, notify_via_email)')
+      .eq('id', userBoardId)
+      .single()
+
+    if (!ub) return
+
+    const boardId = ub.board_id as string
+    if (!(await callerCanManageBoard(db, uid, boardId))) {
+      console.error(`[notifyModPromoted] rejected: ${uid} cannot manage board ${boardId}`)
+      return
+    }
+
+    const boardName = (ub.boards as unknown as { name: string } | null)?.name
+    if (!boardName) return
+
+    const memberUserId = ub.user_id as string | null
+    const user = (ub.users as unknown) as { email: string; display_name: string | null; notify_via_email: boolean } | null
+    if (!memberUserId || !user) return
+
+    const emailWasJustEnabled = !user.notify_via_email
+    if (emailWasJustEnabled) {
+      const { error: updateErr } = await db
+        .from('users').update({ notify_via_email: true }).eq('id', memberUserId)
+      if (updateErr) console.error('[notifyModPromoted] failed to enable notify_via_email:', updateErr.message)
+    }
+
+    const title = "Congratulations — you're now a Mod!"
+    const body = `You've been made a Mod of ${boardName}. You'll now receive email notifications about board activity.`
+    await sendPushNotification(memberUserId, 'account', title, body, '/notifications')
+    await createNotification(db, {
+      type: 'mod_promoted', userId: memberUserId, title, body, linkUrl: '/notifications', actorUserId: uid,
+    })
+
+    if (!user.email) return
+    if (!optionalServerEnv.RESEND_API_KEY) {
+      console.error('[notifyModPromoted] RESEND_API_KEY is not set — skipping email')
+      return
+    }
+
+    const { error: sendError } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: user.email,
+      subject: `You're now a Mod on ${boardName}`,
+      html: modPromotedHtml({
+        displayName: user.display_name ?? undefined,
+        boardName,
+        emailWasJustEnabled,
+        notificationsUrl: `${BASE_URL}/notifications`,
+      }),
+    })
+    if (sendError) console.error('[notifyModPromoted] Resend error:', sendError)
+  } catch (err) {
+    console.error('[notifyModPromoted] failed:', err)
+  }
+}
+
+/**
+ * Fire-and-forget: congratulate a Mod just promoted to Leader (board Admin).
+ * No email-preference nudge or allow-list reminder here — by this point
+ * they've already been a Mod and received that message once.
+ */
+export async function notifyLeaderPromoted(boardId: string, targetUserId: string): Promise<void> {
+  try {
+    const uid = await callerId('notifyLeaderPromoted')
+    if (!uid) return
+
+    if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[notifyLeaderPromoted] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
+      return
+    }
+
+    const db = createAdminClient()
+
+    if (!(await callerCanManageBoard(db, uid, boardId))) {
+      console.error(`[notifyLeaderPromoted] rejected: ${uid} cannot manage board ${boardId}`)
+      return
+    }
+
+    const [{ data: board }, { data: user }] = await Promise.all([
+      db.from('boards').select('name').eq('id', boardId).single(),
+      db.from('users').select('email, display_name, notify_via_email').eq('id', targetUserId).single(),
+    ])
+    const boardName = board?.name
+    if (!boardName || !user) return
+
+    const title = "Congratulations — you're now the Admin!"
+    const body = `You've been promoted to Admin of ${boardName}.`
+    await sendPushNotification(targetUserId, 'account', title, body, '/notifications')
+    await createNotification(db, {
+      type: 'leader_promoted', userId: targetUserId, title, body, linkUrl: '/notifications', actorUserId: uid,
+    })
+
+    if (!user.notify_via_email || !user.email) return
+    if (!optionalServerEnv.RESEND_API_KEY) return
+
+    const { error: sendError } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: user.email,
+      subject: `You're now the Admin of ${boardName}`,
+      html: leaderPromotedHtml({
+        displayName: user.display_name ?? undefined,
+        boardName,
+        notificationsUrl: `${BASE_URL}/notifications`,
+      }),
+    })
+    if (sendError) console.error('[notifyLeaderPromoted] Resend error:', sendError)
+  } catch (err) {
+    console.error('[notifyLeaderPromoted] failed:', err)
+  }
+}
+
+/**
+ * Fire-and-forget: alert a board's Mods and Leaders (never the site-wide
+ * Overlord unless they separately hold a visible Mod/Leader seat on this
+ * specific board) that a new member is waiting on approval. Caller must be
+ * the requester themselves — this fires right after their own
+ * confirmJoinBoard insert, not as a moderator action.
+ */
+export async function notifyJoinRequestPending(userBoardId: string): Promise<void> {
+  try {
+    const uid = await callerId('notifyJoinRequestPending')
+    if (!uid) return
+
+    if (!optionalServerEnv.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[notifyJoinRequestPending] SUPABASE_SERVICE_ROLE_KEY is not set — skipping')
+      return
+    }
+
+    const db = createAdminClient()
+
+    const { data: ub } = await db
+      .from('user_boards')
+      .select('user_id, board_id, boards(name), users!user_id(display_name)')
+      .eq('id', userBoardId)
+      .single()
+
+    if (!ub) return
+    if (ub.user_id !== uid) {
+      console.error(`[notifyJoinRequestPending] rejected: ${uid} does not own request ${userBoardId}`)
+      return
+    }
+
+    const boardId = ub.board_id as string
+    const boardName = (ub.boards as unknown as { name: string } | null)?.name
+    if (!boardName) return
+    const requesterName = (ub.users as unknown as { display_name: string | null } | null)?.display_name ?? 'Someone'
+
+    // Hidden rows are silent Overlord seats, not visible board leadership —
+    // excluded so the site-wide Admin isn't fanned out to on every board.
+    const { data: recipients } = await db
+      .from('user_boards')
+      .select('user_id, users!user_id(email, notify_via_email)')
+      .eq('board_id', boardId)
+      .eq('is_approved', true)
+      .eq('is_hidden', false)
+      .in('role', ['Mod', 'Leader'])
+
+    if (!recipients || recipients.length === 0) return
+
+    const title = 'New join request'
+    const body = `${requesterName} has requested to join ${boardName}.`
+    const approvalsUrl = `${BASE_URL}/leader/approvals`
+
+    const sends: Promise<unknown>[] = []
+    for (const r of recipients) {
+      const recipientId = r.user_id as string
+      const recipientUser = (r.users as unknown) as { email: string; notify_via_email: boolean } | null
+      sends.push(sendPushNotification(recipientId, 'account', title, body, '/leader/approvals'))
+      sends.push(createNotification(db, {
+        type: 'join_request', userId: recipientId, title, body, linkUrl: '/leader/approvals', actorUserId: uid,
+      }))
+      if (recipientUser?.notify_via_email && recipientUser.email && optionalServerEnv.RESEND_API_KEY) {
+        sends.push(resend.emails.send({
+          from: EMAIL_FROM,
+          to: recipientUser.email,
+          subject: `New member waiting for approval on ${boardName}`,
+          html: joinRequestPendingHtml({ requesterName, boardName, approvalsUrl }),
+        }).then(({ error }) => {
+          if (error) console.error('[notifyJoinRequestPending] Resend error:', error)
+        }))
+      }
+    }
+    await Promise.all(sends)
+  } catch (err) {
+    console.error('[notifyJoinRequestPending] failed:', err)
   }
 }

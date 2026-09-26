@@ -286,6 +286,58 @@ export const shiftMatchHtml = (opts: {
   `)
 }
 
+/** Sent to a user promoted from board member to Mod */
+export const modPromotedHtml = (opts: {
+  displayName?: string
+  boardName: string
+  emailWasJustEnabled: boolean
+  notificationsUrl: string
+}) =>
+  shell(`
+    ${h1('Congratulations — you\'re now a Mod! 🎉')}
+    ${p(`Hi${opts.displayName ? ` ${esc(opts.displayName)}` : ''},`)}
+    ${p(`You've been made a Mod of:`)}
+    ${highlight(esc(opts.boardName))}
+    ${p('As a Mod, you\'ll help review new member requests and keep the board running smoothly. You\'ll now receive email notifications about new join requests and other board activity.')}
+    ${opts.emailWasJustEnabled
+      ? p('We\'ve turned on email notifications for your account so you don\'t miss anything that needs your attention.')
+      : ''}
+    ${highlight('Please add support@wdwshiftx.com to your contacts or safe-senders list so these updates land in your inbox and not your spam folder.')}
+    ${btn(opts.notificationsUrl, 'View Your Notifications')}
+    ${muted('You can manage your email notification preference any time in your profile settings.')}
+  `)
+
+/** Sent to a Mod promoted to Leader (board Admin) */
+export const leaderPromotedHtml = (opts: {
+  displayName?: string
+  boardName: string
+  notificationsUrl: string
+}) =>
+  shell(`
+    ${h1('Congratulations — you\'re now the Admin! 🎉')}
+    ${p(`Hi${opts.displayName ? ` ${esc(opts.displayName)}` : ''},`)}
+    ${p(`You've been promoted to Admin of:`)}
+    ${highlight(esc(opts.boardName))}
+    ${p('You now have full management access for the board, including member roles and join requests.')}
+    ${btn(opts.notificationsUrl, 'View Your Notifications')}
+    ${muted('You can manage your email notification preference any time in your profile settings.')}
+  `)
+
+/** Sent to a board's Mods/Leaders when a new member requests to join */
+export const joinRequestPendingHtml = (opts: {
+  requesterName: string
+  boardName: string
+  approvalsUrl: string
+}) =>
+  shell(`
+    ${h1('New join request waiting')}
+    ${p(`<strong>${esc(opts.requesterName)}</strong> has requested to join:`)}
+    ${highlight(esc(opts.boardName))}
+    ${p('Review and approve or reject the request whenever you get a chance.')}
+    ${btn(opts.approvalsUrl, 'Review Requests')}
+    ${muted('You received this because you\'re a Mod or Admin of this board.')}
+  `)
+
 // (betaClosingHtml and a generic notificationHtml used to live here — both
 // had no callers and were removed in the 2026-07-18 code-scan cleanup. Git
 // history has them if a one-off send is ever needed again.)

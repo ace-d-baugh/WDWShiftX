@@ -68,7 +68,7 @@ async function deliverToMembers(
     const batch = memberIds.slice(i, i + NOTIFY_BATCH_SIZE)
     const results = await Promise.allSettled(batch.map(async memberId => {
       const info = members.get(memberId)!
-      await sendPushNotification(memberId, title, body, '/notifications')
+      await sendPushNotification(memberId, 'account', title, body, '/notifications')
       if (info.notify && info.email && optionalServerEnv.RESEND_API_KEY) {
         const { error } = await resend.emails.send({
           from: EMAIL_FROM,

@@ -53,7 +53,8 @@ export function PushPromptBanner() {
       <div className="flex items-center gap-3">
         <Bell className="w-4 h-4 text-info shrink-0" />
         <p className="text-sm text-text/80 flex-1">
-          Get notified the moment a shift matches or someone&rsquo;s interested in your post.
+          Get notified the moment a shift matches, someone&rsquo;s interested in your post, or a new shift is posted.
+          You&rsquo;ll get all notifications by default &mdash; change that in your Profile.
         </p>
         <div className="flex items-center gap-1.5 shrink-0">
           <Button size="sm" onClick={enable} loading={busy}>Enable</Button>

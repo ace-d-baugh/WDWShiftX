@@ -207,6 +207,7 @@ async function notifyNewMessage(conversationId: string, senderId: string, body: 
     (participants ?? []).map(p =>
       sendPushNotification(
         p.user_id,
+        'messages',
         `New message from ${senderName}`,
         preview,
         `/messages/${conversationId}`

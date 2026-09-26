@@ -15,7 +15,9 @@ self.addEventListener('push', (event) => {
       body: data.body || '',
       icon: '/apple-icon.png',
       badge: '/apple-icon.png',
-      data: { url: data.url || '/wall' },
+      data: { url: data.url || '/wall', settingsUrl: data.settingsUrl || null },
+      // Second tap target on pushes that carry a settings link (desktop/Android)
+      actions: data.settingsUrl ? [{ action: 'settings', title: 'Notification settings' }] : [],
       // Keep desktop toasts on screen until dismissed — the default ~5s
       // auto-hide is easy to miss for time-sensitive shift matches
       requireInteraction: true,
@@ -25,7 +27,8 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = (event.notification.data && event.notification.data.url) || '/wall'
+  const payload = event.notification.data || {}
+  const url = (event.action === 'settings' && payload.settingsUrl) || payload.url || '/wall'
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {

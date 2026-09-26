@@ -13,10 +13,13 @@ export type RoadmapColumn   = 'done' | 'in_progress' | 'next' | 'backlog' | 'def
 export type RemovedReason   = 'expired' | 'leader_removed' | 'user_removed' | 'covered' | 'fulfilled'
 export type ClaimStatus     = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'completed' | 'fell_through'
 export type MessageReaction = 'thumbs_up' | 'laugh' | 'surprise' | 'sad' | 'mad' | 'star'
+export type PushMode        = 'all' | 'some' | 'none'
+export type PushCategory    = 'comments' | 'messages' | 'wall_posts' | 'shift_activity' | 'account'
 export type NotificationType =
   | 'shift_match' | 'interest' | 'comment'
   | 'claim_created' | 'claim_resolved' | 'claim_finalized'
   | 'board_approved' | 'board_announcement'
+  | 'mod_promoted' | 'leader_promoted' | 'join_request'
 export type ContactMethodType =
   | 'phone' | 'email' | 'instagram' | 'facebook' | 'twitter' | 'tiktok'
   | 'discord' | 'snapchat' | 'linkedin' | 'other'
@@ -36,6 +39,11 @@ export interface Database {
           phone_number: string | null
           notify_via_email: boolean
           notify_via_sms: boolean
+          push_mode: PushMode
+          push_comments: boolean
+          push_messages: boolean
+          push_wall_posts: boolean
+          push_shift_activity: boolean
           onboarding_dismissed_at: string | null
           role: GlobalRole
           membership: Membership
@@ -62,6 +70,11 @@ export interface Database {
           phone_number?: string | null
           notify_via_email?: boolean
           notify_via_sms?: boolean
+          push_mode?: PushMode
+          push_comments?: boolean
+          push_messages?: boolean
+          push_wall_posts?: boolean
+          push_shift_activity?: boolean
           onboarding_dismissed_at?: string | null
           role?: GlobalRole
           membership?: Membership
@@ -88,6 +101,11 @@ export interface Database {
           phone_number?: string | null
           notify_via_email?: boolean
           notify_via_sms?: boolean
+          push_mode?: PushMode
+          push_comments?: boolean
+          push_messages?: boolean
+          push_wall_posts?: boolean
+          push_shift_activity?: boolean
           onboarding_dismissed_at?: string | null
           role?: GlobalRole
           membership?: Membership
