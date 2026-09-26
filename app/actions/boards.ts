@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getActionSession, requireAdminAction } from '@/lib/auth/session'
-import { notifyBoardApproved } from '@/app/actions/notifications'
+import { notifyBoardApproved, notifyModPromoted, notifyLeaderPromoted, notifyJoinRequestPending } from '@/app/actions/notifications'
 import { slugify } from '@/lib/slug'
 import type { BoardRole } from '@/lib/database.types'
 
@@ -122,17 +122,19 @@ export async function confirmJoinBoard(boardId: string, confirmed: boolean): Pro
       return {}
     }
 
-    const { error } = await supabase.from('user_boards').insert({
+    const { data: inserted, error } = await supabase.from('user_boards').insert({
       user_id: userId,
       board_id: boardId,
       role: 'User',
       is_approved: false,
-    })
+    }).select('id').single()
 
     if (error) return { error: error.message }
 
     await recordAttempt(supabase, userId, code, 'success')
     revalidatePath('/profile')
+    // Fire-and-forget — never blocks the join request
+    if (inserted) notifyJoinRequestPending(inserted.id as string)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }
@@ -334,11 +336,14 @@ export async function updateUserBoardRole(
   try {
     if (!['User', 'Mod'].includes(newRole)) return { error: 'Invalid role.' }
     const { supabase } = await getActionSession()
-    const { data: existing } = await supabase.from('user_boards').select('is_hidden').eq('id', userBoardId).single()
+    const { data: existing } = await supabase.from('user_boards').select('is_hidden, role').eq('id', userBoardId).single()
     if (existing?.is_hidden) return { error: 'Cannot modify a hidden membership.' }
     const { error } = await supabase.from('user_boards').update({ role: newRole }).eq('id', userBoardId)
     if (error) return { error: error.message }
     revalidatePath('/leader/approvals')
+    // Fire-and-forget — never blocks the role change. Only a genuine
+    // User -> Mod promotion congratulates; a no-op or demotion doesn't.
+    if (newRole === 'Mod' && existing?.role !== 'Mod') notifyModPromoted(userBoardId)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }
@@ -391,6 +396,8 @@ export async function transferBoardOwnership(
     if (demoteErr) return { error: demoteErr.message }
 
     revalidatePath('/profile')
+    // Fire-and-forget — never blocks the transfer
+    notifyLeaderPromoted(boardId, newLeaderUserId)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unknown error' }
@@ -543,6 +550,8 @@ export async function adminTransferBoardOwnership(
     if (promoteErr) return { error: promoteErr.message }
 
     revalidatePath(`/admin/users/${newLeaderUserId}`)
+    // Fire-and-forget — never blocks the transfer
+    notifyLeaderPromoted(boardId, newLeaderUserId)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Not authorized.' }

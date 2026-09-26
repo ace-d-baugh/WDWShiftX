@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   const [{ data: userProfile }, { data: contactMethods }] = await Promise.all([
     supabase
       .from('users')
-      .select('id, display_name, email, phone_number, notify_via_email, notify_via_sms, role, is_active, created_at, avatar_url, bio, birthday_month, birthday_day, birthday_year')
+      .select('id, display_name, email, phone_number, notify_via_email, notify_via_sms, push_mode, push_comments, push_messages, push_wall_posts, push_shift_activity, role, is_active, created_at, avatar_url, bio, birthday_month, birthday_day, birthday_year')
       .eq('id', user.id)
       .single(),
     supabase

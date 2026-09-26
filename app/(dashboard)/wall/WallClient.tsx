@@ -27,6 +27,7 @@ const ET = 'America/New_York'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const DAY_ABBR  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 // Fixed Sun→Sat order for the day pills, independent of the user's week-start
 // setting (which still governs the calendar popups elsewhere on the page).
 const ALL_DAYS: readonly number[] = [0, 1, 2, 3, 4, 5, 6]
@@ -1020,7 +1021,8 @@ export function WallClient({
                           : 'bg-text/10 text-text/40 hover:bg-text/15'
                       )}
                     >
-                      {DAY_ABBR[d]}
+                      <span className="sm:hidden">{DAY_LETTER[d]}</span>
+                      <span className="hidden sm:inline">{DAY_ABBR[d]}</span>
                     </button>
                   ))}
                 </div>

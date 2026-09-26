@@ -9,6 +9,7 @@ import { MyBoardsSection } from '@/components/features/MyBoardsSection'
 import { AvatarUpload } from '@/components/features/AvatarUpload'
 import { Avatar } from '@/components/ui/Avatar'
 import { PushNotificationsToggle } from '@/components/features/PushNotificationsToggle'
+import { PushPreferences } from '@/components/features/PushPreferences'
 import { IosInstallPrompt } from '@/components/features/IosInstallPrompt'
 import { CalendarSyncSection } from '@/components/features/CalendarSyncSection'
 import { TradeRecordSection } from '@/components/features/TradeRecordSection'
@@ -20,7 +21,7 @@ import { displayNameRegex } from '@/lib/validations/auth'
 import { getSettings, saveSettings, type UserSettings, type WeekStart, type DateFormat, type TimeFormat, DEFAULT_SETTINGS } from '@/lib/settings'
 import { getStoredTheme, applyTheme, freeThemeFallback, THEMES, isProTheme, type Theme, type ThemeInfo } from '@/lib/theme'
 import { upsertPreferences } from '@/lib/preferences'
-import type { GlobalRole, ContactMethodType } from '@/lib/database.types'
+import type { GlobalRole, ContactMethodType, PushMode } from '@/lib/database.types'
 
 interface UserProfile {
   id: string
@@ -29,6 +30,11 @@ interface UserProfile {
   phone_number: string | null
   notify_via_email: boolean
   notify_via_sms: boolean
+  push_mode: PushMode
+  push_comments: boolean
+  push_messages: boolean
+  push_wall_posts: boolean
+  push_shift_activity: boolean
   role: GlobalRole
   is_active: boolean
   created_at: string
@@ -349,7 +355,7 @@ export function ProfileClient({ user, sessionUserId, contactMethods }: ProfileCl
       </div>
 
       {/* Notifications */}
-      <div className="card shadow-sm">
+      <div id="notifications" className="card shadow-sm scroll-mt-20">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-info/10 rounded-full flex items-center justify-center">
             <Bell className="w-5 h-5 text-info" />
@@ -370,6 +376,16 @@ export function ProfileClient({ user, sessionUserId, contactMethods }: ProfileCl
           {/* SMS toggle — hidden until SMS provider is configured */}
           {/* Applies instantly per device — not part of the Save button below */}
           <PushNotificationsToggle />
+          <PushPreferences
+            userId={sessionUserId}
+            initial={{
+              push_mode: user.push_mode,
+              push_comments: user.push_comments,
+              push_messages: user.push_messages,
+              push_wall_posts: user.push_wall_posts,
+              push_shift_activity: user.push_shift_activity,
+            }}
+          />
           {/* iOS browser tab: toggle hides itself — show install steps instead */}
           <IosInstallPrompt variant="inline" />
         </div>

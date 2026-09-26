@@ -494,9 +494,11 @@ export function HelpClient({ userEmail, importEnabled }: HelpClientProps) {
           <h2 className="font-accent text-xl font-bold text-text">Push Notifications</h2>
         </div>
         <p className="text-sm text-text/60 mb-4">
-          Get an instant alert when a shift matches or someone&rsquo;s interested in your post — even with
-          the site closed. Turn them on under <strong>Profile → Notifications</strong>, then follow the steps
-          for your device so alerts pop up instead of landing silently in the notification tray.
+          Get an instant alert when a shift matches, someone comments or messages you, or a new shift is
+          posted to your boards — even with the site closed. Turn them on under{' '}
+          <strong>Profile → Notifications</strong>. You&rsquo;ll get all notifications by default; choose
+          All, Only some, or None in that same section anytime. Then follow the steps for your device so
+          alerts pop up instead of landing silently in the notification tray.
         </p>
         <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">
           {PUSH_GUIDES.map((guide, i) => (

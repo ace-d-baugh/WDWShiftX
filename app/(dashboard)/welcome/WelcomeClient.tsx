@@ -201,8 +201,9 @@ export function WelcomeClient({ userId, displayName, importEnabled, initialShift
               </h2>
               <p className="text-sm text-text/60 mt-1 mb-3">
                 Shifts go fast — the first person to hear about one usually gets it. Turn on push
-                notifications so claims and matches reach you instantly. Email updates are already on;
-                manage both anytime in your <Link href="/profile" className="text-primary hover:underline">profile</Link>.
+                notifications so claims, matches, and new posts on your boards reach you instantly. You&rsquo;ll get all
+                notifications by default; email updates are already on. Change what you receive anytime in your{' '}
+                <Link href="/profile#notifications" className="text-primary hover:underline">profile</Link>.
               </p>
               <PushNotificationsToggle />
               {/* iOS browser tab: the toggle above hides itself — show the
