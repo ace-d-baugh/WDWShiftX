@@ -52,16 +52,21 @@ export const ShareHandler = forwardRef<ShareHandlerRef, ShareHandlerProps>(funct
 
   const runShare = async () => {
     const blob = blobRef.current
-    const text = buildShareText(data, url)
     const file = blob ? new File([blob], 'wdwshiftx-post.png', { type: 'image/png' }) : null
 
     try {
       if (file && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: data.title, text, url })
+        // Image only — no text, no url. Apps like Facebook's iOS share
+        // extension treat a share carrying a url (whether in the `url`
+        // field or just detected inside `text`) as a link share and
+        // silently drop the attached file in favor of their own
+        // Open-Graph link-preview card. The branded image is the
+        // shareable artifact here; the deep link stays in-app only.
+        await navigator.share({ files: [file], title: data.title })
         return
       }
       if (navigator.share) {
-        await navigator.share({ title: data.title, text, url })
+        await navigator.share({ title: data.title, text: buildShareText(data, url), url })
         return
       }
     } catch (err) {
