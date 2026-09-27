@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -21,7 +21,7 @@ import { ClaimSection, ClaimPill, InterestedPill, type MyClaim, type PendingClai
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { isSampleId } from '@/lib/tour/sample-data'
 import { cn } from '@/lib/utils'
-import { ShareHandler } from '@/components/features/ShareHandler'
+import { ShareHandler, type ShareHandlerRef } from '@/components/features/ShareHandler'
 import { buildShiftShareData, wallPostShareUrl } from '@/lib/share/buildWallPostShare'
 import { Avatar } from '@/components/ui/Avatar'
 import { UserLink } from '@/components/ui/UserLink'
@@ -88,7 +88,7 @@ export function ShiftCard({
   useEffect(() => setMounted(true), [])
   const [openCommentsTick, setOpenCommentsTick] = useState(0)
   const [messageTick, setMessageTick] = useState(0)
-  const [shareTick, setShareTick] = useState(0)
+  const shareRef = useRef<ShareHandlerRef>(null)
   const [claimsOpen, setClaimsOpen] = useState(false)
 
   const isOwner = currentUserId && shift.user_id === currentUserId
@@ -307,7 +307,7 @@ export function ShiftCard({
           ownerUserId={shift.user_id}
           openCommentsTick={openCommentsTick}
           messageTick={messageTick}
-          onShare={() => setShareTick(t => t + 1)}
+          onShare={() => shareRef.current?.share()}
           showInterest={false}
           leadingAction={
             isOwner ? (
@@ -393,7 +393,7 @@ export function ShiftCard({
             {isOwner && (
               <>
                 <div className="my-1 border-t border-border" />
-                <button className={menuItemCls} onClick={() => { setShareTick(t => t + 1); setMenuPos(null) }}>
+                <button className={menuItemCls} onClick={() => { shareRef.current?.share(); setMenuPos(null) }}>
                   <Share2 className="w-3.5 h-3.5 shrink-0" /> Share
                 </button>
                 <button className={menuItemCls} onClick={() => { router.push(`/wall/edit-shift/${shift.id}`); setMenuPos(null) }}>
@@ -423,7 +423,7 @@ export function ShiftCard({
 
       {/* Off-screen capture node only needs to exist for the owner — Share
           isn't offered to anyone else, so there's nothing to render it for. */}
-      {isOwner && <ShareHandler data={shareData} url={wallPostShareUrl(shift.id)} tick={shareTick} />}
+      {isOwner && <ShareHandler ref={shareRef} data={shareData} url={wallPostShareUrl(shift.id)} />}
 
       <ConfirmDialog
         open={confirmUnpost}
