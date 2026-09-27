@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { toBlob } from 'html-to-image'
 import { ShareCard, type ShareCardData } from './ShareCard'
 import { ShareModal } from './ShareModal'
@@ -9,43 +9,49 @@ import { buildShareText } from '@/lib/share/buildWallPostShare'
 interface ShareHandlerProps {
   data: ShareCardData
   url: string
-  /** Bumped by the card's ⋮ menu to trigger a share — same tick idiom the
-   *  card already uses for openCommentsTick/messageTick. */
-  tick: number
+}
+
+export interface ShareHandlerRef {
+  share: () => void
 }
 
 /**
- * Renders the off-screen ShareCard, captures it to an image on each tick,
- * and tries navigator.share (with the image, then without it) before
- * falling back to the copy/download modal.
+ * Renders the off-screen ShareCard and keeps a captured image ready in the
+ * background (re-captured whenever `data` changes), so `share()` can call
+ * navigator.share() synchronously the moment it's invoked. iOS Safari only
+ * honors navigator.share() while the tap that triggered it is still "live" —
+ * routing the call through an awaited image capture (or through a tick prop
+ * bounced through a separate effect) reliably loses that window, which is
+ * what was silently dropping owners into the copy/download fallback modal.
  */
-export function ShareHandler({ data, url, tick }: ShareHandlerProps) {
+export const ShareHandler = forwardRef<ShareHandlerRef, ShareHandlerProps>(function ShareHandler(
+  { data, url },
+  ref
+) {
   const cardRef = useRef<HTMLDivElement>(null)
+  const blobRef = useRef<Blob | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  // Compares against the last *value* handled, not "have I ever run" — a
-  // boolean-flag guard gets defeated by React 18 StrictMode's double-invoke
-  // of mount effects in dev, which would fire a share for every card on load.
-  const lastTick = useRef(tick)
 
+  // Background capture — not tied to the share tap, so it never sits between
+  // the click and the navigator.share() call.
   useEffect(() => {
-    if (tick === lastTick.current) return
-    lastTick.current = tick
-    void runShare()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick])
+    let cancelled = false
+    blobRef.current = null
+    const node = cardRef.current
+    if (!node) return
+    toBlob(node, { pixelRatio: 2, cacheBust: true })
+      .then(blob => { if (!cancelled) blobRef.current = blob })
+      .catch(() => { if (!cancelled) blobRef.current = null })
+    return () => { cancelled = true }
+  }, [data])
+
+  useImperativeHandle(ref, () => ({
+    share: () => { void runShare() },
+  }))
 
   const runShare = async () => {
-    const node = cardRef.current
-    let blob: Blob | null = null
-    if (node) {
-      try {
-        blob = await toBlob(node, { pixelRatio: 2, cacheBust: true })
-      } catch {
-        blob = null
-      }
-    }
-
+    const blob = blobRef.current
     const text = buildShareText(data, url)
     const file = blob ? new File([blob], 'wdwshiftx-post.png', { type: 'image/png' }) : null
 
@@ -60,8 +66,9 @@ export function ShareHandler({ data, url, tick }: ShareHandlerProps) {
       }
     } catch (err) {
       if ((err as DOMException)?.name === 'AbortError') return
-      // Anything else (e.g. share() throwing for an unsupported combination)
-      // falls through to the modal below instead of failing silently.
+      // Anything else (e.g. share() throwing for an unsupported combination,
+      // or activation expiring) falls through to the modal below instead of
+      // failing silently.
     }
 
     setImageUrl(blob ? URL.createObjectURL(blob) : null)
@@ -83,4 +90,4 @@ export function ShareHandler({ data, url, tick }: ShareHandlerProps) {
       />
     </>
   )
-}
+})
