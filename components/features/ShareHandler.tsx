@@ -34,15 +34,22 @@ export const ShareHandler = forwardRef<ShareHandlerRef, ShareHandlerProps>(funct
   const [imageUrl, setImageUrl] = useState<string | null>(null)
 
   // Background capture — not tied to the share tap, so it never sits between
-  // the click and the navigator.share() call.
+  // the click and the navigator.share() call. Deliberately never clears
+  // blobRef on its own: `data` gets a new object identity on every Wall
+  // reload (tab switch, claim change, any post action — not just edits to
+  // this post), so a re-capture kicks off far more often than the content
+  // actually changes. Keeping the last good blob in place until a new one
+  // resolves means a share tap during that window still gets a (possibly a
+  // reload cycle stale, but still accurate) image instead of no image at
+  // all — the previous version nulled it up front and regularly lost the
+  // race, silently falling back to a link-only share.
   useEffect(() => {
     let cancelled = false
-    blobRef.current = null
     const node = cardRef.current
     if (!node) return
     toBlob(node, { pixelRatio: 2, cacheBust: true })
-      .then(blob => { if (!cancelled) blobRef.current = blob })
-      .catch(() => { if (!cancelled) blobRef.current = null })
+      .then(blob => { if (!cancelled && blob) blobRef.current = blob })
+      .catch(() => {})
     return () => { cancelled = true }
   }, [data])
 
